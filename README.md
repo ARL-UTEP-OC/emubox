@@ -1,21 +1,21 @@
 # The Emulation SandBox (EmuBox)
 
 ## System Requirements
-### Python 2.x
-### VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack
-### Flask
-### VirtualEnv
+* Python 2.x
+* VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack
+* Flask
+* VirtualEnv
 
-##Description
+## Description
 EmuBox is composed of two main components: The Workshop Creator and the Workshop Manager.
 
-###Workshop Creator
+### Workshop Creator
 The Workshop Creator automates the creation of workshop units (sets of VMs that compose a cybersecurity scenario). This includes the cloning process.
 During the cloning process, this component adjusts VRDP ports and internal
 network adapter names so that each group is isolated and uniquely accessible by
 participants.
 
-###Workshop Manager
+### Workshop Manager
 
 The Workshop Manager component of EmuBox is a multi-threaded process that
 monitors VRDP connections for each workshop unit. It also contains a web service
@@ -32,7 +32,7 @@ unit, the system will automatically restore the associated VMs from snapshot
 and make it available once again.
 
 ## Installation
-###EmuBox has been tested on:
+### EmuBox has been tested on:
 * Windows 7 (32 and 64-bit), Windows Server 2012 (64-bit)
 * Kali Linux 2016.2 (32 and 64-bit)
 
