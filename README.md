@@ -1,10 +1,10 @@
 # The Emulation SandBox (EmuBox)
 
 ## System Requirements
-* Python 2.x
-* VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack
-* Flask
-* VirtualEnv
+* Python 2.x (tested with [v2.7](https://www.python.org/download/releases/2.7/))
+* VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack (tested with [v5.1.10](https://www.virtualbox.org/wiki/Download_Old_Builds_5_1))
+* Flask (tested with [v0.12](http://pypi.python.org/pypi/Flask/0.12))
+* VirtualEnv (tested with [v15.1.0](https://virtualenv.pypa.io/en/stable/))
 
 ## Description
 EmuBox is composed of two main components: The Workshop Creator and the Workshop Manager.
