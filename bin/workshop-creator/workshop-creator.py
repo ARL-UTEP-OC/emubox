@@ -11,7 +11,7 @@ def printError(message):
 	exit()			
 
 if len(sys.argv) < 2:
-	print "Usage: python workshop-creatory.py <input filename>"
+	print "Usage: python workshop-creator.py <input filename>"
 	exit()
 	
 inputFilename = sys.argv[1]
@@ -121,4 +121,10 @@ for vm in vmset.findall('vm'):
 			result = subprocess.check_output(snapCmd)
 			print(result)
 		except Exception:
-			print "Could take snapshot for VM",newvmName
+			print "Could not take snapshot for VM",newvmName
+
+print """
+**************************************************************************************
+If you have the VirtualBox GUI open, you must restart it to see the workshop groupings
+**************************************************************************************
+"""
