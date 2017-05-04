@@ -84,7 +84,6 @@ def powerdownMachine(session, machine):
     try:
         if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Running:
             logging.debug("session is locked or machine is not running, not powering down")
-            #time.sleep(lockWaitTime)
             return -1
         machine.lockMachine(session, mgr.constants.LockType_Shared)
         console = session.console
@@ -94,15 +93,16 @@ def powerdownMachine(session, machine):
             progress = console.powerdown()
             progress.waitForCompletion(-1)
         session.unlockMachine()
+        return 0
     except Exception as e:
         logging.error("error during powerdown"+ str(e))
+        return -1
 
 
 def restoreMachine(session, machine):
     try:
-        if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_PoweredOff:
+        if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_PoweredOff or machine.state != mgr.constants.MachineState_Aborted:
             logging.debug("session is locked or machine is not powered off, not restoring vm")
-            #time.sleep(lockWaitTime)
             return -1
         try:
             machine.lockMachine(session, mgr.constants.LockType_Shared)
@@ -111,30 +111,32 @@ def restoreMachine(session, machine):
             logging.debug("RESTORE")
             progress = session.machine.restoreSnapshot(snap)
             progress.waitForCompletion(-1)
+            return 0
         except Exception as e:
             save = False
             logging.error(str(mgr) + str(e))
             traceback.print_exc()
-            # exit()
-        session.unlockMachine()
+            session.unlockMachine()
+            return -1
     except Exception as e:
         logging.error("error during restore" + str(e))
+        return -1
 
 
 def startMachine(session, machine):
     try:
         if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Saved:
             logging.debug( "session is locked, not starting vm")
-            #time.sleep(lockWaitTime)
             return -1
             logging.debug("LAUNCH")
         progress = machine.launchVMProcess(session, "headless", "")
         progress.waitForCompletion(-1)
-
         session.unlockMachine()
+        return 0
     except Exception as e:
         logging.error("error during start" + str(e))
-
+    session.unlockMachine()
+    return -1
 
 def makeAvailableToNotAvailable(vmNameList):
     # print "making notAvailable",vmNameList,"\n"
@@ -184,8 +186,6 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
             logging.debug("Restore substates:"+str(restoreSubstates))
             vmsToRemoveFromQueue = []
             for substate in restoreSubstates:
-                # TODO: might replace this with a call to a shell script for timing reasons
-                # output = subprocess.call(["restartFromSnap.bat", vmNameToRestore])
                 logging.debug("Processing state for:"+str(substate)+str(restoreSubstates[substate]))
                 sem.wait()
                 sem.acquire()
@@ -193,23 +193,26 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 vmState = getVMInfo(session, mach)["VMState"]
                 sem.release()
                 logging.debug("currState:" + str(vmState))
-
+                result = -1
                 if restoreSubstates[substate] == "pending" and vmState == mgr.constants.MachineState_Running:
                     logging.debug("CALLING POWEROFF"+str(substate)+":"+str(restoreSubstates[substate]))
-                    powerdownMachine(session, mach)
-                    restoreSubstates[substate] = "poweroff_sent"
+                    result = powerdownMachine(session, mach)
+                    if result != -1:
+                        restoreSubstates[substate] = "poweroff_sent"
 
                 elif restoreSubstates[
                     substate] == "poweroff_sent" and vmState == mgr.constants.MachineState_PoweredOff or vmState == mgr.constants.MachineState_Aborted:
                     logging.debug("CALLING RESTORE"+str(substate)+":"+str(restoreSubstates[substate]))
-                    restoreMachine(session, mach)
-                    restoreSubstates[substate] = "restorecurrent_sent"
+                    result = restoreMachine(session, mach)
+                    if result != -1:
+                        restoreSubstates[substate] = "restorecurrent_sent"
 
                 elif restoreSubstates[
                     substate] == "restorecurrent_sent" and vmState == mgr.constants.MachineState_Saved:
                     logging.debug("CALLING STARTVM"+str(substate)+":"+str(restoreSubstates[substate]))
-                    startMachine(session, mach)
-                    restoreSubstates[substate] = "startvm_sent"
+                    result = startMachine(session, mach)
+                    if result != -1:
+                        restoreSubstates[substate] = "startvm_sent"
                 elif restoreSubstates[substate] == "startvm_sent" and vmState == mgr.constants.MachineState_Running:
                     restoreSubstates[substate] = "complete"
                     sem.wait()
@@ -288,11 +291,9 @@ def manageStates():
             nasList = []
             for vmName in vms:
                 if "VRDEActiveConnection" in vms[vmName]:
-                    if vms[vmName][
-                        "VRDEActiveConnection"] == 1 and vmName in availableState and vmName not in notAvailableState and vmName not in restoreState:
+                    if vms[vmName]["VRDEActiveConnection"] == 1 and vmName in availableState and vmName not in notAvailableState and vmName not in restoreState:
                         nasList.append(vmName)
-                    elif vms[vmName][
-                        "VRDEActiveConnection"] == 0 and vmName in notAvailableState and vmName not in restoreState and vmName not in restoreState:
+                    elif vms[vmName]["VRDEActiveConnection"] == 0 and vmName in notAvailableState and vmName not in restoreState and vmName not in restoreState:
                         restoreState.append(vmName)
 
             makeAvailableToNotAvailable(nasList)
@@ -300,8 +301,7 @@ def manageStates():
             # add any newly available vms into the available buffer
             av = []
             for vmName in vms:
-                if "vrde" in vms[vmName] and vms[vmName]["vrde"] == 1 and vms[vmName][
-                    "VMState"] == mgr.constants.MachineState_Running:
+                if "vrde" in vms[vmName] and vms[vmName]["vrde"] == 1 and vms[vmName]["VMState"] == mgr.constants.MachineState_Running:
                     # make available
                     if vmName not in notAvailableState and vmName not in restoreState and vmName not in availableState:
                         av.append(vmName)
