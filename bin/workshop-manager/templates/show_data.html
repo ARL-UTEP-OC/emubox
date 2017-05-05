@@ -11,7 +11,7 @@ var otherVar = '{{ templateAvailable }}';
 <thead>
     <tr>
       <th>Workshop Name</th>
-      <th>VM Name</th>
+      <th>Status</th>
       <th>Connection Link</th>
     </tr>
   </thead>
@@ -22,11 +22,14 @@ var otherVar = '{{ templateAvailable }}';
 	    {{ unitInfo["workshopName"] }}
 	</td>
     <td>
-        {{ unitInfo["VM Name"] }}
+        {{ unitInfo["state"] }}
     </td>
     <td>
+        {% if unitInfo["state"] == "Available" %}
         <a href="{{ unitInfo["ms-rdp"] }}">MS-RDP</a>
+        {% endif %}
     </td>
+
 </tr>
 {% endfor %}
   </tbody>

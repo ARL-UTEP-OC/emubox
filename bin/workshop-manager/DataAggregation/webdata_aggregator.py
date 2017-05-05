@@ -35,7 +35,8 @@ def aggregateRDP():
             aggregatedInfoSem.wait()
             aggregatedInfoSem.acquire()
             aggregatedInfo = []
-            for vm in monitorInfo:
+            for vmInfo in monitorInfo:
+                vm = vmInfo[0]
                 rdp_filename = os.path.join("WorkshopData", "RDP", ""+vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp")
                 logging.debug( "LOOKING FOR "+rdp_filename)
                 if os.path.isfile(rdp_filename):
@@ -43,7 +44,7 @@ def aggregateRDP():
                     workshopName = vm["groups"][0].split("/")[1]
                     if len(workshopName) < 0:
                         workshopName = vm["groups"][0]
-                    aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdp_filename})
+                    aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdp_filename, "state" : vmInfo[1]})
                     #aggregatedInfo.append(({"groups": "a"}))
             aggregatedInfoSem.release()
             time.sleep(probeTime)

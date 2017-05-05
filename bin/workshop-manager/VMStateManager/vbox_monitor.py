@@ -307,8 +307,15 @@ def manageStates():
             availableInfo = []
             for vmName in availableState:
                 if "name" in vms[vmName] and "vrdeproperty[TCP/Ports]" in vms[vmName]:
-                    #availableInfo.append((vms[vmName]["groups"][0], vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
-                    availableInfo.append(vms[vmName])
+                    availableInfo.append((vms[vmName], "Available"))
+            for vmName in notAvailableState:
+                if "name" in vms[vmName] and "vrdeproperty[TCP/Ports]" in vms[vmName]:
+                    # availableInfo.append((vms[vmName]["groups"][0], vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
+                    availableInfo.append((vms[vmName], "Not available"))
+            for vmName in restoreState:
+                if "name" in vms[vmName] and "vrdeproperty[TCP/Ports]" in vms[vmName]:
+                    # availableInfo.append((vms[vmName]["groups"][0], vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
+                    availableInfo.append((vms[vmName], "Restoring"))
             #availableInfo.sort(key=lambda tup: tup[0]["name"])
             availableInfoSem.release()
 

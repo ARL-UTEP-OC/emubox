@@ -37,7 +37,6 @@ def download(filename):
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 #@app.route('/<path:path>', methods=['GET', 'POST'])
 def catch_all(path):
-    print "USING!!!!!!!",DataAggregation.webdata_aggregator.getAggregatedInfo()
     return render_template('show_data.html', templateAvailable=DataAggregation.webdata_aggregator.getAggregatedInfo())
 
 def signal_handler(signal, frame):
