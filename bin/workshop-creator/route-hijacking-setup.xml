@@ -12,7 +12,7 @@
             </base-groupname>
             <num-clones>
                 <!-- Required: Each virtual machine specified in this file will be clones this many times -->
-                3
+                8
             </num-clones>
             <clone-snapshots>
                 true

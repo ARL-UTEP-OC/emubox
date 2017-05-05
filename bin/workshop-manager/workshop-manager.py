@@ -55,14 +55,14 @@ def getVMInfo(session, machine):
 
     # need active machine/console for the following:
     if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Running:
-        logging.debug("session is locked or machine is not running, cannot get console (1)"+str(session.state))
+        #logging.debug("session is locked or machine is not running, cannot get console (1)"+str(session.state))
         return answer
     #print "mstate",machine.state,"constant",mgr.constants.MachineState_Running,"result",machine.state == mgr.constants.MachineState_Running
     machine.lockMachine(session, mgr.constants.LockType_Shared)
     console = session.console
     if console == None:
         # if can't get console, this means that the vm is probably off
-        logging.debug("cannot get console (2), machine is probably off")
+        #logging.debug("cannot get console (2), machine is probably off")
         session.unlockMachine()
         return answer
 
@@ -89,38 +89,36 @@ def powerdownMachine(session, machine):
         console = session.console
         # if can't get console, this means that the vm is probably off
         if console != None:
-            logging.debug("POWERDOWN")
+            logging.debug("Calling Power Down API Function")
             progress = console.powerdown()
             progress.waitForCompletion(-1)
         session.unlockMachine()
         return 0
     except Exception as e:
         logging.error("error during powerdown"+ str(e))
+        session.unlockMachine()
         return -1
 
 
 def restoreMachine(session, machine):
-    try:
-        if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_PoweredOff or machine.state != mgr.constants.MachineState_Aborted:
-            logging.debug("session is locked or machine is not powered off, not restoring vm")
-            return -1
-        try:
-            machine.lockMachine(session, mgr.constants.LockType_Shared)
-            snap = machine.currentSnapshot
-            # have to reference using session for some weird reason!
-            logging.debug("RESTORE")
-            progress = session.machine.restoreSnapshot(snap)
-            progress.waitForCompletion(-1)
-            return 0
-        except Exception as e:
-            save = False
-            logging.error(str(mgr) + str(e))
-            traceback.print_exc()
-            session.unlockMachine()
-            return -1
-    except Exception as e:
-        logging.error("error during restore" + str(e))
+    if session.state != mgr.constants.SessionState_Unlocked or (machine.state != mgr.constants.MachineState_PoweredOff and machine.state != mgr.constants.MachineState_Aborted):
+        logging.debug("session is locked or machine is not powered off, not restoring vm. Session State:" + str(session.state) + "Machine State:" + str(machine.state))
         return -1
+    try:
+        machine.lockMachine(session, mgr.constants.LockType_Shared)
+        snap = machine.currentSnapshot
+        # have to reference using session for some weird reason!
+        logging.debug("Calling Restore API Function")
+        progress = session.machine.restoreSnapshot(snap)
+        progress.waitForCompletion(-1)
+        session.unlockMachine()
+        return 0
+    except Exception as e:
+        logging.error("Error in Restore: " + str(mgr) + " " + str(e))
+        traceback.print_exc()
+        session.unlockMachine()
+        return -1
+
 
 
 def startMachine(session, machine):
@@ -128,15 +126,15 @@ def startMachine(session, machine):
         if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Saved:
             logging.debug( "session is locked, not starting vm")
             return -1
-            logging.debug("LAUNCH")
+            logging.debug("Calling Launch API Function")
         progress = machine.launchVMProcess(session, "headless", "")
         progress.waitForCompletion(-1)
         session.unlockMachine()
         return 0
     except Exception as e:
         logging.error("error during start" + str(e))
-    session.unlockMachine()
-    return -1
+        session.unlockMachine()
+        return -1
 
 def makeAvailableToNotAvailable(vmNameList):
     # print "making notAvailable",vmNameList,"\n"
@@ -200,8 +198,7 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                     if result != -1:
                         restoreSubstates[substate] = "poweroff_sent"
 
-                elif restoreSubstates[
-                    substate] == "poweroff_sent" and vmState == mgr.constants.MachineState_PoweredOff or vmState == mgr.constants.MachineState_Aborted:
+                elif restoreSubstates[substate] == "poweroff_sent" and vmState == mgr.constants.MachineState_PoweredOff or vmState == mgr.constants.MachineState_Aborted:
                     logging.debug("CALLING RESTORE"+str(substate)+":"+str(restoreSubstates[substate]))
                     result = restoreMachine(session, mach)
                     if result != -1:
@@ -229,8 +226,8 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 if rem in restoreSubstates:
                     del restoreSubstates[rem]
             time.sleep(restoreTime)
-        except Exception as x:
-            logging.error("RESTORE: An error occured:"+str(x))
+        except Exception as e:
+            logging.error("RESTORE: An error occured: "+str(e))
             time.sleep(lockWaitTime)
             pass
 
@@ -369,7 +366,7 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     httpServer = WSGIServer(('0.0.0.0', 8080), app)
 
