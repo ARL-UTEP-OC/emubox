@@ -7,21 +7,13 @@ import traceback
 import gevent
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
+gevent.monkey.patch_all()
 
 #to reduce stdout
 import logging
 
-#catch signal for quitting
-import signal
+#For cleanup
 import gc
-
-gevent.monkey.patch_all()
-
-# gevent imports
-from gevent.pywsgi import WSGIServer
-from flask import Flask
-from flask import json
-from flask import render_template
 
 probeTime = 5
 restoreTime = 1
@@ -42,7 +34,12 @@ restoreInfo = []
 vms = {}
 
 # vars needed for gevent (lock)
-sem = BoundedSemaphore(1)
+queueStateSem = BoundedSemaphore(1)
+availableInfoSem = BoundedSemaphore(1)
+
+def getAvailableInfo():
+    availableInfoSem.wait()
+    return availableInfo
 
 ####functions needed for testbed manager threads:
 def getVMInfo(session, machine):
@@ -140,22 +137,22 @@ def makeAvailableToNotAvailable(vmNameList):
     # print "making notAvailable",vmNameList,"\n"
 
     for vmName in vmNameList:
-        sem.wait()
-        sem.acquire()
+        queueStateSem.wait()
+        queueStateSem.acquire()
         availableState.remove(vmName)
         notAvailableState.append(vmName)
-        sem.release()
+        queueStateSem.release()
 
 
 def makeNotAvailableToRestoreState(vmNameList):
     # print "making notAvailableToRestore:",vmNameList,"\n"
 
     for vmName in vmNameList:
-        sem.wait()
-        sem.acquire()
+        queueStateSem.wait()
+        queueStateSem.acquire()
         notAvailableState.remove(vmName)
         restoreState.append(vmName)
-        sem.release()
+        queueStateSem.release()
 
 
 def makeRestoreToAvailableState():  # will look at restore buffer and process any items that exist
@@ -185,11 +182,11 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
             vmsToRemoveFromQueue = []
             for substate in restoreSubstates:
                 logging.debug("Processing state for:"+str(substate)+str(restoreSubstates[substate]))
-                sem.wait()
-                sem.acquire()
+                queueStateSem.wait()
+                queueStateSem.acquire()
                 mach = vbox.findMachine(substate)
                 vmState = getVMInfo(session, mach)["VMState"]
-                sem.release()
+                queueStateSem.release()
                 logging.debug("currState:" + str(vmState))
                 result = -1
                 if restoreSubstates[substate] == "pending" and vmState == mgr.constants.MachineState_Running:
@@ -212,14 +209,14 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                         restoreSubstates[substate] = "startvm_sent"
                 elif restoreSubstates[substate] == "startvm_sent" and vmState == mgr.constants.MachineState_Running:
                     restoreSubstates[substate] = "complete"
-                    sem.wait()
-                    sem.acquire()
+                    queueStateSem.wait()
+                    queueStateSem.acquire()
                     if substate in restoreState:
                         # remove from restore so it can be added to available buffer once again
                         restoreState.remove(substate)
                     if substate in notAvailableState:
                         notAvailableState.remove(substate)
-                    sem.release()
+                    queueStateSem.release()
                     vmsToRemoveFromQueue.append(substate)
 
             for rem in vmsToRemoveFromQueue:
@@ -235,10 +232,10 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
 def makeNewToAvailableState(vmNameList):
     # print "making available:",vmNameList,"\n"
     for vmName in vmNameList:
-        sem.wait()
-        sem.acquire()
+        queueStateSem.wait()
+        queueStateSem.acquire()
         availableState.append(vmName)
-        sem.release()
+        queueStateSem.release()
 
 
 def manageStates():
@@ -272,13 +269,13 @@ def manageStates():
                         currGroupToVms[gname].append(vm)
 
                         # so we get all at once (may have to create a lock?)
-            sem.wait()
-            sem.acquire()
+            queueStateSem.wait()
+            queueStateSem.acquire()
             ###lock###
             vms = currvms
             groupToVms = currGroupToVms
             ###unlock###
-            sem.release()
+            queueStateSem.release()
 
             # print "VMS:",vms
             # print "GROUPS:",groupToVms
@@ -305,14 +302,15 @@ def manageStates():
             makeNewToAvailableState(av)
 
             # add available info to available vms
-            sem.wait()
-            sem.acquire()
+            availableInfoSem.wait()
+            availableInfoSem.acquire()
             availableInfo = []
             for vmName in availableState:
                 if "name" in vms[vmName] and "vrdeproperty[TCP/Ports]" in vms[vmName]:
-                    availableInfo.append((vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
-            sem.release()
-            availableInfo.sort(key=lambda tup: tup[0])
+                    #availableInfo.append((vms[vmName]["groups"][0], vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
+                    availableInfo.append(vms[vmName])
+            #availableInfo.sort(key=lambda tup: tup[0]["name"])
+            availableInfoSem.release()
 
             # Print out status
             logging.info("\n\n\n")
@@ -326,29 +324,12 @@ def manageStates():
             logging.error("STATES: An error occured:" + str(x))
             time.sleep(lockWaitTime)
 
-app = Flask(__name__)
-app.debug = True
-
-
-# Simple catch-all server
-@app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
-@app.route('/<path:path>', methods=['GET', 'POST'])
-def catch_all(path):
-    return render_template('show_data.html', templateAvailable=availableInfo)
-
-def signal_handler(signal, frame):
+def cleanup():
     global mgr
     global vbox
     global session
-    logging.info("Cleaning up...")
+    logging.info("Cleaning up VBOX_MONITOR...")
     try:
-        logging.info("Killing webserver...")
-        httpServer.stop()
-        logging.info("Killing threads...")
-        gevent.kill(srvGreenlet)
-        gevent.kill(stateAssignmentThread)
-        gevent.kill(restoreThread)
-
         logging.info("Removing VirtualBox ISession...")
         del session
         logging.info("Removing IVirtualBox Interface...")
@@ -359,23 +340,19 @@ def signal_handler(signal, frame):
         logging.info("Collecting Garbage...")
         gc.collect()
         logging.info("Clean up complete. Exitting...")
-        exit()
+
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
-        exit()
+
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal_handler)
     logging.basicConfig(level=logging.DEBUG)
 
-    httpServer = WSGIServer(('0.0.0.0', 8080), app)
-
-    srvGreenlet = gevent.spawn(httpServer.start)
     stateAssignmentThread = gevent.spawn(manageStates)
     restoreThread = gevent.spawn(makeRestoreToAvailableState)
 
     try:
-        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread])
+        gevent.joinall([stateAssignmentThread, restoreThread])
     except Exception as e:
         logging.error("An error occured in threads"+str(e))
-        exit()
+        cleanup()
