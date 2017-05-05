@@ -93,7 +93,7 @@ for vm in vmset.findall('vm'):
         # for some reason, the vms aren't placed into a group unless we execute an additional modify command
         try:
             groupCmd = [pathToVirtualBox, "modifyvm", newvmName, "--groups", "/" + baseGroupname + "/" + netAdapterName]
-            print("\nsetting up vrdp for " + newvmName)
+            print("\nsetting up group for " + newvmName)
             print("\nexecuting: ")
             print(groupCmd)
             result = subprocess.check_output(groupCmd)

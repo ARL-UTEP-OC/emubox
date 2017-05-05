@@ -5,6 +5,11 @@
         </path-to-vboxmanage>path-to-vboxmanage>
     </vbox-setup>
     <testbed-setup>
+		<network-config>
+			<ip-address>
+			localhost
+			</ip-address>
+		</network-config>
         <vm-set>
             <base-groupname>
                 <!-- Optional: All vms that are cloned will be placed in this group and then in a subgroup based on the adapter name -->
