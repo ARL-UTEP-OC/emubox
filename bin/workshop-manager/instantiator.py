@@ -28,9 +28,9 @@ import VMStateManager.vbox_monitor
 app = Flask(__name__)
 app.debug = True
 
-@app.route('/WorkshopData/RDP/<path:filename>', methods=['GET', 'POST'])
+@app.route('/WorkshopData/<path:filename>', methods=['GET', 'POST'])
 def download(filename):
-    downloads = os.path.join(app.root_path, "WorkshopData/RDP/")
+    downloads = os.path.join(app.root_path, "WorkshopData/")
     return send_from_directory(directory=downloads, filename=filename)
 
 # Simple catch-all server
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     stateAssignmentThread = gevent.spawn(VMStateManager.vbox_monitor.manageStates)
     restoreThread = gevent.spawn(VMStateManager.vbox_monitor.makeRestoreToAvailableState)
     srvGreenlet = gevent.spawn(httpServer.start)
-    dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateRDP())
+    dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateData())
 
     try:
         #Let threads run until signal is caught

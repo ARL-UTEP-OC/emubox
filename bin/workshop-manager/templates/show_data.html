@@ -1,8 +1,8 @@
 <head>
-<script>
-var someJavaScriptVar = '{{ templateAvailable }}';
-var otherVar = '{{ templateAvailable }}';
-</script>
+    <script>
+    var someJavaScriptVar = '{{ templateAvailable }}';
+    var otherVar = '{{ templateAvailable }}';
+    </script>
 </head>
 <body>
 <h1 align="center">Welcome to EmuBox</h1>
@@ -10,12 +10,13 @@ var otherVar = '{{ templateAvailable }}';
 <table style="width:50%" border="1" cellpadding="5" cellspacing="5" align="center">
 <thead>
     <tr>
-      <th>Workshop Name</th>
-      <th>Status</th>
-      <th>Connection Link</th>
+        <th>Workshop Name</th>
+        <th>Status</th>
+        <th>Materials</th>
+        <th>Connection Link</th>
     </tr>
-  </thead>
-  <tbody>
+</thead>
+<tbody>
 {% for unitInfo in templateAvailable %}
 <tr>
 	<td>
@@ -25,11 +26,15 @@ var otherVar = '{{ templateAvailable }}';
         {{ unitInfo["state"] }}
     </td>
     <td>
+        {% for material in unitInfo["materials"] %}
+        {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/>
+        {% endfor %}
+    </td>
+    <td>
         {% if unitInfo["state"] == "Available" %}
         <a href="{{ unitInfo["ms-rdp"] }}">MS-RDP</a>
         {% endif %}
     </td>
-
 </tr>
 {% endfor %}
   </tbody>

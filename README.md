@@ -7,6 +7,13 @@
 * VirtualEnv (tested with [v15.1.0](https://virtualenv.pypa.io/en/stable/))
 
 ## Description
+EmuBox uses the Flask python microframework as the web server gateway interface (WSGI) application.
+This provides similar functionality as a fast server gateway interface (FCGI) application that allows 
+multiple, concurrent connections to the web application.
+
+Gevent is used to host the standalone flask WSGI container. This handles the concurrent WSGI behavior. It uses 
+greenlet to provide high-level synchronous API  on top of libev event loop. 
+
 EmuBox is composed of two main components: The Workshop Creator and the Workshop Manager.
 
 ### Workshop Creator

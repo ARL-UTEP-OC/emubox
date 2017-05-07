@@ -1,6 +1,7 @@
 import time
 import traceback
 import VMStateManager.vbox_monitor
+import glob
 import os
 
 # gevent imports
@@ -26,7 +27,7 @@ def cleanup():
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
 
-def aggregateRDP():
+def aggregateData():
     global aggregatedInfo
     while True:
         try:
@@ -37,15 +38,22 @@ def aggregateRDP():
             aggregatedInfo = []
             for vmInfo in monitorInfo:
                 vm = vmInfo[0]
-                rdp_filename = os.path.join("WorkshopData", "RDP", ""+vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp")
-                logging.debug( "LOOKING FOR "+rdp_filename)
-                if os.path.isfile(rdp_filename):
-                    logging.debug("FOUND: " +rdp_filename)
-                    workshopName = vm["groups"][0].split("/")[1]
-                    if len(workshopName) < 0:
-                        workshopName = vm["groups"][0]
-                    aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdp_filename, "state" : vmInfo[1]})
-                    #aggregatedInfo.append(({"groups": "a"}))
+                workshopName = vm["groups"][0].split("/")[1]
+                if len(workshopName) < 0:
+                    workshopName = vm["groups"][0]
+                ###########Look for RDP Info########
+                rdpFilename = os.path.join("WorkshopData", workshopName,"RDP", vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp")
+                logging.debug( "LOOKING FOR "+rdpFilename)
+                if os.path.isfile(rdpFilename):
+                    logging.debug("FOUND: " +rdpFilename)
+                materialsPath = os.path.join("WorkshopData", workshopName,"Materials")
+                files = os.listdir(materialsPath)
+                filesPaths = []
+                for file in files:
+                    if os.path.isfile(os.path.join(materialsPath,file)):
+                        filesPaths.append((os.path.join(materialsPath, file), file))
+                print "FOUND FILES IN DIR: ", files
+                aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "state" : vmInfo[1], "materials" : filesPaths})
             aggregatedInfoSem.release()
             time.sleep(probeTime)
         except Exception as e:
@@ -56,12 +64,11 @@ def aggregateRDP():
 
 def getAggregatedInfo():
     aggregatedInfoSem.wait()
-    aggregatedInfo
     return aggregatedInfo
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    mydata = aggregateRDP()
+    mydata = aggregateData()
 
     # stateAggregationThread = gevent.spawn(manageStates)
     # restoreThread = gevent.spawn(makeRestoreToAvailableState)

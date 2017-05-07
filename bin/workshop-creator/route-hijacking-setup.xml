@@ -7,13 +7,13 @@
     <testbed-setup>
 		<network-config>
 			<ip-address>
-			localhost
+			192.168.1.10
 			</ip-address>
 		</network-config>
         <vm-set>
             <base-groupname>
                 <!-- Optional: All vms that are cloned will be placed in this group and then in a subgroup based on the adapter name -->
-                hijacking_scenario
+                Route_Hijacking_Exercise
             </base-groupname>
             <num-clones>
                 <!-- Required: Each virtual machine specified in this file will be clones this many times -->
@@ -41,7 +41,7 @@
             <vm>
                 <name>
                     <!-- Required: The name of the vm that will be cloned -->
-                    kali-debian-32_attacker
+                    kali-2016.2-debian_ecel
                 </name>
                 <vrdp-enabled>
                     <!-- Required: Indicates whether clones of this vm should have vrdp enabled; if true, then vrdp-baseport will be used to determine the port to use -->
