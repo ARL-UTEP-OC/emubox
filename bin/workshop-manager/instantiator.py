@@ -57,7 +57,7 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     httpServer = WSGIServer(('0.0.0.0', 8080), app)
     stateAssignmentThread = gevent.spawn(VMStateManager.vbox_monitor.manageStates)
