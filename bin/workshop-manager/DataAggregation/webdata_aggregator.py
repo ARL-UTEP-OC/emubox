@@ -1,7 +1,6 @@
 import time
 import traceback
 import VMStateManager.vbox_monitor
-import glob
 import os
 
 # gevent imports
@@ -41,19 +40,21 @@ def aggregateData():
                 workshopName = vm["groups"][0].split("/")[1]
                 if len(workshopName) < 0:
                     workshopName = vm["groups"][0]
+                print "WORKSHOP NAME: ", workshopName
                 ###########Look for RDP Info########
                 rdpFilename = os.path.join("WorkshopData", workshopName,"RDP", vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp")
                 logging.debug( "LOOKING FOR "+rdpFilename)
                 if os.path.isfile(rdpFilename):
                     logging.debug("FOUND: " +rdpFilename)
-                materialsPath = os.path.join("WorkshopData", workshopName,"Materials")
-                files = os.listdir(materialsPath)
-                filesPaths = []
-                for file in files:
-                    if os.path.isfile(os.path.join(materialsPath,file)):
-                        filesPaths.append((os.path.join(materialsPath, file), file))
-                print "FOUND FILES IN DIR: ", files
-                aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "state" : vmInfo[1], "materials" : filesPaths})
+                    materialsPath = os.path.join("WorkshopData", workshopName,"Materials")
+                    if os.path.isdir(materialsPath):
+                        files = os.listdir(materialsPath)
+                        filesPaths = []
+                        for file in files:
+                            if os.path.isfile(os.path.join(materialsPath,file)):
+                                filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
+                        print "FOUND FILES IN DIR: ", files
+                        aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "state" : vmInfo[1], "materials" : filesPaths})
             aggregatedInfoSem.release()
             time.sleep(probeTime)
         except Exception as e:
