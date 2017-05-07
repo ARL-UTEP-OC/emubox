@@ -71,6 +71,25 @@ kdcproxyname:s:
 		print "Complete"
 	except Exception as e:
 		print "ERROR creating RDP File:", e
+		
+def create_rdesktop_file(directory, filename, ip, port):
+	if port:
+		ip = ip + ":" + port
+		rdp_file_string = \
+"""#!/bin/sh
+rdesktop -g 1280x768 -a 16 -T "Route Hijacking" 192.168.1.10:1011
+
+"""
+	try:
+		print "Creating " + filename + "..."
+		if not os.path.exists(directory):
+			os.makedirs(directory)
+		rdp_file = open(os.path.join(directory,filename), "w+")
+		rdp_file.write(rdp_file_string)
+		rdp_file.close()
+		print "Complete"
+	except Exception as e:
+		print "ERROR creating RDP File:", e
 	
 if len(sys.argv) < 2:
     print "Usage: python workshop-rdp.py <input filename>"
@@ -125,6 +144,7 @@ for vm in vmset.findall('vm'):
         if vrdpEnabled and vrdpEnabled == 'true':
             newVRDPname = str(vrdpBaseport)
             create_rdp_file(baseGroupname+"\RDP",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
+            create_rdesktop_file(baseGroupname+"\RDP",newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
             vrdpBaseport = str(int(vrdpBaseport) + 1)
 print """
 **************************************************************************************

@@ -42,10 +42,16 @@ def aggregateData():
                     workshopName = vm["groups"][0]
                 print "WORKSHOP NAME: ", workshopName
                 ###########Look for RDP Info########
-                rdpFilename = os.path.join("WorkshopData", workshopName,"RDP", vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp")
-                logging.debug( "LOOKING FOR "+rdpFilename)
-                if os.path.isfile(rdpFilename):
-                    logging.debug("FOUND: " +rdpFilename)
+                rdpFilename = os.path.join("WorkshopData", workshopName,"RDP", vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp").replace('\\', '/')
+                rdesktopFilename = os.path.join("WorkshopData", workshopName, "RDP",vm["name"] + "_" + vm["vrdeproperty[TCP/Ports]"] + ".sh").replace('\\', '/')
+                logging.debug( "LOOKING FOR "+rdpFilename + " or " + rdesktopFilename)
+                if os.path.isfile(rdpFilename) == False:
+                    rdpFilename = ""
+                if os.path.isfile(rdesktopFilename) == False:
+                    rdesktopFilename = ""
+
+                if rdpFilename != "" or rdesktopFilename != "":
+                    logging.debug("FOUND FILE")
                     materialsPath = os.path.join("WorkshopData", workshopName,"Materials")
                     if os.path.isdir(materialsPath):
                         files = os.listdir(materialsPath)
@@ -54,7 +60,7 @@ def aggregateData():
                             if os.path.isfile(os.path.join(materialsPath,file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
                         print "FOUND FILES IN DIR: ", files
-                        aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "state" : vmInfo[1], "materials" : filesPaths})
+                        aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "rdesktop" : rdesktopFilename, "state" : vmInfo[1], "materials" : filesPaths})
             aggregatedInfoSem.release()
             time.sleep(probeTime)
         except Exception as e:

@@ -32,7 +32,12 @@
     </td>
     <td>
         {% if unitInfo["state"] == "Available" %}
-        <a href="{{ unitInfo["ms-rdp"] }}">MS-RDP</a>
+        {% if unitInfo["ms-rdp"] != "" %}
+        Windows: <a href="{{ unitInfo["ms-rdp"] }}">MS-RDP</a><br/>
+        {% endif %}
+        {% if unitInfo["ms-rdp"] != "" %}
+        Linux: <a href="{{ unitInfo["rdesktop"] }}">rdesktop</a>
+        {% endif %}
         {% endif %}
     </td>
 </tr>
