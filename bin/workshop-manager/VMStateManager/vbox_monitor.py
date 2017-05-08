@@ -38,7 +38,7 @@ queueStateSem = BoundedSemaphore(1)
 availableInfoSem = BoundedSemaphore(1)
 
 def getAvailableInfo():
-    availableInfoSem.wait()
+    #availableInfoSem.wait()
     return availableInfo
 
 ####functions needed for testbed manager threads:

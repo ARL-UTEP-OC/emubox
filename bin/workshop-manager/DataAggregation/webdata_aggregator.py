@@ -70,7 +70,7 @@ def aggregateData():
             time.sleep(probeTime)
 
 def getAggregatedInfo():
-    aggregatedInfoSem.wait()
+    #aggregatedInfoSem.wait()
     return aggregatedInfo
 
 if __name__ == '__main__':
