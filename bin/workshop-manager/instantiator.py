@@ -33,7 +33,6 @@ def nocache(view):
     @wraps(view)
     def no_cache(*args, **kwargs):
         response = make_response(view(*args, **kwargs))
-        print "RESPONSE", response
         #response.headers['Last-Modified'] = datetime.now()
         response.headers['Cache-Control'] = 'public, no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
         response.headers['Pragma'] = 'no-cache'
@@ -49,7 +48,6 @@ def download(filename):
 
 # Simple catch-all server
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
-#@app.route('/<path:path>', methods=['GET', 'POST'])
 @nocache
 def catch_all(path):
     return render_template('show_data.html', templateAvailable=DataAggregation.webdata_aggregator.getAggregatedInfo())
