@@ -14,10 +14,11 @@ import signal
 
 #Flask imports
 from flask import Flask
-from flask import json
+from flask import make_response
+from functools import wraps, update_wrapper
+from datetime import datetime
 from flask import render_template
 from flask import send_from_directory
-
 #DataAggregation
 import DataAggregation.webdata_aggregator
 
@@ -28,14 +29,28 @@ import VMStateManager.vbox_monitor
 app = Flask(__name__)
 app.debug = True
 
+def nocache(view):
+    @wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        print "RESPONSE", response
+        #response.headers['Last-Modified'] = datetime.now()
+        response.headers['Cache-Control'] = 'public, no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+    return update_wrapper(no_cache, view)
+
 @app.route('/WorkshopData/<path:filename>', methods=['GET', 'POST'])
+@nocache
 def download(filename):
     downloads = os.path.join(app.root_path, "WorkshopData/")
-    return send_from_directory(directory=downloads, filename=filename)
+    return send_from_directory(directory=downloads, as_attachment=True, filename=filename, mimetype='application/octet-stream')
 
 # Simple catch-all server
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 #@app.route('/<path:path>', methods=['GET', 'POST'])
+@nocache
 def catch_all(path):
     return render_template('show_data.html', templateAvailable=DataAggregation.webdata_aggregator.getAggregatedInfo())
 
