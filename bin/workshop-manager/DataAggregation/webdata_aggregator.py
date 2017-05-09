@@ -40,11 +40,11 @@ def aggregateData():
                 workshopName = vm["groups"][0].split("/")[1]
                 if len(workshopName) < 0:
                     workshopName = vm["groups"][0]
-                print "WORKSHOP NAME: ", workshopName
+                logging.debug( "WORKSHOP NAME: "+ str(workshopName))
                 ###########Look for RDP Info########
                 rdpFilename = os.path.join("WorkshopData", workshopName,"RDP", vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp").replace('\\', '/')
                 rdesktopFilename = os.path.join("WorkshopData", workshopName, "RDP",vm["name"] + "_" + vm["vrdeproperty[TCP/Ports]"] + ".sh").replace('\\', '/')
-                logging.debug( "LOOKING FOR "+rdpFilename + " or " + rdesktopFilename)
+                logging.debug( "LOOKING FOR "+str(rdpFilename) + " or " + str(rdesktopFilename))
                 if os.path.isfile(rdpFilename) == False:
                     rdpFilename = ""
                 if os.path.isfile(rdesktopFilename) == False:
@@ -59,8 +59,8 @@ def aggregateData():
                         for file in files:
                             if os.path.isfile(os.path.join(materialsPath,file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
-                        print "FOUND FILES IN DIR: ", files
-                        aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "rdesktop" : rdesktopFilename, "state" : vmInfo[1], "materials" : filesPaths})
+                        logging.debug("FOUND FILES IN DIR: "+str(files))
+                    aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "rdesktop" : rdesktopFilename, "state" : vmInfo[1], "materials" : filesPaths})
             aggregatedInfoSem.release()
             time.sleep(probeTime)
         except Exception as e:
