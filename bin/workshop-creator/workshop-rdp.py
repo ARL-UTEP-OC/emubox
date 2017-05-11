@@ -32,7 +32,7 @@ enableworkspacereconnect:i:0
 disable wallpaper:i:0
 allow font smoothing:i:0
 allow desktop composition:i:0
-disable full window drag:i:1
+disable full window drag:i:0
 disable menu anims:i:1
 disable themes:i:0
 disable cursor setting:i:0
@@ -77,7 +77,7 @@ def create_rdesktop_file(directory, filename, ip, port):
 		ip = ip + ":" + port
 		rdp_file_string = \
 """#!/bin/sh
-rdesktop -g 1280x768 -a 16 -T "Route Hijacking" 192.168.1.10:1011
+rdesktop -g 1280x768 -a 16 -T "Route Hijacking" """+ip+"""
 
 """
 	try:
