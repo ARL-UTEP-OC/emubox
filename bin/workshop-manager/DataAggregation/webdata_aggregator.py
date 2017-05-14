@@ -52,10 +52,10 @@ def aggregateData():
 
                 if rdpFilename != "" or rdesktopFilename != "":
                     logging.debug("FOUND FILE")
+                    filesPaths = []
                     materialsPath = os.path.join("WorkshopData", workshopName,"Materials")
                     if os.path.isdir(materialsPath):
                         files = os.listdir(materialsPath)
-                        filesPaths = []
                         for file in files:
                             if os.path.isfile(os.path.join(materialsPath,file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
