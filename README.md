@@ -8,11 +8,11 @@
 
 ## Description
 EmuBox uses the Flask python microframework as the web server gateway interface (WSGI) application.
-This provides similar functionality as a fast server gateway interface (FCGI) application that allows 
+This provides similar functionality as a fast common gateway interface (FCGI) application that allows 
 multiple, concurrent connections to the web application.
 
 Gevent is used to host the standalone flask WSGI container. This handles the concurrent WSGI behavior. It uses 
-greenlet to provide high-level synchronous API  on top of libev event loop. 
+greenlet to provide high-level synchronous API on top of libev event loop. 
 
 EmuBox is composed of two main components: The Workshop Creator and the Workshop Manager.
 
@@ -52,7 +52,7 @@ workshop-manager\Scripts\activate
 cd workshop-manager
 
 Next, execute EmuBox by typing:
-python workshop-manager.py 
+python instantiator.py 
 
 This will start a flask webserver and a backend monitor for virtualbox VMs.
 
