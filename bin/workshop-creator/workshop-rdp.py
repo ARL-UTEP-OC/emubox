@@ -113,8 +113,6 @@ cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
 linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
 baseGroupname = vmset.find('base-groupname').text.rstrip().lstrip()
 
-netAdapter = vmset.find('internalnet-basename').text.rstrip().lstrip()
-
 baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
 
 vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
@@ -136,8 +134,7 @@ for vm in vmset.findall('vm'):
         newvmName = vmname + myBaseOutname + str(i)
 
 		# The group name
-        netAdapterName = netAdapter + myBaseOutname + str(i)
-        newGroupname = baseGroupname + "/" + netAdapterName
+        newGroupname = baseGroupname + "/Unit" + str(i)
 
         # vrdp setup
         vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()

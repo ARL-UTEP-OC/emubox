@@ -26,8 +26,6 @@ cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
 linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
 baseGroupname = vmset.find('base-groupname').text.rstrip().lstrip()
 
-netAdapter = vmset.find('internalnet-basename').text.rstrip().lstrip()
-
 baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
 
 vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
@@ -44,11 +42,15 @@ for vm in vmset.findall('vm'):
             print "VM not found: ", vmname
             print "Exiting"
             exit()
-
-        netAdapterName = netAdapter + myBaseOutname + str(i)
+        internalnets = vm.findall('internalnet-basename')
+        internalnetNames = []
+        for internalnet in internalnets:
+            internalnetNames.append(internalnet.text.rstrip().lstrip()+ myBaseOutname + str(i))
+        print "Internal net names: ", internalnetNames
 
         # clone the vm and give it a name ending with myBaseOutname
         cloneCmd = [pathToVirtualBox, "clonevm", vmname, "--register"]
+        #NOTE, the following logic is not in error. Linked clone can only be created from a snapshot.
         if cloneSnapshots == 'true':
             if linkedClones == 'true':
                 try:
@@ -82,17 +84,20 @@ for vm in vmset.findall('vm'):
         print(result)
 
         # internal network setup
-        intNetCmd = [pathToVirtualBox, "modifyvm", newvmName, "--nic1", "intnet", "--intnet1", netAdapterName]
-        print("\nsetting up internal network adapter")
-        print("executing: ")
-        print(intNetCmd)
-        result = subprocess.check_output(intNetCmd)
-        # commented out the next line because an error about non-mutable state is reported even thought it still completes successfully
-        # print(result)
+        netNum = 1
+        for internalnetName in internalnetNames:		
+            intNetCmd = [pathToVirtualBox, "modifyvm", newvmName, "--nic"+str(netNum), "intnet", "--intnet"+str(netNum), internalnetName]
+            print("\nsetting up internal network adapter")
+            print("executing: ")
+            print(intNetCmd)
+            result = subprocess.check_output(intNetCmd)
+            netNum+=1
+            # commented out the next line because an error about non-mutable state is reported even thought it still completes successfully
+            # print(result)
 
         # for some reason, the vms aren't placed into a group unless we execute an additional modify command
         try:
-            groupCmd = [pathToVirtualBox, "modifyvm", newvmName, "--groups", "/" + baseGroupname + "/" + netAdapterName]
+            groupCmd = [pathToVirtualBox, "modifyvm", newvmName, "--groups", "/" + baseGroupname + "/Unit" + str(i)]
             print("\nsetting up group for " + newvmName)
             print("\nexecuting: ")
             print(groupCmd)
