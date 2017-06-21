@@ -6,52 +6,53 @@ from gi.repository import Gtk
 BOX_SPACING = 5
 PADDING = 5
 
-# This class is a window that contains boxes to layout the widgets
-class MainWindow(Gtk.Window):
-
-    # Declaration of boxes
-    outerVertBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
-    buttonsHorBox = Gtk.Box(spacing=BOX_SPACING)
-    vBoxManageHorBox = Gtk.Box(spacing=BOX_SPACING)
-    ipAddressHorBox = Gtk.Box(spacing=BOX_SPACING)
-    baseGroupNameHorBox = Gtk.Box(spacing=BOX_SPACING)
-    numClonesHorBox = Gtk.Box(spacing=BOX_SPACING)
-    cloneSnapshotsHorBox = Gtk.Box(spacing=BOX_SPACING)
-    linkedClonesHorBox = Gtk.Box(spacing=BOX_SPACING)
-    baseOutnameHorBox = Gtk.Box(spacing=BOX_SPACING)
-    vrdpBaseportHorBox = Gtk.Box(spacing=BOX_SPACING)
-
-    # Declaration of buttons
-    newButton = Gtk.Button(label="New")
-    openButton = Gtk.Button(label="Open")
-    saveButton = Gtk.Button(label="Save")
-
-    # Declaration of labels
-    vBoxManageLabel = Gtk.Label("Path To VBoxManager:")
-    ipAddressLabel = Gtk.Label("IP Address:")
-    baseGroupNameLabel = Gtk.Label("Base Group Name:")
-    numClonesLabel = Gtk.Label("Number of Clones:")
-    cloneSnapshotsLabel = Gtk.Label("Clone Snapshots:")
-    linkedClonesLabel = Gtk.Label("Linked Clones:")
-    baseOutnameLabel = Gtk.Label("Base Outname:")
-    vrdpBaseportLabel = Gtk.Label("VRDP Baseport:")
-
-    # Declaration of entrys
-    vBoxManageEntry = Gtk.Entry()
-    ipAddressEntry = Gtk.Entry()
-    baseGroupNameEntry = Gtk.Entry()
-    numClonesEntry = Gtk.Entry()
-    cloneSnapshotsEntry = Gtk.Entry()
-    linkedClonesEntry = Gtk.Entry()
-    baseOutnameEntry = Gtk.Entry()
-    vrdpBaseportEntry = Gtk.Entry()
+# This class is a container that contains the base GUI
+class BaseWidget(Gtk.Box):
 
     def __init__(self):
+        super(BaseWidget, self).__init__()
 
-        Gtk.Window.__init__(self, title="Workshop Creator GUI")
+        self.set_border_width(PADDING)
+
+        # Declaration of boxes
+        self.outerVertBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
+        self.buttonsHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.vBoxManageHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.ipAddressHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.baseGroupNameHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.numClonesHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.cloneSnapshotsHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.linkedClonesHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.baseOutnameHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.vrdpBaseportHorBox = Gtk.Box(spacing=BOX_SPACING)
+
+        # Declaration of buttons
+        self.newButton = Gtk.Button(label="New")
+        self.openButton = Gtk.Button(label="Open")
+        self.saveButton = Gtk.Button(label="Save")
+
+        # Declaration of labels
+        self.vBoxManageLabel = Gtk.Label("Path To VBoxManager:")
+        self.ipAddressLabel = Gtk.Label("IP Address:")
+        self.baseGroupNameLabel = Gtk.Label("Base Group Name:")
+        self.numClonesLabel = Gtk.Label("Number of Clones:")
+        self.cloneSnapshotsLabel = Gtk.Label("Clone Snapshots:")
+        self.linkedClonesLabel = Gtk.Label("Linked Clones:")
+        self.baseOutnameLabel = Gtk.Label("Base Outname:")
+        self.vrdpBaseportLabel = Gtk.Label("VRDP Baseport:")
+
+        # Declaration of entrys
+        self.vBoxManageEntry = Gtk.Entry()
+        self.ipAddressEntry = Gtk.Entry()
+        self.baseGroupNameEntry = Gtk.Entry()
+        self.numClonesEntry = Gtk.Entry()
+        self.cloneSnapshotsEntry = Gtk.Entry()
+        self.linkedClonesEntry = Gtk.Entry()
+        self.baseOutnameEntry = Gtk.Entry()
+        self.vrdpBaseportEntry = Gtk.Entry()
 
         self.initializeContainers()
-        self.initializeButtons()
+        #self.initializeButtons()
         self.initializeLabels()
         self.initializeEntrys()
 
@@ -107,6 +108,70 @@ class MainWindow(Gtk.Window):
 
     def saveButtonClicked(self, widget):
         print("Save Button Clicked")
+
+# This class is a container that will hold the vm information
+class VMWidget(Gtk.Box):
+
+    def __init__(self):
+        super(VMWidget, self).__init__()
+
+        self.set_border_width(PADDING)
+
+        # Declaration of boxes
+        self.outerVertBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
+        self.nameHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.vrdpEnabledHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.internalnetBasenameHorBox = Gtk.Box(spacing=BOX_SPACING)
+
+        # Declaration of labels
+        self.nameLabel = Gtk.Label("Name:")
+        self.vrdpEnabledLabel = Gtk.Label("VRDP Enabled:")
+        self.internalnetBasenameLabel = Gtk.Label("Intrnalnet Basename:")
+
+        # Declaration of entrys
+        self.nameEntry = Gtk.Entry()
+        self.vrdpEnabledEntry = Gtk.Entry()
+        self.intenralnetBasenameEntry = Gtk.Entry()
+
+        self.initializeContainers()
+        self.initializeLabels()
+        self.initializeEntrys()
+
+    def initializeContainers(self):
+        self.add(self.outerVertBox)
+        self.outerVertBox.add(self.nameHorBox)
+        self.outerVertBox.add(self.vrdpEnabledHorBox)
+        self.outerVertBox.add(self.internalnetBasenameHorBox)
+
+    def initializeLabels(self):
+        self.nameHorBox.pack_start(self.nameLabel, False, False, PADDING)
+        self.vrdpEnabledHorBox.pack_start(self.vrdpEnabledLabel, False, False, PADDING)
+        self.internalnetBasenameHorBox.pack_start(self.internalnetBasenameLabel, False, False, PADDING)
+
+    def initializeEntrys(self):
+        self.nameHorBox.pack_start(self.nameEntry, False, False, PADDING)
+        self.vrdpEnabledHorBox.pack_start(self.vrdpEnabledEntry, False, False, PADDING)
+        self.internalnetBasenameHorBox.pack_start(self.intenralnetBasenameEntry, False, False, PADDING)
+
+# This class contains the main window, its main container is a notebook
+class MainWindow(Gtk.Window):
+
+    def __init__(self):
+        Gtk.Window.__init__(self, title="Workshop Creator GUI")
+
+        self.notebook = Gtk.Notebook()
+        self.baseWidget = BaseWidget()
+        self.vm1Widget = VMWidget()
+        self.vm2Widget = VMWidget()
+
+        self.initializeContainers()
+
+    def initializeContainers(self):
+        self.add(self.notebook)
+        self.notebook.append_page(self.baseWidget, Gtk.Label("Base"))
+        self.notebook.append_page(self.vm1Widget, Gtk.Label("VM1"))
+        self.notebook.append_page(self.vm2Widget, Gtk.Label("VM2"))
+        self.notebook.append_page(Gtk.Box(), Gtk.Label("Add VM"))
 
 def main():
     win = MainWindow()
