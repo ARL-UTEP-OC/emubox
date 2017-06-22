@@ -153,25 +153,64 @@ class VMWidget(Gtk.Box):
         self.vrdpEnabledHorBox.pack_start(self.vrdpEnabledEntry, False, False, PADDING)
         self.internalnetBasenameHorBox.pack_start(self.intenralnetBasenameEntry, False, False, PADDING)
 
+# This class is a widget that is a grid, it holds the structure of the tree view
+class WorkshopTreeWidget(Gtk.Grid):
+
+    def __init__(self):
+        super(WorkshopTreeWidget, self).__init__()
+
+        self.set_border_width(PADDING)
+
+        # Initialized fields
+        self.treeStore = Gtk.TreeStore(str)
+        self.treeView = Gtk.TreeView(self.treeStore)
+        self.scrollableTreeList = Gtk.ScrolledWindow()
+
+        self.initializeContainers()
+        self.populateTreeStore()
+        self.drawTreeView()
+        self.setLayout()
+
+    def initializeContainers(self):
+        self.set_column_homogeneous(True)
+        self.set_row_homogeneous(True)
+
+    def populateTreeStore(self):
+        treeiter = self.treeStore.append(None, ["MainWorkshops"])
+        self.treeStore.append(treeiter, ["SubWorkshop1"])
+        self.treeStore.append(treeiter, ["SubWorkshop2"])
+        treeiter = self.treeStore.append(None, ["MoreWorkshops"])
+        self.treeStore.append(treeiter, ["SubWorkshop1"])
+        self.treeStore.append(treeiter, ["SubWorkshop2"])
+
+    def drawTreeView(self):
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Workshops", renderer, text=0)
+        self.treeView.append_column(column)
+
+    def setLayout(self):
+        self.scrollableTreeList.set_min_content_width(175)
+        self.scrollableTreeList.set_vexpand(True)
+        self.attach(self.scrollableTreeList, 0, 0, 4, 10)
+        self.scrollableTreeList.add(self.treeView)
+
 # This class contains the main window, its main container is a notebook
 class MainWindow(Gtk.Window):
 
     def __init__(self):
         Gtk.Window.__init__(self, title="Workshop Creator GUI")
 
-        self.notebook = Gtk.Notebook()
+        self.windowBox = Gtk.Box(spacing=BOX_SPACING)
+
+        self.workshopTree = WorkshopTreeWidget()
         self.baseWidget = BaseWidget()
-        self.vm1Widget = VMWidget()
-        self.vm2Widget = VMWidget()
 
         self.initializeContainers()
 
     def initializeContainers(self):
-        self.add(self.notebook)
-        self.notebook.append_page(self.baseWidget, Gtk.Label("Base"))
-        self.notebook.append_page(self.vm1Widget, Gtk.Label("VM1"))
-        self.notebook.append_page(self.vm2Widget, Gtk.Label("VM2"))
-        self.notebook.append_page(Gtk.Box(), Gtk.Label("Add VM"))
+        self.add(self.windowBox)
+        self.windowBox.pack_start(self.workshopTree, False, False, PADDING)
+        self.windowBox.pack_start(self.baseWidget, False, False, PADDING)
 
 def main():
     win = MainWindow()
