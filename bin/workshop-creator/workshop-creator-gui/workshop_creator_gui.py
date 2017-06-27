@@ -171,7 +171,6 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.treeStore = Gtk.TreeStore(str)
         self.treeView = Gtk.TreeView(self.treeStore)
         self.scrollableTreeList = Gtk.ScrolledWindow()
-
         self.initializeContainers()
         self.drawTreeView()
         self.setLayout()
@@ -218,7 +217,7 @@ class MainWindow(Gtk.Window):
         Gtk.Window.__init__(self, title="Workshop Creator GUI")
         self.windowBox = Gtk.Box(spacing=BOX_SPACING)
 
-        # Workshop config file listdir
+        # Workshop config file list
         self.workshopList = []
 
         # Widget creation
@@ -230,8 +229,9 @@ class MainWindow(Gtk.Window):
         self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
         self.workshopTree.populateTreeStore(self.workshopList)
 
-        for ws in self.workshopList:
-            print(ws.baseGroupName)
+        # Signal initialization
+        select = self.workshopTree.treeView.get_selection()
+        select.connect("changed", self.onItemSelected)
 
     def initializeContainers(self):
         self.add(self.windowBox)
@@ -247,6 +247,33 @@ class MainWindow(Gtk.Window):
                 workshop = Workshop()
                 workshop.loadFileConfig(filename)
                 self.workshopList.append(workshop)
+
+    def onItemSelected(self, selection):
+        model, treeiter = selection.get_selected()
+
+        if not model.iter_has_child(treeiter):
+            filename = model[treeiter][0]
+
+            currentWorkshop = None
+            matchFound = False
+            for workshop in self.workshopList:
+                if filename == workshop.filename:
+                    currentWorkshop = workshop
+                    matchFound = True
+                    break
+
+            if not matchFound:
+                return
+
+            self.baseWidget.vBoxManageEntry.set_text(currentWorkshop.pathToVBoxManage)
+            self.baseWidget.ipAddressEntry.set_text(currentWorkshop.ipAddress)
+            self.baseWidget.baseGroupNameEntry.set_text(currentWorkshop.baseGroupName)
+            self.baseWidget.numClonesEntry.set_text(currentWorkshop.numOfClones)
+            self.baseWidget.cloneSnapshotsEntry.set_text(currentWorkshop.cloneSnapshots)
+            self.baseWidget.linkedClonesEntry.set_text(currentWorkshop.linkedClones)
+            self.baseWidget.baseOutnameEntry.set_text(currentWorkshop.baseOutName)
+            self.baseWidget.vrdpBaseportEntry.set_text(currentWorkshop.vrdpBaseport)
+
 
 def main():
     win = MainWindow()

@@ -46,10 +46,10 @@ class Workshop:
 
         vmset = root.find('testbed-setup').find('vm-set')
         self.baseGroupName = vmset.find('base-groupname').text.rstrip().lstrip()
-        self.numOfClones = int(vmset.find('num-clones').text.rstrip().lstrip())
+        self.numOfClones = vmset.find('num-clones').text.rstrip().lstrip()
         self.cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
         self.linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
-        self.baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
+        self.baseOutName = vmset.find('base-outname').text.rstrip().lstrip()
         self.vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
 
         for vm in vmset.findall('vm'):
