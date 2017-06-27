@@ -1,10 +1,16 @@
+import os
+
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
+from workshop_creator_gui_loader import Workshop
+from workshop_creator_gui_loader import VM
+
 # Constants
 BOX_SPACING = 5
 PADDING = 5
+WORKSHOP_CONFIG_DIRECTORY = "workshop_configs"
 
 # This class is a container that contains the base GUI
 class BaseWidget(Gtk.Box):
@@ -167,7 +173,6 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.scrollableTreeList = Gtk.ScrolledWindow()
 
         self.initializeContainers()
-        self.populateTreeStore()
         self.drawTreeView()
         self.setLayout()
 
@@ -175,13 +180,25 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.set_column_homogeneous(True)
         self.set_row_homogeneous(True)
 
-    def populateTreeStore(self):
-        treeiter = self.treeStore.append(None, ["MainWorkshops"])
-        self.treeStore.append(treeiter, ["SubWorkshop1"])
-        self.treeStore.append(treeiter, ["SubWorkshop2"])
-        treeiter = self.treeStore.append(None, ["MoreWorkshops"])
-        self.treeStore.append(treeiter, ["SubWorkshop1"])
-        self.treeStore.append(treeiter, ["SubWorkshop2"])
+    def populateTreeStore(self, workshopList):
+
+        # An element in the treeIterList will follow this format, [treeiter, "GroupName"]
+        treeIterList = []
+
+        for workshop in workshopList:
+
+            matchFound = False
+
+            for treeIter in treeIterList:
+                if treeIter[1] == workshop.baseGroupName:
+                    matchFound = True
+                    self.treeStore.append(treeIter[0], [workshop.filename])
+                    break
+
+            if not matchFound:
+                treeIter = self.treeStore.append(None, [workshop.baseGroupName])
+                self.treeStore.append(treeIter, [workshop.filename])
+                treeIterList.append([treeIter, workshop.baseGroupName])
 
     def drawTreeView(self):
         renderer = Gtk.CellRendererText()
@@ -199,18 +216,37 @@ class MainWindow(Gtk.Window):
 
     def __init__(self):
         Gtk.Window.__init__(self, title="Workshop Creator GUI")
-
         self.windowBox = Gtk.Box(spacing=BOX_SPACING)
 
+        # Workshop config file listdir
+        self.workshopList = []
+
+        # Widget creation
         self.workshopTree = WorkshopTreeWidget()
         self.baseWidget = BaseWidget()
 
+        # Initialization
         self.initializeContainers()
+        self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
+        self.workshopTree.populateTreeStore(self.workshopList)
+
+        for ws in self.workshopList:
+            print(ws.baseGroupName)
 
     def initializeContainers(self):
         self.add(self.windowBox)
         self.windowBox.pack_start(self.workshopTree, False, False, PADDING)
         self.windowBox.pack_start(self.baseWidget, False, False, PADDING)
+
+    def loadXMLFiles(self, directory):
+
+        # Here we will iterate through all the files that end with .xml
+        #in the workshop_configs directory
+        for filename in os.listdir(directory):
+            if filename.endswith(".xml"):
+                workshop = Workshop()
+                workshop.loadFileConfig(filename)
+                self.workshopList.append(workshop)
 
 def main():
     win = MainWindow()
