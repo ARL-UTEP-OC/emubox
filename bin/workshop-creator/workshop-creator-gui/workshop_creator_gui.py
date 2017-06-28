@@ -128,9 +128,9 @@ class VMWidget(Gtk.Box):
         self.internalnetBasenameHorBox.pack_start(self.internalnetBasenameLabel, False, False, PADDING)
 
     def initializeEntrys(self):
-        self.nameHorBox.pack_start(self.nameEntry, False, False, PADDING)
-        self.vrdpEnabledHorBox.pack_start(self.vrdpEnabledEntry, False, False, PADDING)
-        self.internalnetBasenameHorBox.pack_start(self.intenralnetBasenameEntry, False, False, PADDING)
+        self.nameHorBox.pack_end(self.nameEntry, False, False, PADDING)
+        self.vrdpEnabledHorBox.pack_end(self.vrdpEnabledEntry, False, False, PADDING)
+        self.internalnetBasenameHorBox.pack_end(self.intenralnetBasenameEntry, False, False, PADDING)
 
 # This class is a widget that is a grid, it holds the structure of the tree view
 class WorkshopTreeWidget(Gtk.Grid):
@@ -193,11 +193,13 @@ class MainWindow(Gtk.Window):
         self.windowBox = Gtk.Box(spacing=BOX_SPACING)
         self.actionBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
         self.buttonBox = Gtk.Box(spacing=BOX_SPACING)
+        self.scrolledActionBox = Gtk.ScrolledWindow()
+        self.scrolledInnerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
         self.baseWidget = BaseWidget()
-        self.vmWidget = VMWidget()
+        self.vmWidgetList = []
 
         # Declaration of buttons
         self.newButton = Gtk.Button(label="New")
@@ -223,8 +225,13 @@ class MainWindow(Gtk.Window):
         self.windowBox.pack_start(self.actionBox, False, False, PADDING)
 
         self.actionBox.pack_start(self.buttonBox, False, False, PADDING)
-        self.actionBox.pack_start(self.baseWidget, False, False, PADDING)
-        self.actionBox.pack_start(self.vmWidget, False, False, PADDING)
+        self.actionBox.pack_start(self.scrolledActionBox, False, False, PADDING)
+
+        self.scrolledActionBox.add(self.scrolledInnerBox)
+        self.scrolledInnerBox.pack_start(self.baseWidget, False, False, PADDING)
+        self.scrolledActionBox.set_min_content_width(400)
+        self.scrolledActionBox.set_min_content_height(600)
+
 
     def initializeButtons(self):
         self.newButton.connect("clicked", self.newButtonClicked)
@@ -247,9 +254,6 @@ class MainWindow(Gtk.Window):
     # Event handler functions
     def newButtonClicked(self, widget):
         print("New Button Clicked")
-
-    def openButtonClicked(self, widget):
-        print("Open Button Clicked")
 
     def saveButtonClicked(self, widget):
         print("Save Button Clicked")
@@ -279,6 +283,24 @@ class MainWindow(Gtk.Window):
             self.baseWidget.linkedClonesEntry.set_text(currentWorkshop.linkedClones)
             self.baseWidget.baseOutnameEntry.set_text(currentWorkshop.baseOutName)
             self.baseWidget.vrdpBaseportEntry.set_text(currentWorkshop.vrdpBaseport)
+
+            # Here we will cycle through all the vm's belonging to that
+            # workshop and create an instance of the vm viewer widget and
+            # attach it for every single one
+
+            for vmWidget in self.vmWidgetList:
+                self.scrolledInnerBox.remove(vmWidget)
+
+            self.vmWidgetList = []
+
+            for vm in currentWorkshop.vmList:
+
+                vmWidget = VMWidget()
+                vmWidget.nameEntry.set_text(vm.name)
+                vmWidget.vrdpEnabledEntry.set_text(vm.vrdpEnabled)
+                self.scrolledInnerBox.pack_start(vmWidget, False, False, PADDING)
+                self.actionBox.show_all()
+                self.vmWidgetList.append(vmWidget)
 
 
 def main():

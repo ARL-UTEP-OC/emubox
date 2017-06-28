@@ -53,12 +53,10 @@ class Workshop:
         self.vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
 
         for vm in vmset.findall('vm'):
-        	currentVM = VM()
-        	currentVM.name = vm.find('name').text.rstrip().lstrip()
-        	currentVM.vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
-        	internalnetList = vm.findall('internalnet-basename')
-
-        	for internalnet in internalnetList:
-        		currentVM.internalnetBasenameList.append(internalnet.text.rstrip().lstrip())
-
-        self.vmList.append(currentVM)
+            currentVM = VM()
+            currentVM.name = vm.find('name').text.rstrip().lstrip()
+            currentVM.vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
+            internalnetList = vm.findall('internalnet-basename')
+            for internalnet in internalnetList:
+                currentVM.internalnetBasenameList.append(internalnet.text.rstrip().lstrip())
+            self.vmList.append(currentVM)
