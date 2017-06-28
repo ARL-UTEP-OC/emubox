@@ -36,7 +36,7 @@ class Workshop:
 
         self.filename = os.path.splitext(inputFile)[0]
 
-        tree = ET.parse(os.getcwd()+"\\workshop_configs\\"+inputFile)
+        tree = ET.parse(os.getcwd()+"/workshop_configs/"+inputFile)
         root = tree.getroot()
 
         self.pathToVBoxManage = root.find('vbox-setup').find('path-to-vboxmanage').text.rstrip().lstrip()
