@@ -32,11 +32,6 @@ class BaseWidget(Gtk.Box):
         self.baseOutnameHorBox = Gtk.Box(spacing=BOX_SPACING)
         self.vrdpBaseportHorBox = Gtk.Box(spacing=BOX_SPACING)
 
-        # Declaration of buttons
-        self.newButton = Gtk.Button(label="New")
-        self.openButton = Gtk.Button(label="Open")
-        self.saveButton = Gtk.Button(label="Save")
-
         # Declaration of labels
         self.vBoxManageLabel = Gtk.Label("Path To VBoxManager:")
         self.ipAddressLabel = Gtk.Label("IP Address:")
@@ -58,7 +53,6 @@ class BaseWidget(Gtk.Box):
         self.vrdpBaseportEntry = Gtk.Entry()
 
         self.initializeContainers()
-        #self.initializeButtons()
         self.initializeLabels()
         self.initializeEntrys()
 
@@ -74,17 +68,6 @@ class BaseWidget(Gtk.Box):
         self.outerVertBox.add(self.baseOutnameHorBox)
         self.outerVertBox.add(self.vrdpBaseportHorBox)
 
-
-    def initializeButtons(self):
-        self.newButton.connect("clicked", self.newButtonClicked)
-        self.buttonsHorBox.pack_start(self.newButton, False, False, PADDING)
-
-        self.openButton.connect("clicked", self.openButtonClicked)
-        self.buttonsHorBox.pack_start(self.openButton, False, False, PADDING)
-
-        self.saveButton.connect("clicked", self.saveButtonClicked)
-        self.buttonsHorBox.pack_start(self.saveButton, False, False, PADDING)
-
     def initializeLabels(self):
         self.vBoxManageHorBox.pack_start(self.vBoxManageLabel, False, False, PADDING)
         self.ipAddressHorBox.pack_start(self.ipAddressLabel, False, False, PADDING)
@@ -96,24 +79,14 @@ class BaseWidget(Gtk.Box):
         self.vrdpBaseportHorBox.pack_start(self.vrdpBaseportLabel, False, False, PADDING)
 
     def initializeEntrys(self):
-        self.vBoxManageHorBox.pack_start(self.vBoxManageEntry, False, False, PADDING)
-        self.ipAddressHorBox.pack_start(self.ipAddressEntry, False, False, PADDING)
-        self.baseGroupNameHorBox.pack_start(self.baseGroupNameEntry, False, False, PADDING)
-        self.numClonesHorBox.pack_start(self.numClonesEntry, False, False, PADDING)
-        self.cloneSnapshotsHorBox.pack_start(self.cloneSnapshotsEntry, False, False, PADDING)
-        self.linkedClonesHorBox.pack_start(self.linkedClonesEntry, False, False, PADDING)
-        self.baseOutnameHorBox.pack_start(self.baseOutnameEntry, False, False, PADDING)
-        self.vrdpBaseportHorBox.pack_start(self.vrdpBaseportEntry, False, False, PADDING)
-
-    # Event handler functions
-    def newButtonClicked(self, widget):
-        print("New Button Clicked")
-
-    def openButtonClicked(self, widget):
-        print("Open Button Clicked")
-
-    def saveButtonClicked(self, widget):
-        print("Save Button Clicked")
+        self.vBoxManageHorBox.pack_end(self.vBoxManageEntry, False, False, PADDING)
+        self.ipAddressHorBox.pack_end(self.ipAddressEntry, False, False, PADDING)
+        self.baseGroupNameHorBox.pack_end(self.baseGroupNameEntry, False, False, PADDING)
+        self.numClonesHorBox.pack_end(self.numClonesEntry, False, False, PADDING)
+        self.cloneSnapshotsHorBox.pack_end(self.cloneSnapshotsEntry, False, False, PADDING)
+        self.linkedClonesHorBox.pack_end(self.linkedClonesEntry, False, False, PADDING)
+        self.baseOutnameHorBox.pack_end(self.baseOutnameEntry, False, False, PADDING)
+        self.vrdpBaseportHorBox.pack_end(self.vrdpBaseportEntry, False, False, PADDING)
 
 # This class is a container that will hold the vm information
 class VMWidget(Gtk.Box):
@@ -205,7 +178,7 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.treeView.append_column(column)
 
     def setLayout(self):
-        self.scrollableTreeList.set_min_content_width(175)
+        self.scrollableTreeList.set_min_content_width(200)
         self.scrollableTreeList.set_vexpand(True)
         self.attach(self.scrollableTreeList, 0, 0, 4, 10)
         self.scrollableTreeList.add(self.treeView)
@@ -215,17 +188,27 @@ class MainWindow(Gtk.Window):
 
     def __init__(self):
         Gtk.Window.__init__(self, title="Workshop Creator GUI")
-        self.windowBox = Gtk.Box(spacing=BOX_SPACING)
 
-        # Workshop config file list
-        self.workshopList = []
+        # Layout container initialization
+        self.windowBox = Gtk.Box(spacing=BOX_SPACING)
+        self.actionBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.buttonBox = Gtk.Box(spacing=BOX_SPACING)
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
         self.baseWidget = BaseWidget()
+        self.vmWidget = VMWidget()
+
+        # Declaration of buttons
+        self.newButton = Gtk.Button(label="New")
+        self.saveButton = Gtk.Button(label="Save")
+
+        # Workshop config file list
+        self.workshopList = []
 
         # Initialization
         self.initializeContainers()
+        self.initializeButtons()
         self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
         self.workshopTree.populateTreeStore(self.workshopList)
 
@@ -235,8 +218,21 @@ class MainWindow(Gtk.Window):
 
     def initializeContainers(self):
         self.add(self.windowBox)
+
         self.windowBox.pack_start(self.workshopTree, False, False, PADDING)
-        self.windowBox.pack_start(self.baseWidget, False, False, PADDING)
+        self.windowBox.pack_start(self.actionBox, False, False, PADDING)
+
+        self.actionBox.pack_start(self.buttonBox, False, False, PADDING)
+        self.actionBox.pack_start(self.baseWidget, False, False, PADDING)
+        self.actionBox.pack_start(self.vmWidget, False, False, PADDING)
+
+    def initializeButtons(self):
+        self.newButton.connect("clicked", self.newButtonClicked)
+        self.buttonBox.pack_start(self.newButton, True, True, PADDING)
+
+        self.saveButton.connect("clicked", self.saveButtonClicked)
+        self.buttonBox.pack_start(self.saveButton, True, True, PADDING)
+
 
     def loadXMLFiles(self, directory):
 
@@ -247,6 +243,16 @@ class MainWindow(Gtk.Window):
                 workshop = Workshop()
                 workshop.loadFileConfig(filename)
                 self.workshopList.append(workshop)
+
+    # Event handler functions
+    def newButtonClicked(self, widget):
+        print("New Button Clicked")
+
+    def openButtonClicked(self, widget):
+        print("Open Button Clicked")
+
+    def saveButtonClicked(self, widget):
+        print("Save Button Clicked")
 
     def onItemSelected(self, selection):
         model, treeiter = selection.get_selected()
@@ -277,7 +283,7 @@ class MainWindow(Gtk.Window):
 
 def main():
     win = MainWindow()
-    win.resize(500, 600)
+    win.resize(550, 600)
     win.connect("delete-event", Gtk.main_quit)
     win.show_all()
     Gtk.main()
