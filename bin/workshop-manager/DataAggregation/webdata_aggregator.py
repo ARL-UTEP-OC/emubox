@@ -65,8 +65,8 @@ def aggregateData():
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
                         logging.debug("FOUND FILES IN DIR: "+str(files))
                     aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "rdesktop" : rdesktopFilename, "state" : vmInfo[1], "materials" : filesPaths})
-            aggregatedInfoSem.release()
             aggregateAvailableWorkshops()
+            aggregatedInfoSem.release()
             time.sleep(probeTime)
         except Exception as e:
             logging.error("AGGREGATION: An error occured: " + str(e))
