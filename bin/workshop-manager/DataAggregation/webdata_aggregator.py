@@ -12,8 +12,12 @@ gevent.monkey.patch_all()
 #to reduce stdout
 import logging
 
+# Queue import
+from Queue import *
+
 probeTime = 5
 aggregatedInfo = []
+availableWorkshops = []
 
 # vars needed for gevent (lock)
 aggregatedInfoSem = BoundedSemaphore(1)
@@ -62,6 +66,7 @@ def aggregateData():
                         logging.debug("FOUND FILES IN DIR: "+str(files))
                     aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "rdesktop" : rdesktopFilename, "state" : vmInfo[1], "materials" : filesPaths})
             aggregatedInfoSem.release()
+            aggregateAvailableWorkshops()
             time.sleep(probeTime)
         except Exception as e:
             logging.error("AGGREGATION: An error occured: " + str(e))
@@ -72,6 +77,26 @@ def aggregateData():
 def getAggregatedInfo():
     #aggregatedInfoSem.wait()
     return aggregatedInfo
+
+def aggregateAvailableWorkshops():
+    global availableWorkshops
+    availableInfo = filter(lambda x: x["state"] == "Available", info) # get list of available workshops
+    availableWorkshops = []
+    while len(availableInfo) > 0:
+        curr_workshop = availableInfo[0] # take first available workshop and get tmp list of all other workshops like it
+        tmp = filter(lambda x: x["workshopName"] == curr_workshop["workshopName"], availableInfo) 
+        q = Queue()
+        for w in tmp: # put all like-workshops in a queue
+            q.put(w)
+        availableWorkshops.append({
+            "workshopName": curr_workshop["workshopName"], 
+            "materials": curr_workshop["materials"],
+            "queue": q
+            })
+        availableInfo = filter(lambda x: x["workshopName"] != curr_workshop["workshopName"], availableInfo) # remove workshops put in queue
+
+def getAvailableWorkshops():
+    return availableWorkshops
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
