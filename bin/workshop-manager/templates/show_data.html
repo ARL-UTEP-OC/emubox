@@ -37,8 +37,10 @@
         {% endfor %}
     </td>
     <td>
+        {% if unitInfo["queue"].qsize() %}
         Windows: <a href="/ms-rdp/{{ unitInfo["workshopName"]}}">MS-RDP</a><br/>
         Linux: <a href="/rdesktop/{{ unitInfo["workshopName"]}}">rdesktop</a>
+        {% endif %}
     </td>
 </tr>
 {% endfor %}
