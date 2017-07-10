@@ -52,6 +52,18 @@ def download(filename):
 def catch_all(path):
     return render_template('show_data.html', templateAvailable=DataAggregation.webdata_aggregator.getAggregatedInfo())
 
+# Catch rdp requests
+@app.route('/ms-rdp/<workshopName>')
+def giveRDP(workshopName):
+    availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
+    return filter(lambda x: x["workshopName"] == workshopName, availableWorkshops)[0]["queue"].get()["ms-rdp"]
+
+# Catch rdesktop requests
+@app.route('/rdesktop/<workshopName>')
+def giverdesktop(workshopName):
+    availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
+    return filter(lambda x: x["workshopName"] == workshopName, availableWorkshops)[0]["queue"].get()["rdesktop"]
+
 def signal_handler(signal, frame):
     try:
         logging.info("Killing webserver...")

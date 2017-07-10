@@ -29,7 +29,7 @@
 	    {{ unitInfo["workshopName"] }}
 	</td>
     <td>
-        {{ unitInfo["state"] }}
+        There are {{unitInfo["queue"].qsize()}} workshops available!
     </td>
     <td>
         {% for material in unitInfo["materials"] %}
@@ -37,18 +37,14 @@
         {% endfor %}
     </td>
     <td>
-        {% if unitInfo["state"] == "Available" %}
-        {% if unitInfo["ms-rdp"] != "" %}
-        Windows: <a href="{{ unitInfo["ms-rdp"] }}">MS-RDP</a><br/>
-        {% endif %}
-        {% if unitInfo["ms-rdp"] != "" %}
-        Linux: <a href="{{ unitInfo["rdesktop"] }}">rdesktop</a>
-        {% endif %}
+        {% if unitInfo["queue"].qsize() %}
+        Windows: <a href="/ms-rdp/{{ unitInfo["workshopName"]}}">MS-RDP</a><br/>
+        Linux: <a href="/rdesktop/{{ unitInfo["workshopName"]}}">rdesktop</a>
         {% endif %}
     </td>
 </tr>
 {% endfor %}
-  </tbody>
+</tbody>
 </table>
 
 </body>
