@@ -96,6 +96,24 @@ class BaseWidget(Gtk.Box):
         self.baseOutnameHorBox.pack_end(self.baseOutnameEntry, False, False, PADDING)
         self.vrdpBaseportHorBox.pack_end(self.vrdpBaseportEntry, False, False, PADDING)
 
+class InternalnetBasenameWidget(Gtk.EventBox):
+
+    def __init__(self):
+        super(InternalnetBasenameWidget, self).__init__()
+
+        self.outerHorBox = Gtk.Box(spacing=BOX_SPACING)
+
+        self.label = Gtk.Label("Internalnet Basename:")
+        self.entry = Gtk.Entry()
+
+        self.initialize()
+
+    def initialize(self):
+        self.add(self.outerHorBox)
+
+        self.outerHorBox.pack_start(self.label, False, False, PADDING)
+        self.outerHorBox.pack_end(self.entry, False, False, PADDING)
+
 # This class is a container that will hold the vm information
 class VMWidget(Gtk.Box):
 
@@ -109,8 +127,7 @@ class VMWidget(Gtk.Box):
         self.nameHorBox = Gtk.Box(spacing=BOX_SPACING)
         self.vrdpEnabledHorBox = Gtk.Box(spacing=BOX_SPACING)
         self.iNetVerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
-        self.internalnetBasenameHorBoxList = []
-        self.iNetEntryList = []
+        self.inetBasenameWidgetList = []
 
         # Declaration of labels
         self.nameLabel = Gtk.Label("Name:")
@@ -138,29 +155,21 @@ class VMWidget(Gtk.Box):
         self.nameHorBox.pack_end(self.nameEntry, False, False, PADDING)
         self.vrdpEnabledHorBox.pack_end(self.vrdpEnabledEntry, False, False, PADDING)
 
-    def initializeInternalNetBasenames(self, internalNetList):
+    def loadInets(self, internalNetList):
 
+        # Clear the box of widgets
         for widget in self.iNetVerBox.get_children():
             self.iNetVerBox.remove(widget)
 
-        self.internalnetBasenameHorBoxList = []
-        self.iNetEntryList = []
+        # Clear the list of widgets
+        self.inetBasenameWidgetList = []
 
         for internalNet in internalNetList:
-            iNetHorBox = Gtk.Box(spacing=BOX_SPACING)
+            inetWidget = InternalnetBasenameWidget()
+            inetWidget.entry.set_text(internalNet)
 
-            internalnetBasenameLabel = Gtk.Label("Intrnalnet Basename:")
-            iNetEntry = Gtk.Entry()
-            self.iNetEntryList.append(iNetEntry)
-            iNetEntry.set_text(internalNet)
-
-            iNetHorBox.pack_start(internalnetBasenameLabel, False, False, PADDING)
-            iNetHorBox.pack_end(iNetEntry, False, False, PADDING)
-
-            self.internalnetBasenameHorBoxList.append(iNetHorBox)
-
-        for iNetBox in self.internalnetBasenameHorBoxList:
-            self.iNetVerBox.pack_start(iNetBox, False, False, 0)
+            self.inetBasenameWidgetList.append(inetWidget)
+            self.iNetVerBox.pack_start(inetWidget, False, False, 0)
 
 
 # This class is a widget that is a grid, it holds the structure of the tree view
@@ -211,6 +220,7 @@ class AppWindow(Gtk.ApplicationWindow):
         # Layout container initialization
         self.windowBox = Gtk.Box(spacing=BOX_SPACING)
         self.actionBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.actionEventBox = Gtk.EventBox()
         self.scrolledActionBox = Gtk.ScrolledWindow()
         self.scrolledInnerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
 
@@ -232,20 +242,38 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopTree.populateTreeStore(self.workshopList)
 
         # Signal initialization
+        # This will handle when the tree selection is changed
         select = self.workshopTree.treeView.get_selection()
         select.connect("changed", self.onItemSelected)
 
+        # This is the signal for the file chooser under the vbox path
         self.baseWidget.chooseVBoxPathButton.connect("clicked", self.onVBoxPathClicked)
 
-        # Called when this window terminates
+        # This will get called when the window terminates
         self.connect("delete-event", self.on_delete)
+
+        # This is called when the action box is clicked
+        self.actionEventBox.connect("button-press-event", self.actionBoxEvent)
+        # This will be the menu for adding and taking away iNetEntryList
+        self.menu = Gtk.Menu()
+        item1 = Gtk.MenuItem("item1")
+        self.menu.append(item1)
+        item2 = Gtk.MenuItem("item2")
+        self.menu.append(item2)
+
+    def actionBoxEvent(self, widget, event):
+
+        if event.button == 3:
+            self.menu.show_all()
+            self.menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
     def initializeContainers(self):
         self.add(self.windowBox)
 
         self.windowBox.pack_start(self.workshopTree, False, False, PADDING)
-        self.windowBox.pack_start(self.actionBox, False, False, PADDING)
+        self.windowBox.pack_start(self.actionEventBox, False, False, PADDING)
 
+        self.actionEventBox.add(self.actionBox)
         self.actionBox.pack_start(self.scrolledActionBox, False, False, PADDING)
 
         self.scrolledActionBox.add(self.scrolledInnerBox)
@@ -335,7 +363,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
             self.vmWidget.nameEntry.set_text(self.currentVM.name)
             self.vmWidget.vrdpEnabledEntry.set_text(self.currentVM.vrdpEnabled)
-            self.vmWidget.initializeInternalNetBasenames(self.currentVM.internalnetBasenameList)
+            self.vmWidget.loadInets(self.currentVM.internalnetBasenameList)
 
             self.actionBox.show_all()
 
@@ -373,8 +401,8 @@ class AppWindow(Gtk.ApplicationWindow):
             self.currentVM.vrdpEnabled = self.vmWidget.vrdpEnabledEntry.get_text()
 
             self.currentVM.internalnetBasenameList = []
-            for inet in self.vmWidget.iNetEntryList:
-                self.currentVM.internalnetBasenameList.append(inet.get_text())
+            for inetWidget in self.vmWidget.inetBasenameWidgetList:
+                self.currentVM.internalnetBasenameList.append(inetWidget.entry.get_text())
 
     def hardSave(self):
 
