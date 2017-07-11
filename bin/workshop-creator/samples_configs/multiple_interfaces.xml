@@ -2,7 +2,7 @@
     <vbox-setup>
         <path-to-vboxmanage>
             C:\Program Files\Oracle\VirtualBox\VBoxManage.exe
-        </path-to-vboxmanage>path-to-vboxmanage>
+        </path-to-vboxmanage>
     </vbox-setup>
     <testbed-setup>
 		<network-config>

@@ -12,10 +12,6 @@
           <attribute name="label" translatable="yes">Save</attribute>
           <attribute name="action">app.save</attribute>
         </item>
-        <item>
-          <attribute name="label" translatable="yes">Save As...</attribute>
-          <attribute name="action">app.saveAs</attribute>
-        </item>
       </section>
     </submenu>
   </menu>

@@ -1,6 +1,8 @@
 import os
 import sys
 
+from lxml import etree
+
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk
@@ -108,6 +110,7 @@ class VMWidget(Gtk.Box):
         self.vrdpEnabledHorBox = Gtk.Box(spacing=BOX_SPACING)
         self.iNetVerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
         self.internalnetBasenameHorBoxList = []
+        self.iNetEntryList = []
 
         # Declaration of labels
         self.nameLabel = Gtk.Label("Name:")
@@ -141,12 +144,14 @@ class VMWidget(Gtk.Box):
             self.iNetVerBox.remove(widget)
 
         self.internalnetBasenameHorBoxList = []
+        self.iNetEntryList = []
 
         for internalNet in internalNetList:
             iNetHorBox = Gtk.Box(spacing=BOX_SPACING)
 
             internalnetBasenameLabel = Gtk.Label("Intrnalnet Basename:")
             iNetEntry = Gtk.Entry()
+            self.iNetEntryList.append(iNetEntry)
             iNetEntry.set_text(internalNet)
 
             iNetHorBox.pack_start(internalnetBasenameLabel, False, False, PADDING)
@@ -156,6 +161,7 @@ class VMWidget(Gtk.Box):
 
         for iNetBox in self.internalnetBasenameHorBoxList:
             self.iNetVerBox.pack_start(iNetBox, False, False, 0)
+
 
 # This class is a widget that is a grid, it holds the structure of the tree view
 class WorkshopTreeWidget(Gtk.Grid):
@@ -217,6 +223,8 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopList = []
 
         self.currentWorkshop = None
+        self.currentVM = None
+        self.isParent = None
 
         # Initialization
         self.initializeContainers()
@@ -228,6 +236,9 @@ class AppWindow(Gtk.ApplicationWindow):
         select.connect("changed", self.onItemSelected)
 
         self.baseWidget.chooseVBoxPathButton.connect("clicked", self.onVBoxPathClicked)
+
+        # Called when this window terminates
+        self.connect("delete-event", self.on_delete)
 
     def initializeContainers(self):
         self.add(self.windowBox)
@@ -254,7 +265,10 @@ class AppWindow(Gtk.ApplicationWindow):
     def onItemSelected(self, selection):
         model, treeiter = selection.get_selected()
 
+        self.softSave()
+
         if model.iter_has_child(treeiter):
+            self.isParent = True
             filename = model[treeiter][0]
             self.currentWorkshop = None
             matchFound = False
@@ -287,6 +301,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.actionBox.show_all()
 
         elif not model.iter_has_child(treeiter):
+            self.isParent = False
             vmName = model[treeiter][0]
             treeiter = model.iter_parent(treeiter)
             filename = model[treeiter][0]
@@ -302,11 +317,11 @@ class AppWindow(Gtk.ApplicationWindow):
             if not matchFound:
                 return
 
-            currentVM = None
+            self.currentVM = None
             matchFound = False
             for vmWidget in self.currentWorkshop.vmList:
                 if vmName == vmWidget.name:
-                    currentVM = vmWidget
+                    self.currentVM = vmWidget
                     matchFound = True
                     break
 
@@ -318,10 +333,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
             self.scrolledInnerBox.pack_start(self.vmWidget, False, False, PADDING)
 
-            self.vmWidget.nameEntry.set_text(currentVM.name)
-            self.vmWidget.vrdpEnabledEntry.set_text(currentVM.vrdpEnabled)
-            print(currentVM.internalnetBasenameList)
-            self.vmWidget.initializeInternalNetBasenames(currentVM.internalnetBasenameList)
+            self.vmWidget.nameEntry.set_text(self.currentVM.name)
+            self.vmWidget.vrdpEnabledEntry.set_text(self.currentVM.vrdpEnabled)
+            self.vmWidget.initializeInternalNetBasenames(self.currentVM.internalnetBasenameList)
 
             self.actionBox.show_all()
 
@@ -340,6 +354,73 @@ class AppWindow(Gtk.ApplicationWindow):
             print("Cancel was selected")
 
         dialog.destroy()
+
+    def softSave(self):
+
+        if self.isParent == True:
+            self.currentWorkshop.pathToVBoxManage = self.baseWidget.vBoxManageEntry.get_text()
+            self.currentWorkshop.ipAddress = self.baseWidget.ipAddressEntry.get_text()
+            self.currentWorkshop.baseGroupName = self.baseWidget.baseGroupNameEntry.get_text()
+            self.currentWorkshop.numOfClones = self.baseWidget.numClonesEntry.get_text()
+            self.currentWorkshop.cloneSnapshots = self.baseWidget.cloneSnapshotsEntry.get_text()
+            self.currentWorkshop.linkedClones = self.baseWidget.linkedClonesEntry.get_text()
+            self.currentWorkshop.baseOutName = self.baseWidget.baseOutnameEntry.get_text()
+            self.currentWorkshop.vrdpBaseport = self.baseWidget.vrdpBaseportEntry.get_text()
+
+        elif self.isParent == False:
+
+            self.currentVM.name = self.vmWidget.nameEntry.get_text()
+            self.currentVM.vrdpEnabled = self.vmWidget.vrdpEnabledEntry.get_text()
+
+            self.currentVM.internalnetBasenameList = []
+            for inet in self.vmWidget.iNetEntryList:
+                self.currentVM.internalnetBasenameList.append(inet.get_text())
+
+    def hardSave(self):
+
+        for workshop in self.workshopList:
+
+            # Create root of XML etree
+            root = etree.Element("xml")
+
+            # Populate vbox-setup fields
+            vbox_setup_element = etree.SubElement(root, "vbox-setup")
+            etree.SubElement(vbox_setup_element, "path-to-vboxmanage").text = workshop.pathToVBoxManage
+
+            # Populate testbed-setup fields
+            testbed_setup_element = etree.SubElement(root, "testbed-setup")
+            network_config_element = etree.SubElement(testbed_setup_element, "network-config")
+            etree.SubElement(network_config_element, "ip-address").text = workshop.ipAddress
+
+            # Populate vm-set fields
+            vm_set_element = etree.SubElement(testbed_setup_element, "vm-set")
+            etree.SubElement(vm_set_element, "base-groupname").text = workshop.baseGroupName
+            etree.SubElement(vm_set_element, "num-clones").text = workshop.numOfClones
+            etree.SubElement(vm_set_element, "clone-snapshots").text = workshop.cloneSnapshots
+            etree.SubElement(vm_set_element, "linked-clones").text = workshop.linkedClones
+            etree.SubElement(vm_set_element, "base-outname").text = workshop.baseOutName
+            etree.SubElement(vm_set_element, "vrdp-baseport").text = workshop.vrdpBaseport
+
+            # Iterate through list of VMs and whether vrdp is enabled for that vm
+            for vm in workshop.vmList:
+                vm_element = etree.SubElement(vm_set_element, "vm")
+                etree.SubElement(vm_element, "name").text = vm.name
+                etree.SubElement(vm_element, "vrdp-enabled").text = vm.vrdpEnabled
+                for internalnet in vm.internalnetBasenameList:
+                    etree.SubElement(vm_element, "internalnet-basename").text = internalnet
+
+            # Create tree for writing to XML file
+            tree = etree.ElementTree(root)
+
+            # Write tree to XML config file
+            tree.write("workshop_configs/"+workshop.filename+".xml", pretty_print = True)
+
+    def fullSave(self):
+        self.softSave()
+        self.hardSave()
+
+    def on_delete(self, event, widget):
+        self.fullSave()
 
 
 class Application(Gtk.Application):
@@ -362,14 +443,11 @@ class Application(Gtk.Application):
         action.connect("activate", self.onSave)
         self.add_action(action)
 
-        action = Gio.SimpleAction.new("saveAs", None)
-        action.connect("activate", self.onSaveAs)
-        self.add_action(action)
-
         builder = Gtk.Builder.new_from_file("menuDescription.xml")
         self.set_menubar(builder.get_object("menubar"))
 
     def do_activate(self):
+        Gtk.Application.do_activate(self)
         if not self.window:
             self.window = AppWindow(application=self, title="Workshop Creator GUI")
         self.window.present()
@@ -379,10 +457,8 @@ class Application(Gtk.Application):
         print("New Menu Option Pressed")
 
     def onSave(self, action, param):
-        print(self.window.currentWorkshop.filename)
+        self.window.fullSave()
 
-    def onSaveAs(self, action, param):
-        print("Save As Menu Option Pressed")
 
 if __name__ == "__main__":
     app = Application()
