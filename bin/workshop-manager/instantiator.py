@@ -67,7 +67,7 @@ def giverdesktop(workshopName):
 # Catch AJAX request
 @app.route('/generateTable')
 def giveWorkshopData():
-    return render_template('generate_table.html', templateAvailable=DataAggregation.agg_test.getAvailableWorkshops())
+    return render_template('generate_table.html', templateAvailable=DataAggregation.webdata_aggregator.getAvailableWorkshops())
 
 
 def signal_handler(signal, frame):
