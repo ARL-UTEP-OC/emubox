@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     try:
         #Let threads run until signal is caught
-        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread])
+        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator])
     except Exception as e:
         logging.error("An error occured in threads"+str(e))
         exit()
