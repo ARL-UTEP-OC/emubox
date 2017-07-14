@@ -7,8 +7,6 @@
     </head>
 
     <body>
-        <h1 align="center">Welcome to EmuBox</h1>
-        <h3 align="center">Please connect to one of the following with remote desktop.</h3>
         <table style="width:50%" border="1" cellpadding="5" cellspacing="5" align="center">
         <thead>
             <tr>
@@ -21,33 +19,40 @@
         </thead>
         <tbody>
         {% for unitInfo in templateAvailable %}
-        <tr>
-            <td>
-                <center>
-                {{ loop.index }}
-                </center>
-            </td>
-            <td>
-                {{ unitInfo["workshopName"] }}
-            </td>
-            <td>
-                There are {{unitInfo["queue"].qsize()}} workshops available!
-            </td>
-            <td>
-                {% for material in unitInfo["materials"] %}
-                {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/>
-                {% endfor %}
-            </td>
-            <td>
-                {% if unitInfo["queue"].qsize() %}
-                Windows: <a href="/ms-rdp/{{ unitInfo["workshopName"]}}">MS-RDP</a><br/>
-                Linux: <a href="/rdesktop/{{ unitInfo["workshopName"]}}">rdesktop</a>
-                {% endif %}
-            </td>
-        </tr>
+            <tr>
+                <td>
+                    <center>
+                    {{ loop.index }}
+                    </center>
+                </td>
+                <td>
+                    <center>
+                        {{ unitInfo["workshopName"] }}
+                    </center>
+                </td>
+                <td>
+                    <center>
+                        There are {{unitInfo["queue"].qsize()}} workshops available!
+                    </center>
+                </td>
+                <td>
+                    {% for material in unitInfo["materials"] %}
+                        <center>
+                            {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/>
+                        </center>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if unitInfo["queue"].qsize() %}
+                        <center>
+                            Windows: <a href="/ms-rdp/{{ unitInfo["workshopName"]}}">MS-RDP</a><br/>
+                            Linux: <a href="/rdesktop/{{ unitInfo["workshopName"]}}">rdesktop</a>
+                        </center>
+                    {% endif %}
+                </td>
+            </tr>
         {% endfor %}
         </tbody>
         </table>
     </body>
 </html>
-
