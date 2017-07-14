@@ -96,6 +96,7 @@ class BaseWidget(Gtk.Box):
         self.baseOutnameHorBox.pack_end(self.baseOutnameEntry, False, False, PADDING)
         self.vrdpBaseportHorBox.pack_end(self.vrdpBaseportEntry, False, False, PADDING)
 
+# This class is the widget inside of vmWidget
 class InternalnetBasenameWidget(Gtk.EventBox):
 
     def __init__(self):
@@ -171,6 +172,21 @@ class VMWidget(Gtk.Box):
             self.inetBasenameWidgetList.append(inetWidget)
             self.iNetVerBox.pack_start(inetWidget, False, False, 0)
 
+    def initializeSignals(self, eventHandler):
+        for widget in self.inetBasenameWidgetList:
+            widget.connect("button-press-event", eventHandler)
+
+    def addInet(self, eventHandler):
+        inet = InternalnetBasenameWidget()
+        inet.connect("button-press-event", eventHandler)
+        self.inetBasenameWidgetList.append(inet)
+        self.iNetVerBox.pack_start(inet, False, False, 0)
+
+    def removeInet(self, inetWidget):
+
+        if len(self.inetBasenameWidgetList) > 1:
+            self.iNetVerBox.remove(inetWidget)
+            self.inetBasenameWidgetList.remove(inetWidget)
 
 # This class is a widget that is a grid, it holds the structure of the tree view
 class WorkshopTreeWidget(Gtk.Grid):
@@ -183,6 +199,7 @@ class WorkshopTreeWidget(Gtk.Grid):
         # Initialized fields
         self.treeStore = Gtk.TreeStore(str)
         self.treeView = Gtk.TreeView(self.treeStore)
+        self.treeView.set_enable_search(False)
         self.scrollableTreeList = Gtk.ScrolledWindow()
         self.initializeContainers()
         self.drawTreeView()
@@ -200,6 +217,13 @@ class WorkshopTreeWidget(Gtk.Grid):
             for vm in workshop.vmList:
                 self.treeStore.append(treeIter, [vm.name])
 
+    def addNode(self, workshopName, vmName):
+        treeIter = self.treeStore.append(None, [workshopName])
+        self.treeStore.append(treeIter, [vmName])
+
+    def addChildNode(self, workshopTreeIter, vmName):
+        self.treeStore.append(self.treeStore.iter_parent(workshopTreeIter), [vmName])
+
     def drawTreeView(self):
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Workshops", renderer, text=0)
@@ -210,6 +234,52 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.scrollableTreeList.set_vexpand(True)
         self.attach(self.scrollableTreeList, 0, 0, 4, 10)
         self.scrollableTreeList.add(self.treeView)
+
+# This class is a general message dialog with entry
+class EntryDialog(Gtk.Dialog):
+
+    def __init__(self, parent, message):
+        Gtk.Dialog.__init__(self, "Name", parent, 0,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OK, Gtk.ResponseType.OK))
+
+        self.set_default_size(150, 100)
+        # This is the outer box, we need another box inside for formatting
+        self.dialogBox = self.get_content_area()
+        self.outerVertBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+
+        self.dialogBox.add(self.outerVertBox)
+
+        self.label = Gtk.Label(message)
+        self.entry = Gtk.Entry()
+        self.entryText = None
+
+        self.outerVertBox.pack_start(self.label, False, False, PADDING)
+        self.outerVertBox.pack_start(self.entry, False, False, PADDING)
+        self.set_modal(True)
+
+        self.connect("response", self.dialogResponseActionEvent)
+
+        self.show_all()
+
+        self.status = None
+
+    def dialogResponseActionEvent(self, dialog, responseID):
+        # OK was clicked and there is text
+        if responseID == Gtk.ResponseType.OK and not self.entry.get_text_length() < 1:
+            self.entryText = self.entry.get_text()
+            self.status = True
+
+        # Ok was clicked and there is no text
+        elif responseID == Gtk.ResponseType.OK and self.entry.get_text_length() < 1:
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "The entry must not be empty.")
+            dialog.run()
+            dialog.destroy()
+
+        # The operation was canceled
+        elif responseID == Gtk.ResponseType.CANCEL or responseID == Gtk.ResponseType.DELETE_EVENT:
+            self.entryText = None
+            self.status = True
 
 # This class contains the main window, its main container is a notebook
 class AppWindow(Gtk.ApplicationWindow):
@@ -253,19 +323,40 @@ class AppWindow(Gtk.ApplicationWindow):
         self.connect("delete-event", self.on_delete)
 
         # This is called when the action box is clicked
-        self.actionEventBox.connect("button-press-event", self.actionBoxEvent)
+        #self.actionEventBox.connect("button-press-event", self.actionBoxEvent)
         # This will be the menu for adding and taking away iNetEntryList
-        self.menu = Gtk.Menu()
-        item1 = Gtk.MenuItem("item1")
-        self.menu.append(item1)
-        item2 = Gtk.MenuItem("item2")
-        self.menu.append(item2)
+        self.inetMenu = Gtk.Menu()
+        addInet = Gtk.MenuItem("Add INet")
+        addInet.connect("activate", self.addInetEventHandler)
+        self.inetMenu.append(addInet)
+        removeInet = Gtk.MenuItem("Remove INet")
+        removeInet.connect("activate", self.removeInetEventHandler)
+        self.inetMenu.append(removeInet)
 
-    def actionBoxEvent(self, widget, event):
+        # Currentwidget in focus
+        self.focusedInetWidget = None
 
-        if event.button == 3:
-            self.menu.show_all()
-            self.menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+        # Here we will initialize signals for the tree view right clicked
+        self.workshopTree.treeView.connect("button-press-event", self.treeViewActionEvent)
+        self.focusedTreeIter = None
+
+        # Here we will create the menu for adding/removing workshops
+        self.workshopMenu = Gtk.Menu()
+        addWorkshop = Gtk.MenuItem("Add Workshop")
+        addWorkshop.connect("activate", self.addWorkshopActionEvent)
+        self.workshopMenu.append(addWorkshop)
+        removeWorkshop = Gtk.MenuItem("Remove Workshop")
+        removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
+        self.workshopMenu.append(removeWorkshop)
+
+        # Here we will create the menu for adding/removing vm's
+        self.vmMenu = Gtk.Menu()
+        addVM = Gtk.MenuItem("Add VM")
+        addVM.connect("activate", self.addVMActionEvent)
+        self.vmMenu.append(addVM)
+        removeVM = Gtk.MenuItem("Remove VM")
+        removeVM.connect("activate", self.removeVMActionEvent)
+        self.vmMenu.append(removeVM)
 
     def initializeContainers(self):
         self.add(self.windowBox)
@@ -364,6 +455,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.vmWidget.nameEntry.set_text(self.currentVM.name)
             self.vmWidget.vrdpEnabledEntry.set_text(self.currentVM.vrdpEnabled)
             self.vmWidget.loadInets(self.currentVM.internalnetBasenameList)
+            self.vmWidget.initializeSignals(self.inetActionEvent)
 
             self.actionBox.show_all()
 
@@ -447,10 +539,128 @@ class AppWindow(Gtk.ApplicationWindow):
         self.softSave()
         self.hardSave()
 
+    def inetActionEvent(self, widget, event):
+        if event.button == 3:
+
+            self.focusedInetWidget = widget
+
+            self.inetMenu.show_all()
+            self.inetMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+
+    def addInetEventHandler(self, menuItem):
+        self.vmWidget.addInet(self.inetActionEvent)
+        self.actionBox.show_all()
+
+    def removeInetEventHandler(self, menuItem):
+        self.vmWidget.removeInet(self.focusedInetWidget)
+        self.actionBox.show_all()
+
+    def treeViewActionEvent(self, treeView, event):
+        # Get the current treeview model
+        model = self.workshopTree.treeStore
+
+        if event.button == 3:
+            pathInfo= treeView.get_path_at_pos(event.x, event.y)
+
+            if pathInfo is not None:
+                path, column, xCoord, yCoord = pathInfo
+                treeIter = model.get_iter(path)
+                self.focusedTreeIter = treeIter
+                #print(model[treeIter][0])
+                if model.iter_has_child(treeIter):
+                    self.workshopMenu.show_all()
+                    self.workshopMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+
+                elif not model.iter_has_child(treeIter):
+                    self.vmMenu.show_all()
+                    self.vmMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+
+    def addNewWorkshop(self, workshopName, vmName):
+        workshop = Workshop()
+        workshop.filename = workshopName
+
+        workshop.filename = workshopName
+        workshop.pathToVBoxManage = "Path To VBoxManage"
+        workshop.ipAddress = "IP Address"
+        workshop.baseGroupName = "Base Group Name"
+        workshop.numOfClones = "Number of Clones"
+        workshop.cloneSnapshots = "Clone Snapshots"
+        workshop.linkedClones = "Linked Clones"
+        workshop.baseOutName = "Base Outname"
+        workshop.vrdpBaseport = "VRDP Baseport"
+
+        vm = VM()
+        vm.name = vmName
+        vm.vrdpEnabled = "VRDP Enabled"
+        vm.internalnetBasenameList.append("intnet")
+        workshop.vmList.append(vm)
+
+        self.workshopList.append(workshop)
+        self.workshopTree.addNode(workshop.filename, vm.name)
+
+        self.softSave()
+        self.hardSave()
+
+    def addNewVM(self, vmName):
+        vm = VM()
+        vm.name = vmName
+        vm.vrdpEnabled = "VRDP Enabled"
+        vm.internalnetBasenameList.append("intnet")
+
+        self.currentWorkshop.vmList.append(vm)
+        self.workshopTree.addChildNode(self.focusedTreeIter, vm.name)
+
+        self.softSave()
+        self.hardSave()
+
+    def addWorkshopActionEvent(self, menuItem):
+        workshopDialog = EntryDialog(self, "Enter a workshop name.")
+        workshopText = None
+
+        while workshopDialog.status != True:
+            response = workshopDialog.run()
+            workshopText = workshopDialog.entryText
+        workshopDialog.destroy()
+
+        if workshopText != None:
+            vmDialog = EntryDialog(self, "Enter a VM name.")
+            vmText = None
+            while not vmDialog.status == True:
+                response = vmDialog.run()
+                vmText = vmDialog.entryText
+            vmDialog.destroy()
+
+        if workshopText != None and vmText != None:
+            self.addNewWorkshop(workshopText, vmText)
+
+    def removeWorkshopActionEvent(self, menuItem):
+        model = self.workshopTree.treeStore
+        os.remove(WORKSHOP_CONFIG_DIRECTORY+"/"+self.currentWorkshop.filename+".xml")
+        self.workshopList.remove(self.currentWorkshop)
+        model.remove(self.focusedTreeIter)
+
+    def addVMActionEvent(self, menuItem):
+        vmDialog = EntryDialog(self, "Enter a VM name.")
+        vmText = None
+
+        while not vmDialog.status == True:
+            response = vmDialog.run()
+            vmText = vmDialog.entryText
+        vmDialog.destroy()
+
+        if vmText != None:
+            self.addNewVM(vmText)
+
+    def removeVMActionEvent(self, menuItem):
+        if len(self.currentWorkshop.vmList) > 1:
+            model = self.workshopTree.treeStore
+            self.currentWorkshop.vmList.remove(self.currentVM)
+            model.remove(self.focusedTreeIter)
+
     def on_delete(self, event, widget):
         self.fullSave()
 
-
+# This class is the main application
 class Application(Gtk.Application):
 
     def __init__(self, *args, **kwargs):
