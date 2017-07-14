@@ -50,7 +50,7 @@ def download(filename):
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @nocache
 def catch_all(path):
-    return render_template('show_data.html', templateAvailable=DataAggregation.webdata_aggregator.aggregateAvailableWorkshops())
+    return render_template('index.html', templateAvailable=DataAggregation.webdata_aggregator.aggregateAvailableWorkshops())
 
 # Catch rdp requests
 @app.route('/ms-rdp/<workshopName>')
@@ -63,6 +63,12 @@ def giveRDP(workshopName):
 def giverdesktop(workshopName):
     availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
     return filter(lambda x: x["workshopName"] == workshopName, availableWorkshops)[0]["queue"].get()["rdesktop"]
+
+# Catch AJAX request
+@app.route('/generateTable')
+def giveWorkshopData():
+    return render_template('generate_table.html', templateAvailable=DataAggregation.webdata_aggregator.getAvailableWorkshops())
+
 
 def signal_handler(signal, frame):
     try:
@@ -92,7 +98,7 @@ if __name__ == '__main__':
 
     try:
         #Let threads run until signal is caught
-        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread])
+        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator])
     except Exception as e:
         logging.error("An error occured in threads"+str(e))
         exit()
