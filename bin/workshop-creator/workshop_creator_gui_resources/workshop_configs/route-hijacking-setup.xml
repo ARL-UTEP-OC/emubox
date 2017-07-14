@@ -8,7 +8,7 @@
     </network-config>
     <vm-set>
       <base-groupname>Route_Hijacking_Exercise</base-groupname>
-      <num-clones>d</num-clones>
+      <num-clones>8</num-clones>
       <clone-snapshots>true</clone-snapshots>
       <linked-clones>true</linked-clones>
       <base-outname>101</base-outname>

@@ -7,13 +7,18 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk
 
-from workshop_creator_gui_loader import Workshop
-from workshop_creator_gui_loader import VM
+from workshop_creator_gui_resources.gui_loader import Workshop
+from workshop_creator_gui_resources.gui_loader import VM
+from workshop_creator_gui_resources.gui_utilities import EntryDialog
+import workshop_creator_gui_resources.gui_constants as gui_constants
 
 # Constants
-BOX_SPACING = 5
-PADDING = 5
-WORKSHOP_CONFIG_DIRECTORY = "workshop_configs"
+BOX_SPACING = gui_constants.BOX_SPACING
+PADDING = gui_constants.PADDING
+WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
+GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
+VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
+
 
 # This class is a container that contains the base GUI
 class BaseWidget(Gtk.Box):
@@ -199,7 +204,6 @@ class WorkshopTreeWidget(Gtk.Grid):
         # Initialized fields
         self.treeStore = Gtk.TreeStore(str)
         self.treeView = Gtk.TreeView(self.treeStore)
-        self.treeView.set_enable_search(False)
         self.scrollableTreeList = Gtk.ScrolledWindow()
         self.initializeContainers()
         self.drawTreeView()
@@ -216,6 +220,9 @@ class WorkshopTreeWidget(Gtk.Grid):
 
             for vm in workshop.vmList:
                 self.treeStore.append(treeIter, [vm.name])
+
+    def clearTreeStore(self):
+        self.treeStore.clear()
 
     def addNode(self, workshopName, vmName):
         treeIter = self.treeStore.append(None, [workshopName])
@@ -234,52 +241,6 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.scrollableTreeList.set_vexpand(True)
         self.attach(self.scrollableTreeList, 0, 0, 4, 10)
         self.scrollableTreeList.add(self.treeView)
-
-# This class is a general message dialog with entry
-class EntryDialog(Gtk.Dialog):
-
-    def __init__(self, parent, message):
-        Gtk.Dialog.__init__(self, "Name", parent, 0,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_OK, Gtk.ResponseType.OK))
-
-        self.set_default_size(150, 100)
-        # This is the outer box, we need another box inside for formatting
-        self.dialogBox = self.get_content_area()
-        self.outerVertBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
-
-        self.dialogBox.add(self.outerVertBox)
-
-        self.label = Gtk.Label(message)
-        self.entry = Gtk.Entry()
-        self.entryText = None
-
-        self.outerVertBox.pack_start(self.label, False, False, PADDING)
-        self.outerVertBox.pack_start(self.entry, False, False, PADDING)
-        self.set_modal(True)
-
-        self.connect("response", self.dialogResponseActionEvent)
-
-        self.show_all()
-
-        self.status = None
-
-    def dialogResponseActionEvent(self, dialog, responseID):
-        # OK was clicked and there is text
-        if responseID == Gtk.ResponseType.OK and not self.entry.get_text_length() < 1:
-            self.entryText = self.entry.get_text()
-            self.status = True
-
-        # Ok was clicked and there is no text
-        elif responseID == Gtk.ResponseType.OK and self.entry.get_text_length() < 1:
-            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "The entry must not be empty.")
-            dialog.run()
-            dialog.destroy()
-
-        # The operation was canceled
-        elif responseID == Gtk.ResponseType.CANCEL or responseID == Gtk.ResponseType.DELETE_EVENT:
-            self.entryText = None
-            self.status = True
 
 # This class contains the main window, its main container is a notebook
 class AppWindow(Gtk.ApplicationWindow):
@@ -383,6 +344,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def onItemSelected(self, selection):
         model, treeiter = selection.get_selected()
+
+        if treeiter == None:
+            return
 
         self.softSave()
 
@@ -533,7 +497,7 @@ class AppWindow(Gtk.ApplicationWindow):
             tree = etree.ElementTree(root)
 
             # Write tree to XML config file
-            tree.write("workshop_configs/"+workshop.filename+".xml", pretty_print = True)
+            tree.write(WORKSHOP_CONFIG_DIRECTORY+workshop.filename+".xml", pretty_print = True)
 
     def fullSave(self):
         self.softSave()
@@ -681,7 +645,7 @@ class Application(Gtk.Application):
         action.connect("activate", self.onSave)
         self.add_action(action)
 
-        builder = Gtk.Builder.new_from_file("menuDescription.xml")
+        builder = Gtk.Builder.new_from_file(GUI_MENU_DESCRIPTION_DIRECTORY)
         self.set_menubar(builder.get_object("menubar"))
 
     def do_activate(self):
@@ -692,7 +656,7 @@ class Application(Gtk.Application):
         self.window.show_all()
 
     def onNew(self, action, param):
-        print("New Menu Option Pressed")
+        self.window.addWorkshopActionEvent(None)
 
     def onSave(self, action, param):
         self.window.fullSave()
