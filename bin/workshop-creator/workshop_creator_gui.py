@@ -10,6 +10,7 @@ from gi.repository import GLib, Gio, Gtk
 from workshop_creator_gui_resources.gui_loader import Workshop
 from workshop_creator_gui_resources.gui_loader import VM
 from workshop_creator_gui_resources.gui_utilities import EntryDialog
+from workshop_creator_gui_resources.gui_utilities import ListEntryDialog
 import workshop_creator_gui_resources.gui_constants as gui_constants
 
 # Constants
@@ -587,8 +588,9 @@ class AppWindow(Gtk.ApplicationWindow):
         workshopDialog.destroy()
 
         if workshopText != None:
-            vmDialog = EntryDialog(self, "Enter a VM name.")
+            vmDialog = ListEntryDialog(self, "Enter a VM name.")
             vmText = None
+
             while not vmDialog.status == True:
                 response = vmDialog.run()
                 vmText = vmDialog.entryText
@@ -604,7 +606,7 @@ class AppWindow(Gtk.ApplicationWindow):
         model.remove(self.focusedTreeIter)
 
     def addVMActionEvent(self, menuItem):
-        vmDialog = EntryDialog(self, "Enter a VM name.")
+        vmDialog = ListEntryDialog(self, "Enter a VM name.")
         vmText = None
 
         while not vmDialog.status == True:
