@@ -635,7 +635,6 @@ class Application(Gtk.Application):
                          **kwargs)
         self.window = None
 
-
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
