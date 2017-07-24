@@ -8,8 +8,8 @@
     </network-config>
     <vm-set>
       <base-groupname>Route_Hijacking_Exercise</base-groupname>
-      <num-clones>8</num-clones>
-      <clone-snapshots>true</clone-snapshots>
+      <num-clones>2</num-clones>
+      <clone-snapshots>false</clone-snapshots>
       <linked-clones>true</linked-clones>
       <base-outname>101</base-outname>
       <vrdp-baseport>1011</vrdp-baseport>

@@ -1,5 +1,11 @@
 import os
 import sys
+import subprocess
+import re
+import threading
+import shutil
+import zipfile
+import datetime
 
 from lxml import etree
 
@@ -11,6 +17,11 @@ from workshop_creator_gui_resources.gui_loader import Workshop
 from workshop_creator_gui_resources.gui_loader import VM
 from workshop_creator_gui_resources.gui_utilities import EntryDialog
 from workshop_creator_gui_resources.gui_utilities import ListEntryDialog
+from workshop_creator_gui_resources.gui_utilities import LoggingDialog
+from workshop_creator_gui_resources.gui_utilities import ExportImportProgressDialog
+from workshop_creator_gui_resources.gui_utilities import SpinnerDialog
+
+import workshop_creator_gui_resources.gui_utilities as gui_utilities
 import workshop_creator_gui_resources.gui_constants as gui_constants
 
 # Constants
@@ -302,23 +313,30 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopTree.treeView.connect("button-press-event", self.treeViewActionEvent)
         self.focusedTreeIter = None
 
-        # Here we will create the menu for adding/removing workshops
-        self.workshopMenu = Gtk.Menu()
-        addWorkshop = Gtk.MenuItem("Add Workshop")
-        addWorkshop.connect("activate", self.addWorkshopActionEvent)
-        self.workshopMenu.append(addWorkshop)
-        removeWorkshop = Gtk.MenuItem("Remove Workshop")
-        removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
-        self.workshopMenu.append(removeWorkshop)
+        # Here we will have all the menu items
+        self.addWorkshop = Gtk.MenuItem("Add Workshop")
+        self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
+        self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
+        self.removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
+        self.exportWorkshop = Gtk.MenuItem("Export Workshop")
+        self.exportWorkshop.connect("activate", self.exportWorkshopActionEvent)
 
-        # Here we will create the menu for adding/removing vm's
+        self.addVM = Gtk.MenuItem("Add VM")
+        self.addVM.connect("activate", self.addVMActionEvent)
+        self.removeVM = Gtk.MenuItem("Remove VM")
+        self.removeVM.connect("activate", self.removeVMActionEvent)
+
+
+        # Workshop context menu
+        self.workshopMenu = Gtk.Menu()
+        self.workshopMenu.append(self.addWorkshop)
+        self.workshopMenu.append(self.removeWorkshop)
+        self.workshopMenu.append(self.exportWorkshop)
+
+        # VM context menu
         self.vmMenu = Gtk.Menu()
-        addVM = Gtk.MenuItem("Add VM")
-        addVM.connect("activate", self.addVMActionEvent)
-        self.vmMenu.append(addVM)
-        removeVM = Gtk.MenuItem("Remove VM")
-        removeVM.connect("activate", self.removeVMActionEvent)
-        self.vmMenu.append(removeVM)
+        self.vmMenu.append(self.addVM)
+        self.vmMenu.append(self.removeVM)
 
     def initializeContainers(self):
         self.add(self.windowBox)
@@ -623,6 +641,155 @@ class AppWindow(Gtk.ApplicationWindow):
             self.currentWorkshop.vmList.remove(self.currentVM)
             model.remove(self.focusedTreeIter)
 
+    def exportWorkshopActionEvent(self, menuItem):
+
+        vmList = subprocess.check_output([VBOXMANAGE_DIRECTORY, "list", "vms"])
+        vmList = re.findall("\"(.*)\"", vmList)
+
+        for vm in self.currentWorkshop.vmList:
+            matchFound = False
+            for registeredVM in vmList:
+                if vm.name == registeredVM:
+                    matchFound = True
+                    break
+                matchFound = False
+
+        if not matchFound:
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "Not all VM's for this workshop are registered.")
+            dialog.run()
+            dialog.destroy()
+            return
+
+
+        dialog = Gtk.FileChooserDialog("Please choose a folder.", self,
+        Gtk.FileChooserAction.SELECT_FOLDER, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        response = dialog.run()
+        folderPath = None
+
+        total = len(self.currentWorkshop.vmList) * 11
+
+        currentTotal = []
+        currentTotal.append(0)
+
+        if response == Gtk.ResponseType.OK:
+            folderPath = dialog.get_filename()+"/"+self.currentWorkshop.filename
+            dialog.destroy()
+
+            if not os.path.exists(folderPath):
+                os.makedirs(folderPath)
+
+            for vm in self.currentWorkshop.vmList:
+                p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                t = threading.Thread(target=self.exportWorker, args=[p, vm.name, currentTotal])
+                t.start()
+
+            progress = ExportImportProgressDialog(self, "Exporting workshops...", currentTotal, total)
+            progress.run()
+
+            shutil.copy2("workshop_creator_gui_resources/workshop_configs/"+self.currentWorkshop.filename+".xml", folderPath)
+            spinnerDialog = SpinnerDialog(self, "Zipping files, this may take a few minutes...")
+            t = threading.Thread(target=self.zipWorker, args=[folderPath, spinnerDialog])
+            t.start()
+            spinnerDialog.run()
+            shutil.rmtree(folderPath)
+            gui_utilities.WarningDialog(self, "Export completed.")
+
+        elif response == Gtk.ResponseType.CANCEL:
+            dialog.destroy()
+
+    def exportWorker(self, process, workerID, currentTotal):
+
+        character = None
+        while process.poll() is None and character != "":
+            character = process.stdout.read(1)
+            if character == "%":
+                currentTotal[0] = currentTotal[0] + 1
+
+    def zipWorker(self, folderPath, spinnerDialog):
+        d = folderPath
+
+        os.chdir(os.path.dirname(d))
+        with zipfile.ZipFile(d + '.zip',
+                             "w",
+                             zipfile.ZIP_DEFLATED,
+                             allowZip64=True) as zf:
+            for root, _, filenames in os.walk(os.path.basename(d)):
+                for name in filenames:
+                    name = os.path.join(root, name)
+                    name = os.path.normpath(name)
+                    zf.write(name, name)
+
+        spinnerDialog.destroy()
+
+    def importActionEvent(self):
+        dialog = Gtk.FileChooserDialog("Please choose the zip you wish to import.", self,
+        Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        response = dialog.run()
+        zipPath = None
+
+        if response == Gtk.ResponseType.OK:
+            zipPath = dialog.get_filename()
+            tempPath = zipPath+"/../creatorImportTemp/"+os.path.splitext(os.path.basename(zipPath))[0]+"/"
+            baseTempPath = zipPath+"/../creatorImportTemp/"
+            dialog.destroy()
+
+            # First we need to unzip the import file to a temp folder
+            spinnerDialog = SpinnerDialog(self, "Unzipping files, this may take a few minutes...")
+            t = threading.Thread(target=self.unzipWorker, args=[zipPath, spinnerDialog])
+            t.start()
+            spinnerDialog.run()
+
+            ovaList = []
+            xmlList = []
+            # Get all files that end with .ova
+            for filename in os.listdir(tempPath):
+                if filename.endswith(".ova"):
+                    ovaList.append(filename)
+                elif filename.endswith(".xml"):
+                    xmlList.append(filename)
+
+            total = len(ovaList) * 22
+
+            currentTotal = []
+            currentTotal.append(0)
+
+            threads = []
+            for ova in ovaList:
+                p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath+ova], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                t = threading.Thread(target=self.importWorker, args=[p, currentTotal])
+                threads.append(t)
+                t.start()
+
+            progress = ExportImportProgressDialog(self, "Importing workshops...", currentTotal, total)
+            progress.run()
+
+            for xml in xmlList:
+                shutil.copy2(tempPath+xml, WORKSHOP_CONFIG_DIRECTORY)
+                shutil.rmtree(baseTempPath)
+
+
+
+        elif response == Gtk.ResponseType.CANCEL:
+            dialog.destroy()
+
+    def importWorker(self, process, currentTotal):
+
+        character = None
+        while process.poll() is None and character != "":
+            character = process.stdout.read(1)
+            if character == "%":
+                currentTotal[0] = currentTotal[0] + 1
+
+    def unzipWorker(self, zipPath, spinnerDialog):
+        unzip = zipfile.ZipFile(zipPath, 'r')
+        unzip.extractall(zipPath+"/../creatorImportTemp")
+        unzip.close()
+        spinnerDialog.destroy()
+
     def on_delete(self, event, widget):
         self.fullSave()
 
@@ -646,6 +813,14 @@ class Application(Gtk.Application):
         action.connect("activate", self.onSave)
         self.add_action(action)
 
+        action = Gio.SimpleAction.new("run", None)
+        action.connect("activate", self.onRun)
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("import", None)
+        action.connect("activate", self.onImport)
+        self.add_action(action)
+
         builder = Gtk.Builder.new_from_file(GUI_MENU_DESCRIPTION_DIRECTORY)
         self.set_menubar(builder.get_object("menubar"))
 
@@ -661,6 +836,23 @@ class Application(Gtk.Application):
 
     def onSave(self, action, param):
         self.window.fullSave()
+
+    def onRun(self, action, param):
+        if self.window.currentWorkshop is None:
+            gui_utilities.WarningDialog(self.window, "You must select a workshop before you can run the creator.")
+            return
+
+        workshopName = self.window.currentWorkshop.filename
+        loggingDialog = LoggingDialog(self.window, workshopName)
+        loggingDialog.run()
+
+    def onImport(self, action, param):
+        self.window.importActionEvent()
+        self.window.fullSave()
+        self.window.destroy()
+        self.window = AppWindow(application=self, title="Workshop Creator GUI")
+        self.window.present()
+        self.window.show_all()
 
 
 if __name__ == "__main__":
