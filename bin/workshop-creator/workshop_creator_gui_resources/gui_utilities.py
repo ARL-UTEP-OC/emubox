@@ -195,9 +195,9 @@ class LoggingDialog(Gtk.Dialog):
         self.connect("response", self.dialogResponseActionEvent)
         self.show_all()
 
-        process = subprocess.Popen(["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        t = threading.Thread(target=self.runWorker, args=[process])
-        t.start()
+        self.process = subprocess.Popen(["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.t = threading.Thread(target=self.runWorker, args=[self.process])
+        self.t.start()
 
     def runWorker(self, process):
         end = self.textBuffer.get_end_iter()
@@ -209,7 +209,7 @@ class LoggingDialog(Gtk.Dialog):
             GObject.idle_add(self.addLine, line)
         end = self.textBuffer.get_end_iter()
         self.textBuffer.insert(end, "Workshop Creator Finished...\n")
-        self.set_response_sensitive(Gtk.ResponseType.OK, False)
+        self.set_response_sensitive(Gtk.ResponseType.OK, True)
 
     def addLine(self, line):
         end = self.textBuffer.get_end_iter()
@@ -217,9 +217,8 @@ class LoggingDialog(Gtk.Dialog):
 
     def dialogResponseActionEvent(self, dialog, responseID):
         # OK was clicked and there is text
-        if responseID == Gtk.ResponseType.OK and t.poll() is not None:
-            self.entryText = self.entry.get_text()
-            self.status = True
+        if responseID == Gtk.ResponseType.OK and self.process.poll() is not None:
+            self.destroy()
 
 
 class ExportImportProgressDialog(Gtk.Dialog):
