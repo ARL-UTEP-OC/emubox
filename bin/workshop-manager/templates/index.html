@@ -1,28 +1,67 @@
+<!DOCTYPE html>
 <html>
     <head>
+        <title>EmuBox</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     </head>
 
     <body>
         <h1 align="center">Welcome to EmuBox</h1>
         <h3 align="center">Please connect to one of the following with remote desktop.</h3>
 
-        <table id="workshops_table", style="width:100%", align="center"></table>
-
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <table style="width:50%" border="1" cellpadding="5" cellspacing="5" align="center">
+        <thead>
+            <tr>
+                <th>Workshop Name</th>
+                <th>Number Available</th>
+                <th>Materials</th>
+                <th>Connection Link</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for unitInfo in templateAvailable %}
+            <tr>
+                <td>
+                    <center> {{ unitInfo["workshopName"] }} </center>
+                </td>
+                <td>
+                    <center> There <span class="workshop_queue" id="{{ unitInfo["workshopName"] }}"></span> available! </center>
+                </td>
+                <td>
+                    {% for material in unitInfo["materials"] %}
+                        <center> {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/> </center>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if unitInfo["queue"].qsize() %}
+                        <center>
+                            Windows: <a href="/ms-rdp/{{ unitInfo["workshopName"]}}">MS-RDP</a><br/>
+                            Linux: <a href="/rdesktop/{{ unitInfo["workshopName"]}}">rdesktop</a>
+                        </center>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        </table>
 
         <script>
-            window.setInterval(ajaxCall, 1000); // Poll every second
-
-            function ajaxCall() {
-                $.ajax({
-                    url: "/generateTable",
-                    success: function(response) {
-                        $("#workshops_table").html(response);
-                        },
-                    error: function() {
-                        {# Need to handle error here #}
-                    }
-                });
+            window.setInterval(updateQueueStatuses, 1000); // Call function every second
+            function updateQueueStatuses() {
+                    $(".workshop_queue").each(function() {
+                        var $this = $(this);
+                        $.ajax({
+                            url: "/getQueueSize/"+$(this).attr("id"),
+                            dataType: "json",
+                            success: function(response) {
+                                if (response == 1)
+                                    $this.text(" is 1 workshop");
+                                else
+                                    $this.text(" are " + response + " workshops ");
+                            }
+                        });
+                    });
             }
         </script>
     </body>
