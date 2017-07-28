@@ -50,7 +50,7 @@ def download(filename):
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @nocache
 def catch_all(path):
-    return render_template('index.html', templateAvailable=DataAggregation.webdata_aggregator.aggregateAvailableWorkshops())
+    return render_template('index.html', templateAvailable=DataAggregation.webdata_aggregator.getAvailableWorkshops())
 
 # Catch rdp requests
 @app.route('/ms-rdp/<workshopName>')
