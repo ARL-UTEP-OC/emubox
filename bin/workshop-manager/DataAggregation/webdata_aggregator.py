@@ -80,7 +80,7 @@ def getAggregatedInfo():
 
 def aggregateAvailableWorkshops():
     global availableWorkshops
-    availableInfo = filter(lambda x: x["state"] == "Available", info) # get list of available workshops
+    availableInfo = filter(lambda x: x["state"] == "Available", aggregatedInfo) # get list of available workshops
     availableWorkshops = []
     while len(availableInfo) > 0:
         curr_workshop = availableInfo[0] # take first available workshop and get tmp list of all other workshops like it
