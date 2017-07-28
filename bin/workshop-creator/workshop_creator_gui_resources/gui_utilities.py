@@ -17,6 +17,7 @@ PADDING = gui_constants.PADDING
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
+WORKSHOP_CREATOR_DIRECTORY = gui_constants.WORKSHOP_CREATOR_DIRECTORY
 
 
 # This class is a general message dialog with entry
@@ -194,7 +195,7 @@ class LoggingDialog(Gtk.Dialog):
         self.connect("response", self.dialogResponseActionEvent)
         self.show_all()
 
-        self.process = subprocess.Popen(["python", "workshop-creator.py", WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.process = subprocess.Popen(["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.t = threading.Thread(target=self.runWorker, args=[self.process])
         self.t.start()
 
