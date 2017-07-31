@@ -55,7 +55,7 @@ def catch_all(path):
 # Catch rdp requests
 @app.route('/ms-rdp/<workshopName>')
 def giveRDP(workshopName):
-    workshop = filter(lambda x: x["workshopName"] == workshopName, DataAggregation.agg_test.getAvailableWorkshops())[0]
+    workshop = filter(lambda x: x["workshopName"] == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
     if workshop["queue"].qsize():
         return workshop["queue"].get()["ms-rdp"]
     return "Sorry, there are no workshops available."
@@ -63,7 +63,7 @@ def giveRDP(workshopName):
 # Catch rdesktop requests
 @app.route('/rdesktop/<workshopName>')
 def giverdesktop(workshopName):
-    workshop = filter(lambda x: x["workshopName"] == workshopName, DataAggregation.agg_test.getAvailableWorkshops())[0]
+    workshop = filter(lambda x: x["workshopName"] == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
     if workshop["queue"].qsize():
         return workshop["queue"].get()["rdesktop"]
     return "Sorry, there are no workshops available."
@@ -71,7 +71,7 @@ def giverdesktop(workshopName):
 # Catch AJAX Requests for Queue Size
 @app.route('/getQueueSize/<workshopName>')
 def giveQueueSize(workshopName):
-    availableWorkshops = DataAggregation.agg_test.getAvailableWorkshops()
+    availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
     return jsonify(filter(lambda x: x["workshopName"] == workshopName, availableWorkshops)[0]["queue"].qsize())
 
 
