@@ -30,6 +30,7 @@ PADDING = gui_constants.PADDING
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
+WORKSHOP_CREATOR_DIRECTORY = gui_constants.WORKSHOP_CREATOR_DIRECTORY
 
 
 # This class is a container that contains the base GUI
@@ -668,10 +669,10 @@ class AppWindow(Gtk.ApplicationWindow):
         response = dialog.run()
         folderPath = None
 
-        total = len(self.currentWorkshop.vmList) * 11
+        #total = len(self.currentWorkshop.vmList) * 11
 
-        currentTotal = []
-        currentTotal.append(0)
+        #currentTotal = []
+        #currentTotal.append(0)
 
         if response == Gtk.ResponseType.OK:
             folderPath = dialog.get_filename()+"/"+self.currentWorkshop.filename
@@ -681,12 +682,12 @@ class AppWindow(Gtk.ApplicationWindow):
                 os.makedirs(folderPath)
 
             for vm in self.currentWorkshop.vmList:
-                p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                t = threading.Thread(target=self.exportWorker, args=[p, vm.name, currentTotal])
-                t.start()
+                #p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                #t = threading.Thread(target=self.exportWorker, args=[p, vm.name, currentTotal])
+                #t.start()
 
-            progress = ExportImportProgressDialog(self, "Exporting workshops...", currentTotal, total)
-            progress.run()
+                progress = LoggingDialog(self, "Export", [VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"])
+                progress.run()
 
             shutil.copy2("workshop_creator_gui_resources/workshop_configs/"+self.currentWorkshop.filename+".xml", folderPath)
             spinnerDialog = SpinnerDialog(self, "Zipping files, this may take a few minutes...")
@@ -752,20 +753,20 @@ class AppWindow(Gtk.ApplicationWindow):
                 elif filename.endswith(".xml"):
                     xmlList.append(filename)
 
-            total = len(ovaList) * 22
+            #total = len(ovaList) * 22
 
-            currentTotal = []
-            currentTotal.append(0)
+            #currentTotal = []
+            #currentTotal.append(0)
 
-            threads = []
+            #threads = []
             for ova in ovaList:
-                p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath+ova], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                t = threading.Thread(target=self.importWorker, args=[p, currentTotal])
-                threads.append(t)
-                t.start()
+                #p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath+ova], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                #t = threading.Thread(target=self.importWorker, args=[p, currentTotal])
+                #threads.append(t)
+                #t.start()
 
-            progress = ExportImportProgressDialog(self, "Importing workshops...", currentTotal, total)
-            progress.run()
+                progress = LoggingDialog(self, "Import", [VBOXMANAGE_DIRECTORY, "import", tempPath+ova])
+                progress.run()
 
             for xml in xmlList:
                 shutil.copy2(tempPath+xml, WORKSHOP_CONFIG_DIRECTORY)
@@ -843,7 +844,8 @@ class Application(Gtk.Application):
             return
 
         workshopName = self.window.currentWorkshop.filename
-        loggingDialog = LoggingDialog(self.window, workshopName)
+        command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
+        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
         loggingDialog.run()
 
     def onImport(self, action, param):

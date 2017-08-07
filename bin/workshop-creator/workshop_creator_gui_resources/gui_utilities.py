@@ -168,9 +168,12 @@ class ListEntryDialog(Gtk.Dialog):
 
 class LoggingDialog(Gtk.Dialog):
 
-    def __init__(self, parent, workshopName):
-        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0,
+    def __init__(self, parent, processName, processCommand):
+        Gtk.Dialog.__init__(self, processName, parent, 0,
             (Gtk.STOCK_OK, Gtk.ResponseType.OK))
+
+        self.processName = processName
+        self.processCommand = processCommand
 
         self.set_default_size(500, 500)
         self.set_deletable(False)
@@ -195,20 +198,21 @@ class LoggingDialog(Gtk.Dialog):
         self.connect("response", self.dialogResponseActionEvent)
         self.show_all()
 
-        self.process = subprocess.Popen(["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # command example ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
+        self.process = subprocess.Popen(self.processCommand, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.t = threading.Thread(target=self.runWorker, args=[self.process])
         self.t.start()
 
     def runWorker(self, process):
         end = self.textBuffer.get_end_iter()
-        self.textBuffer.insert(end, "Starting Workshop Creator...\n")
+        self.textBuffer.insert(end, "Starting "+self.processName+"...\n")
         for line in iter(process.stdout.readline, b''):
             end = self.textBuffer.get_end_iter()
             line = line.strip()+"\n"
             # idle_add is needed for a thread-safe function, without it an assertion error will occur
             GObject.idle_add(self.addLine, line)
         end = self.textBuffer.get_end_iter()
-        self.textBuffer.insert(end, "Workshop Creator Finished...\n")
+        self.textBuffer.insert(end, self.processName+" Finished...\n")
         self.set_response_sensitive(Gtk.ResponseType.OK, True)
 
     def addLine(self, line):
