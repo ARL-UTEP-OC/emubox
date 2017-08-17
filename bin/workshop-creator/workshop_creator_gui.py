@@ -352,6 +352,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.scrolledActionBox.set_min_content_width(400)
         self.scrolledActionBox.set_min_content_height(600)
 
+    # This will load xml files
     def loadXMLFiles(self, directory):
 
         # Here we will iterate through all the files that end with .xml
@@ -443,6 +444,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
             self.actionBox.show_all()
 
+    # This handles clicking the vboxpath
     def onVBoxPathClicked(self, button):
         dialog = Gtk.FileChooserDialog("Please choose a file", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -459,6 +461,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         dialog.destroy()
 
+    # Will save all changes to ram
     def softSave(self):
 
         if self.isParent == True:
@@ -480,6 +483,7 @@ class AppWindow(Gtk.ApplicationWindow):
             for inetWidget in self.vmWidget.inetBasenameWidgetList:
                 self.currentVM.internalnetBasenameList.append(inetWidget.entry.get_text())
 
+    # Will save all changed to the disk
     def hardSave(self):
 
         for workshop in self.workshopList:
@@ -519,6 +523,7 @@ class AppWindow(Gtk.ApplicationWindow):
             # Write tree to XML config file
             tree.write(WORKSHOP_CONFIG_DIRECTORY+workshop.filename+".xml", pretty_print = True)
 
+    # Performs a softsave then a hardsave
     def fullSave(self):
         self.softSave()
         self.hardSave()
@@ -642,6 +647,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.currentWorkshop.vmList.remove(self.currentVM)
             model.remove(self.focusedTreeIter)
 
+    # Event, executes when export is called
     def exportWorkshopActionEvent(self, menuItem):
 
         vmList = subprocess.check_output([VBOXMANAGE_DIRECTORY, "list", "vms"])
@@ -700,6 +706,7 @@ class AppWindow(Gtk.ApplicationWindow):
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
+    # Thread function, exports to file
     def exportWorker(self, process, workerID, currentTotal):
 
         character = None
@@ -708,6 +715,7 @@ class AppWindow(Gtk.ApplicationWindow):
             if character == "%":
                 currentTotal[0] = currentTotal[0] + 1
 
+    # Thread function, performs zipping operaiton
     def zipWorker(self, folderPath, spinnerDialog):
         d = folderPath
 
@@ -724,6 +732,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         spinnerDialog.destroy()
 
+    # Event, executes when import is called
     def importActionEvent(self):
         dialog = Gtk.FileChooserDialog("Please choose the zip you wish to import.", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -777,6 +786,7 @@ class AppWindow(Gtk.ApplicationWindow):
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
+    # Thread function, imports files
     def importWorker(self, process, currentTotal):
 
         character = None
@@ -785,12 +795,14 @@ class AppWindow(Gtk.ApplicationWindow):
             if character == "%":
                 currentTotal[0] = currentTotal[0] + 1
 
+    # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         unzip = zipfile.ZipFile(zipPath, 'r')
         unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.close()
         spinnerDialog.destroy()
 
+    # Executes when the window is closed
     def on_delete(self, event, widget):
         self.fullSave()
 
