@@ -7,7 +7,7 @@ import threading
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import GLib, Gio, Gtk, GObject
+from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 
 import gui_constants as gui_constants
 
@@ -210,7 +210,11 @@ class LoggingDialog(Gtk.Dialog):
             end = self.textBuffer.get_end_iter()
             line = line.strip()+"\n"
             # idle_add is needed for a thread-safe function, without it an assertion error will occur
-            GObject.idle_add(self.addLine, line)
+            #GObject.idle_add(self.addLine, line)
+            Gdk.threads_enter()
+            end = self.textBuffer.get_end_iter()
+            self.textBuffer.insert(end, line)
+            Gdk.threads_leave()
         end = self.textBuffer.get_end_iter()
         self.textBuffer.insert(end, self.processName+" Finished...\n")
         self.set_response_sensitive(Gtk.ResponseType.OK, True)

@@ -11,7 +11,7 @@ from lxml import etree
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import GLib, Gio, Gtk
+from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 
 from workshop_creator_gui_resources.gui_loader import Workshop
 from workshop_creator_gui_resources.gui_loader import VM
@@ -870,5 +870,7 @@ class Application(Gtk.Application):
 
 
 if __name__ == "__main__":
+    GObject.threads_init()
+    Gdk.threads_init()
     app = Application()
     app.run(sys.argv)
