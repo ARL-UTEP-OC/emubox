@@ -6,29 +6,28 @@ gevent.monkey.patch_all()
 
 import os
 
-#to reduce stdout
+# to reduce stdout
 import logging
 
-#catch signal for quitting
+# catch signal for quitting
 import signal
 
-#Flask imports
+# Flask imports
 from flask import Flask
 from flask import make_response
 from functools import wraps, update_wrapper
 from datetime import datetime
 from flask import render_template
 from flask import send_from_directory
-#DataAggregation
-import DataAggregation.webdata_aggregator
-
 from flask import jsonify
 
+# DataAggregation
+import DataAggregation.webdata_aggregator
 
-#VM State Manager
+# VM State Manager
 import VMStateManager.vbox_monitor
 
-#######Webserver commands#########
+# Webserver commands
 app = Flask(__name__)
 app.debug = True
 
@@ -53,30 +52,30 @@ def download(filename):
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @nocache
 def catch_all(path):
+    """ Handles all requests to the main index page of the Web Server. """
     return render_template('index.html', templateAvailable=DataAggregation.webdata_aggregator.getAvailableWorkshops())
 
-# Catch rdp requests
 @app.route('/ms-rdp/<workshopName>')
 def giveRDP(workshopName):
-    workshop = filter(lambda x: x["workshopName"] == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
-    if workshop["queue"].qsize():
-        return workshop["queue"].get()["ms-rdp"]
+    """ Catch rdp requests. """
+    workshop = filter(lambda x: x.workshopName == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
+    if workshop.q.qsize():
+        return workshop.q.get().ms_rdp
     return "Sorry, there are no workshops available."
 
-# Catch rdesktop requests
 @app.route('/rdesktop/<workshopName>')
 def giverdesktop(workshopName):
-    workshop = filter(lambda x: x["workshopName"] == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
-    if workshop["queue"].qsize():
-        return workshop["queue"].get()["rdesktop"]
+    """ Catch rdesktop requests. """
+    workshop = filter(lambda x: x.workshopName == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
+    if workshop.q.qsize():
+        return workshop.q.get().rdesktop
     return "Sorry, there are no workshops available."
 
-# Catch AJAX Requests for Queue Size
 @app.route('/getQueueSize/<workshopName>')
 def giveQueueSize(workshopName):
+    """ Catch AJAX Requests for Queue Size. """
     availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
-    return jsonify(filter(lambda x: x["workshopName"] == workshopName, availableWorkshops)[0]["queue"].qsize())
-
+    return jsonify(filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0].q.qsize())
 
 def signal_handler(signal, frame):
     try:
@@ -105,8 +104,8 @@ if __name__ == '__main__':
     dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateData())
 
     try:
-        #Let threads run until signal is caught
+        # Let threads run until signal is caught
         gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator])
     except Exception as e:
-        logging.error("An error occured in threads"+str(e))
+        logging.error("An error occurred in threads" + str(e))
         exit()

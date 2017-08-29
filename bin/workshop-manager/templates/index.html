@@ -20,24 +20,24 @@
             </tr>
         </thead>
         <tbody>
-        {% for unitInfo in templateAvailable %}
+        {% for workshop in templateAvailable %}
             <tr>
                 <td>
-                    <center> {{ unitInfo["workshopName"] }} </center>
+                    <center> {{ workshop.workshopName }} </center>
                 </td>
                 <td>
-                    <center> There <span class="workshop_queue" id="{{ unitInfo["workshopName"] }}"></span> available! </center>
+                    <center> There <span class="workshop_queue" id="{{ workshop.workshopName }}"></span> available! </center>
                 </td>
                 <td>
-                    {% for material in unitInfo["materials"] %}
+                    {% for material in workshop.materials %}
                         <center> {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/> </center>
                     {% endfor %}
                 </td>
                 <td>
-                    {% if unitInfo["queue"].qsize() %}
+                    {% if workshop.q.qsize() %}
                         <center>
-                            Windows: <a href="/ms-rdp/{{ unitInfo["workshopName"]}}">MS-RDP</a><br/>
-                            Linux: <a href="/rdesktop/{{ unitInfo["workshopName"]}}">rdesktop</a>
+                            Windows: <a href="/ms-rdp/{{ workshop.workshopName}}">MS-RDP</a><br/>
+                            Linux: <a href="/ms-rdp/{{ workshop.workshopName}}">rdesktop</a>
                         </center>
                     {% endif %}
                 </td>
