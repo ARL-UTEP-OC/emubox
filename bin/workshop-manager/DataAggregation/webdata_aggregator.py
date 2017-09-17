@@ -91,7 +91,7 @@ def aggregateAvailableWorkshops():
     availableWorkshops = []
     while len(availableInfo) > 0:
         curr_workshop_unit = availableInfo[0] # take first available workshop and get tmp list of all other workshops like it
-        curr_workshop = Workshop(curr_workshop_unit.workshopName, curr_workshop.materials)
+        curr_workshop = Workshop(curr_workshop_unit.workshopName, curr_workshop_unit.materials)
         tmp = filter(lambda x: x.workshopName == curr_workshop.workshopName, availableInfo)
         for w in tmp:  # put all like-workshops in a queue
             curr_workshop.q.put(w)
