@@ -75,7 +75,10 @@ def giverdesktop(workshopName):
 def giveQueueSize(workshopName):
     """ Catch AJAX Requests for Queue Size. """
     availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
-    return jsonify(filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0].q.qsize())
+    if (availableWorkshops):
+        return jsonify(filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0].q.qsize())
+    else:
+        return jsonify("0")
 
 def signal_handler(signal, frame):
     try:
