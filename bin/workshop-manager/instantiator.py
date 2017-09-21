@@ -60,7 +60,8 @@ def giveRDP(workshopName):
     """ Catch rdp requests. """
     workshop = filter(lambda x: x.workshopName == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
     if workshop.q.qsize():
-        return workshop.q.get().ms_rdp
+        downloads = os.path.join(app.root_path, "")
+        return send_from_directory(directory=downloads, as_attachment=True, filename=workshop.q.get().ms_rdp, mimetype='application/octet-stream')
     return "Sorry, there are no workshops available."
 
 @app.route('/rdesktop/<workshopName>')
@@ -68,7 +69,8 @@ def giverdesktop(workshopName):
     """ Catch rdesktop requests. """
     workshop = filter(lambda x: x.workshopName == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
     if workshop.q.qsize():
-        return workshop.q.get().rdesktop
+        downloads = os.path.join(app.root_path, "")
+        return send_from_directory(directory=downloads, as_attachment=True, filename=workshop.q.get().rdesktop, mimetype='application/octet-stream')
     return "Sorry, there are no workshops available."
 
 @app.route('/getQueueSize/<workshopName>')
