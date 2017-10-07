@@ -1,3 +1,4 @@
+from __future__ import division
 import os
 import sys
 import subprocess
@@ -13,15 +14,10 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 
-from workshop_creator_gui_resources.gui_loader import Workshop
-from workshop_creator_gui_resources.gui_loader import VM
-from workshop_creator_gui_resources.gui_utilities import EntryDialog
-from workshop_creator_gui_resources.gui_utilities import ListEntryDialog
-from workshop_creator_gui_resources.gui_utilities import LoggingDialog
-from workshop_creator_gui_resources.gui_utilities import ExportImportProgressDialog
-from workshop_creator_gui_resources.gui_utilities import SpinnerDialog
+from workshop_creator_gui_resources.model import Workshop
+from workshop_creator_gui_resources.model import VM
+from workshop_creator_gui_resources.model import Session
 
-import workshop_creator_gui_resources.gui_utilities as gui_utilities
 import workshop_creator_gui_resources.gui_constants as gui_constants
 
 # Constants
@@ -242,7 +238,7 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.treeStore.append(treeIter, [vmName])
 
     def addChildNode(self, workshopTreeIter, vmName):
-        self.treeStore.append(self.treeStore.iter_parent(workshopTreeIter), [vmName])
+        self.treeStore.append(workshopTreeIter, [vmName])
 
     def drawTreeView(self):
         renderer = Gtk.CellRendererText()
@@ -273,17 +269,13 @@ class AppWindow(Gtk.ApplicationWindow):
         self.baseWidget = BaseWidget()
         self.vmWidget = VMWidget()
 
-        # Workshop config file list
-        self.workshopList = []
-
-        self.currentWorkshop = None
-        self.currentVM = None
+        # if the currently highlighted tree element is a parent, its a workshop
         self.isParent = None
 
         # Initialization
         self.initializeContainers()
-        self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
-        self.workshopTree.populateTreeStore(self.workshopList)
+        self.session=Session()
+        self.workshopTree.populateTreeStore(self.session.workshopList)
 
         # Signal initialization
         # This will handle when the tree selection is changed
@@ -317,6 +309,8 @@ class AppWindow(Gtk.ApplicationWindow):
         # Here we will have all the menu items
         self.addWorkshop = Gtk.MenuItem("Add Workshop")
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
+        self.createWorkshop = Gtk.MenuItem("Run Workshop")
+        self.createWorkshop.connect("activate", self.runWorkshopActionEvent)
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
         self.removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
         self.exportWorkshop = Gtk.MenuItem("Export Workshop")
@@ -330,14 +324,16 @@ class AppWindow(Gtk.ApplicationWindow):
 
         # Workshop context menu
         self.workshopMenu = Gtk.Menu()
-        self.workshopMenu.append(self.addWorkshop)
+        self.workshopMenu.append(self.addVM)
+        self.workshopMenu.append(Gtk.SeparatorMenuItem())
+        self.workshopMenu.append(self.createWorkshop)
         self.workshopMenu.append(self.removeWorkshop)
         self.workshopMenu.append(self.exportWorkshop)
 
         # VM context menu
         self.vmMenu = Gtk.Menu()
-        self.vmMenu.append(self.addVM)
         self.vmMenu.append(self.removeVM)
+        
 
     def initializeContainers(self):
         self.add(self.windowBox)
@@ -352,17 +348,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.scrolledActionBox.set_min_content_width(400)
         self.scrolledActionBox.set_min_content_height(600)
 
-    # This will load xml files
-    def loadXMLFiles(self, directory):
-
-        # Here we will iterate through all the files that end with .xml
-        #in the workshop_configs directory
-        for filename in os.listdir(directory):
-            if filename.endswith(".xml"):
-                workshop = Workshop()
-                workshop.loadFileConfig(filename)
-                self.workshopList.append(workshop)
-
     def onItemSelected(self, selection):
         model, treeiter = selection.get_selected()
 
@@ -374,12 +359,12 @@ class AppWindow(Gtk.ApplicationWindow):
         if model.iter_has_child(treeiter):
             self.isParent = True
             filename = model[treeiter][0]
-            self.currentWorkshop = None
+            self.session.currentWorkshop = None
             matchFound = False
 
-            for workshop in self.workshopList:
+            for workshop in self.session.workshopList:
                 if filename == workshop.filename:
-                    self.currentWorkshop = workshop
+                    self.session.currentWorkshop = workshop
                     matchFound = True
                     break
 
@@ -393,14 +378,14 @@ class AppWindow(Gtk.ApplicationWindow):
 
             self.scrolledInnerBox.pack_start(self.baseWidget, False, False, PADDING)
 
-            self.baseWidget.vBoxManageEntry.set_text(self.currentWorkshop.pathToVBoxManage)
-            self.baseWidget.ipAddressEntry.set_text(self.currentWorkshop.ipAddress)
-            self.baseWidget.baseGroupNameEntry.set_text(self.currentWorkshop.baseGroupName)
-            self.baseWidget.numClonesEntry.set_text(self.currentWorkshop.numOfClones)
-            self.baseWidget.cloneSnapshotsEntry.set_text(self.currentWorkshop.cloneSnapshots)
-            self.baseWidget.linkedClonesEntry.set_text(self.currentWorkshop.linkedClones)
-            self.baseWidget.baseOutnameEntry.set_text(self.currentWorkshop.baseOutName)
-            self.baseWidget.vrdpBaseportEntry.set_text(self.currentWorkshop.vrdpBaseport)
+            self.baseWidget.vBoxManageEntry.set_text(self.session.currentWorkshop.pathToVBoxManage)
+            self.baseWidget.ipAddressEntry.set_text(self.session.currentWorkshop.ipAddress)
+            self.baseWidget.baseGroupNameEntry.set_text(self.session.currentWorkshop.baseGroupName)
+            self.baseWidget.numClonesEntry.set_text(self.session.currentWorkshop.numOfClones)
+            self.baseWidget.cloneSnapshotsEntry.set_text(self.session.currentWorkshop.cloneSnapshots)
+            self.baseWidget.linkedClonesEntry.set_text(self.session.currentWorkshop.linkedClones)
+            self.baseWidget.baseOutnameEntry.set_text(self.session.currentWorkshop.baseOutName)
+            self.baseWidget.vrdpBaseportEntry.set_text(self.session.currentWorkshop.vrdpBaseport)
 
             self.actionBox.show_all()
 
@@ -409,12 +394,12 @@ class AppWindow(Gtk.ApplicationWindow):
             vmName = model[treeiter][0]
             treeiter = model.iter_parent(treeiter)
             filename = model[treeiter][0]
-            self.currentWorkshop = None
+            self.session.currentWorkshop = None
             matchFound = False
 
-            for workshop in self.workshopList:
+            for workshop in self.session.workshopList:
                 if filename == workshop.filename:
-                    self.currentWorkshop = workshop
+                    self.session.currentWorkshop = workshop
                     matchFound = True
                     break
 
@@ -423,9 +408,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
             self.currentVM = None
             matchFound = False
-            for vmWidget in self.currentWorkshop.vmList:
+            for vmWidget in self.session.currentWorkshop.vmList:
                 if vmName == vmWidget.name:
-                    self.currentVM = vmWidget
+                    self.session.currentVM = vmWidget
                     matchFound = True
                     break
 
@@ -437,9 +422,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
             self.scrolledInnerBox.pack_start(self.vmWidget, False, False, PADDING)
 
-            self.vmWidget.nameEntry.set_text(self.currentVM.name)
-            self.vmWidget.vrdpEnabledEntry.set_text(self.currentVM.vrdpEnabled)
-            self.vmWidget.loadInets(self.currentVM.internalnetBasenameList)
+            self.vmWidget.nameEntry.set_text(self.session.currentVM.name)
+            self.vmWidget.vrdpEnabledEntry.set_text(self.session.currentVM.vrdpEnabled)
+            self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
             self.vmWidget.initializeSignals(self.inetActionEvent)
 
             self.actionBox.show_all()
@@ -465,63 +450,20 @@ class AppWindow(Gtk.ApplicationWindow):
     def softSave(self):
 
         if self.isParent == True:
-            self.currentWorkshop.pathToVBoxManage = self.baseWidget.vBoxManageEntry.get_text()
-            self.currentWorkshop.ipAddress = self.baseWidget.ipAddressEntry.get_text()
-            self.currentWorkshop.baseGroupName = self.baseWidget.baseGroupNameEntry.get_text()
-            self.currentWorkshop.numOfClones = self.baseWidget.numClonesEntry.get_text()
-            self.currentWorkshop.cloneSnapshots = self.baseWidget.cloneSnapshotsEntry.get_text()
-            self.currentWorkshop.linkedClones = self.baseWidget.linkedClonesEntry.get_text()
-            self.currentWorkshop.baseOutName = self.baseWidget.baseOutnameEntry.get_text()
-            self.currentWorkshop.vrdpBaseport = self.baseWidget.vrdpBaseportEntry.get_text()
+            self.session.softSaveWorkshop(self.baseWidget.vBoxManageEntry.get_text(), self.baseWidget.ipAddressEntry.get_text(), self.baseWidget.baseGroupNameEntry.get_text(), self.baseWidget.numClonesEntry.get_text(), self.baseWidget.cloneSnapshotsEntry.get_text(), self.baseWidget.linkedClonesEntry.get_text(), self.baseWidget.baseOutnameEntry.get_text(), self.baseWidget.vrdpBaseportEntry.get_text())
 
         elif self.isParent == False:
 
-            self.currentVM.name = self.vmWidget.nameEntry.get_text()
-            self.currentVM.vrdpEnabled = self.vmWidget.vrdpEnabledEntry.get_text()
-
-            self.currentVM.internalnetBasenameList = []
+            self.holdInternalnetBasenameList = []
             for inetWidget in self.vmWidget.inetBasenameWidgetList:
-                self.currentVM.internalnetBasenameList.append(inetWidget.entry.get_text())
+                self.holdInternalnetBasenameList.append(inetWidget.entry.get_text())
+                
+            self.session.softSaveVM(self.vmWidget.nameEntry.get_text(), self.vmWidget.vrdpEnabledEntry.get_text(), self.holdInternalnetBasenameList)
 
     # Will save all changed to the disk
     def hardSave(self):
 
-        for workshop in self.workshopList:
-
-            # Create root of XML etree
-            root = etree.Element("xml")
-
-            # Populate vbox-setup fields
-            vbox_setup_element = etree.SubElement(root, "vbox-setup")
-            etree.SubElement(vbox_setup_element, "path-to-vboxmanage").text = workshop.pathToVBoxManage
-
-            # Populate testbed-setup fields
-            testbed_setup_element = etree.SubElement(root, "testbed-setup")
-            network_config_element = etree.SubElement(testbed_setup_element, "network-config")
-            etree.SubElement(network_config_element, "ip-address").text = workshop.ipAddress
-
-            # Populate vm-set fields
-            vm_set_element = etree.SubElement(testbed_setup_element, "vm-set")
-            etree.SubElement(vm_set_element, "base-groupname").text = workshop.baseGroupName
-            etree.SubElement(vm_set_element, "num-clones").text = workshop.numOfClones
-            etree.SubElement(vm_set_element, "clone-snapshots").text = workshop.cloneSnapshots
-            etree.SubElement(vm_set_element, "linked-clones").text = workshop.linkedClones
-            etree.SubElement(vm_set_element, "base-outname").text = workshop.baseOutName
-            etree.SubElement(vm_set_element, "vrdp-baseport").text = workshop.vrdpBaseport
-
-            # Iterate through list of VMs and whether vrdp is enabled for that vm
-            for vm in workshop.vmList:
-                vm_element = etree.SubElement(vm_set_element, "vm")
-                etree.SubElement(vm_element, "name").text = vm.name
-                etree.SubElement(vm_element, "vrdp-enabled").text = vm.vrdpEnabled
-                for internalnet in vm.internalnetBasenameList:
-                    etree.SubElement(vm_element, "internalnet-basename").text = internalnet
-
-            # Create tree for writing to XML file
-            tree = etree.ElementTree(root)
-
-            # Write tree to XML config file
-            tree.write(WORKSHOP_CONFIG_DIRECTORY+workshop.filename+".xml", pretty_print = True)
+        self.session.hardSave()
 
     # Performs a softsave then a hardsave
     def fullSave(self):
@@ -565,42 +507,33 @@ class AppWindow(Gtk.ApplicationWindow):
                     self.vmMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
     def addNewWorkshop(self, workshopName, vmName):
-        workshop = Workshop()
-        workshop.filename = workshopName
-
-        workshop.filename = workshopName
-        workshop.pathToVBoxManage = "Path To VBoxManage"
-        workshop.ipAddress = "IP Address"
-        workshop.baseGroupName = "Base Group Name"
-        workshop.numOfClones = "Number of Clones"
-        workshop.cloneSnapshots = "Clone Snapshots"
-        workshop.linkedClones = "Linked Clones"
-        workshop.baseOutName = "Base Outname"
-        workshop.vrdpBaseport = "VRDP Baseport"
-
-        vm = VM()
-        vm.name = vmName
-        vm.vrdpEnabled = "VRDP Enabled"
-        vm.internalnetBasenameList.append("intnet")
-        workshop.vmList.append(vm)
-
-        self.workshopList.append(workshop)
-        self.workshopTree.addNode(workshop.filename, vm.name)
+        self.session.addWorkshop(workshopName, vmName)
+        self.workshopTree.addNode(workshopName, vmName)
 
         self.softSave()
         self.hardSave()
 
     def addNewVM(self, vmName):
-        vm = VM()
-        vm.name = vmName
-        vm.vrdpEnabled = "VRDP Enabled"
-        vm.internalnetBasenameList.append("intnet")
-
-        self.currentWorkshop.vmList.append(vm)
-        self.workshopTree.addChildNode(self.focusedTreeIter, vm.name)
+        self.session.addVM(vmName)
+        self.workshopTree.addChildNode(self.focusedTreeIter, vmName)
 
         self.softSave()
         self.hardSave()
+
+    def runWorkshopActionEvent(self, menuItem):
+        if self.session.currentWorkshop is None:
+            WarningDialog(self.window, "You must select a workshop before you can run the workshop.")
+            return
+
+        workshopName = self.session.currentWorkshop.filename
+        command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
+        t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
+        t.start()
+#        self.runLogging("Workshop Creator", command)
+#        t = threading.Thread(target=self.runLogging, args=["Workshop Creator", command])
+#        t.start()
+#        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
+#        loggingDialog.run()
 
     def addWorkshopActionEvent(self, menuItem):
         workshopDialog = EntryDialog(self, "Enter a workshop name.")
@@ -624,10 +557,14 @@ class AppWindow(Gtk.ApplicationWindow):
             self.addNewWorkshop(workshopText, vmText)
 
     def removeWorkshopActionEvent(self, menuItem):
-        model = self.workshopTree.treeStore
-        os.remove(WORKSHOP_CONFIG_DIRECTORY+"/"+self.currentWorkshop.filename+".xml")
-        self.workshopList.remove(self.currentWorkshop)
-        model.remove(self.focusedTreeIter)
+        d = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK_CANCEL, "Are you sure you want to permanently delete this workshop?")
+        response = d.run()
+        d.destroy()
+        
+        if response == Gtk.ResponseType.OK:       
+            model = self.workshopTree.treeStore
+            self.session.removeWorkshop()
+            model.remove(self.focusedTreeIter)
 
     def addVMActionEvent(self, menuItem):
         vmDialog = ListEntryDialog(self, "Enter a VM name.")
@@ -642,24 +579,20 @@ class AppWindow(Gtk.ApplicationWindow):
             self.addNewVM(vmText)
 
     def removeVMActionEvent(self, menuItem):
-        if len(self.currentWorkshop.vmList) > 1:
+        if len(self.session.currentWorkshop.vmList) > 1:
             model = self.workshopTree.treeStore
-            self.currentWorkshop.vmList.remove(self.currentVM)
+            self.session.removeVM()
             model.remove(self.focusedTreeIter)
+        else:
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "Cannot delete the last VM in a Workshop.")
+            dialog.run()
+            dialog.destroy()
+
 
     # Event, executes when export is called
     def exportWorkshopActionEvent(self, menuItem):
 
-        vmList = subprocess.check_output([VBOXMANAGE_DIRECTORY, "list", "vms"])
-        vmList = re.findall("\"(.*)\"", vmList)
-
-        for vm in self.currentWorkshop.vmList:
-            matchFound = False
-            for registeredVM in vmList:
-                if vm.name == registeredVM:
-                    matchFound = True
-                    break
-                matchFound = False
+        matchFound = self.session.getAvailableVMs()
 
         if not matchFound:
             dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "Not all VM's for this workshop are registered.")
@@ -681,56 +614,25 @@ class AppWindow(Gtk.ApplicationWindow):
         #currentTotal.append(0)
 
         if response == Gtk.ResponseType.OK:
-            folderPath = dialog.get_filename()+"/"+self.currentWorkshop.filename
+            folderPath = dialog.get_filename()+"/"+self.session.currentWorkshop.filename
             dialog.destroy()
 
-            if not os.path.exists(folderPath):
-                os.makedirs(folderPath)
-
-            for vm in self.currentWorkshop.vmList:
-                #p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                #t = threading.Thread(target=self.exportWorker, args=[p, vm.name, currentTotal])
-                #t.start()
-
-                progress = LoggingDialog(self, "Export", [VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"])
-                progress.run()
-
-            shutil.copy2("workshop_creator_gui_resources/workshop_configs/"+self.currentWorkshop.filename+".xml", folderPath)
-            spinnerDialog = SpinnerDialog(self, "Zipping files, this may take a few minutes...")
-            t = threading.Thread(target=self.zipWorker, args=[folderPath, spinnerDialog])
+            #holdLogging=[]
+            spinnerDialog=SpinnerDialog(self, "Exporting VMs, this may take a few minutes...")
+            #holdVMs=self.session.getCurrentVMList()
+            t = threading.Thread(target=self.session.exportWorkshop, args=[folderPath, spinnerDialog])
             t.start()
-            spinnerDialog.run()
-            shutil.rmtree(folderPath)
-            gui_utilities.WarningDialog(self, "Export completed.")
+            #for vm in holdVMs:
+                #holdLogging.append(LoggingDialog(self, "Export", [VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"]))
+#            self.session.exportWorkshop(folderPath, spinnerDialog, spinnerDialog2)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
-    # Thread function, exports to file
-    def exportWorker(self, process, workerID, currentTotal):
-
-        character = None
-        while process.poll() is None and character != "":
-            character = process.stdout.read(1)
-            if character == "%":
-                currentTotal[0] = currentTotal[0] + 1
-
-    # Thread function, performs zipping operaiton
-    def zipWorker(self, folderPath, spinnerDialog):
-        d = folderPath
-
-        os.chdir(os.path.dirname(d))
-        with zipfile.ZipFile(d + '.zip',
-                             "w",
-                             zipfile.ZIP_DEFLATED,
-                             allowZip64=True) as zf:
-            for root, _, filenames in os.walk(os.path.basename(d)):
-                for name in filenames:
-                    name = os.path.join(root, name)
-                    name = os.path.normpath(name)
-                    zf.write(name, name)
-
-        spinnerDialog.destroy()
+#    def exportOVAs(self, holdVMs)
+#        for vm in holdVMs:
+#            os.system('"'+VBOXMANAGE_DIRECTORY+'" export "'+vm.name+'" -o "'+folderPath+'/'+vmname+'.ova"')
+#        self.session.exportWorkshop(folderPath
 
     # Event, executes when import is called
     def importActionEvent(self):
@@ -749,8 +651,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
             # First we need to unzip the import file to a temp folder
             spinnerDialog = SpinnerDialog(self, "Unzipping files, this may take a few minutes...")
-            t = threading.Thread(target=self.unzipWorker, args=[zipPath, spinnerDialog])
-            t.start()
+            self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
 
             ovaList = []
@@ -773,9 +674,8 @@ class AppWindow(Gtk.ApplicationWindow):
                 #t = threading.Thread(target=self.importWorker, args=[p, currentTotal])
                 #threads.append(t)
                 #t.start()
-
-                progress = LoggingDialog(self, "Import", [VBOXMANAGE_DIRECTORY, "import", tempPath+ova])
-                progress.run()
+                spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
+                self.session.importToVBox(tempPath+ova, spinnerDialog)
 
             for xml in xmlList:
                 shutil.copy2(tempPath+xml, WORKSHOP_CONFIG_DIRECTORY)
@@ -795,16 +695,15 @@ class AppWindow(Gtk.ApplicationWindow):
             if character == "%":
                 currentTotal[0] = currentTotal[0] + 1
 
-    # Thread function, performs unzipping operation
-    def unzipWorker(self, zipPath, spinnerDialog):
-        unzip = zipfile.ZipFile(zipPath, 'r')
-        unzip.extractall(zipPath+"/../creatorImportTemp")
-        unzip.close()
-        spinnerDialog.destroy()
 
     # Executes when the window is closed
     def on_delete(self, event, widget):
         self.fullSave()
+
+        
+#    def runLogging(self, inName, command):
+#        loggingDialog = LoggingDialog(self, inName, command)
+#        loggingDialog.run()
 
 # This class is the main application
 class Application(Gtk.Application):
@@ -851,14 +750,7 @@ class Application(Gtk.Application):
         self.window.fullSave()
 
     def onRun(self, action, param):
-        if self.window.currentWorkshop is None:
-            gui_utilities.WarningDialog(self.window, "You must select a workshop before you can run the creator.")
-            return
-
-        workshopName = self.window.currentWorkshop.filename
-        command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
-        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
-        loggingDialog.run()
+        self.window.runWorkshopActionEvent(None)
 
     def onImport(self, action, param):
         self.window.importActionEvent()
@@ -869,8 +761,280 @@ class Application(Gtk.Application):
         self.window.show_all()
 
 
+
+
+# This class is a general message dialog with entry
+class EntryDialog(Gtk.Dialog):
+
+    def __init__(self, parent, message):
+        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OK, Gtk.ResponseType.OK))
+
+        self.set_default_size(150, 100)
+        # This is the outer box, we need another box inside for formatting
+        self.dialogBox = self.get_content_area()
+        self.outerVertBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+
+        self.dialogBox.add(self.outerVertBox)
+
+        self.label = Gtk.Label(message)
+        self.entry = Gtk.Entry()
+        self.entryText = None
+
+        self.outerVertBox.pack_start(self.label, False, False, PADDING)
+        self.outerVertBox.pack_start(self.entry, False, False, PADDING)
+        self.set_modal(True)
+
+        self.connect("response", self.dialogResponseActionEvent)
+
+        self.show_all()
+
+        self.status = None
+
+    def dialogResponseActionEvent(self, dialog, responseID):
+        # OK was clicked and there is text
+        if responseID == Gtk.ResponseType.OK and not self.entry.get_text_length() < 1:
+            self.entryText = self.entry.get_text()
+            self.status = True
+
+        # Ok was clicked and there is no text
+        elif responseID == Gtk.ResponseType.OK and self.entry.get_text_length() < 1:
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "The entry must not be empty.")
+            dialog.run()
+            dialog.destroy()
+
+        # The operation was canceled
+        elif responseID == Gtk.ResponseType.CANCEL or responseID == Gtk.ResponseType.DELETE_EVENT:
+            self.entryText = None
+            self.status = True
+
+class VMTreeWidget(Gtk.Grid):
+
+    def __init__(self):
+        super(VMTreeWidget, self).__init__()
+
+        self.set_border_width(PADDING)
+
+        # Initialized fields
+        self.treeStore = Gtk.TreeStore(str)
+        self.treeView = Gtk.TreeView(self.treeStore)
+        self.scrollableTreeList = Gtk.ScrolledWindow()
+        self.initializeContainers()
+        self.drawTreeView()
+        self.setLayout()
+
+    def initializeContainers(self):
+        self.set_column_homogeneous(True)
+        self.set_row_homogeneous(True)
+
+    def populateTreeStore(self, registeredVMList):
+        for vm in registeredVMList:
+            treeIter = self.treeStore.append(None, [vm])
+
+    def drawTreeView(self):
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Registered VM's", renderer, text=0)
+        self.treeView.append_column(column)
+
+    def setLayout(self):
+        self.scrollableTreeList.set_min_content_width(100)
+        self.scrollableTreeList.set_min_content_height(100)
+        self.scrollableTreeList.set_vexpand(True)
+        self.attach(self.scrollableTreeList, 0, 0, 4, 10)
+        self.scrollableTreeList.add(self.treeView)
+
+class ListEntryDialog(Gtk.Dialog):
+
+    def __init__(self, parent, message):
+        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OK, Gtk.ResponseType.OK))
+
+        self.set_default_size(300, 300)
+        # This is the outer box, we need another box inside for formatting
+        self.dialogBox = self.get_content_area()
+        self.outerVertBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.dialogBox.add(self.outerVertBox)
+
+        self.label = Gtk.Label(message)
+
+        # Here we will place the tree view
+        self.treeWidget = VMTreeWidget()
+
+        self.entry = Gtk.Entry()
+        self.entryText = None
+
+        self.outerVertBox.pack_start(self.label, False, False, PADDING)
+        self.outerVertBox.pack_start(self.treeWidget, True, True, PADDING)
+        self.outerVertBox.pack_start(self.entry, False, False, PADDING)
+
+        self.connect("response", self.dialogResponseActionEvent)
+        self.show_all()
+        self.status = None
+
+        self.treeWidget.populateTreeStore(self.retrieveVMList())
+        select = self.treeWidget.treeView.get_selection()
+        select.connect("changed", self.onItemSelected)
+
+    def retrieveVMList(self):
+        # If there are no VM's the list will be empty
+        vmList = subprocess.check_output([VBOXMANAGE_DIRECTORY, "list", "vms"])
+        vmList = re.findall("\"(.*)\"", vmList)
+        return vmList
+
+    def onItemSelected(self, selection):
+        model, treeiter = selection.get_selected()
+
+        if treeiter == None:
+            return
+
+        vmName = model[treeiter][0]
+        self.entry.set_text(vmName)
+
+    def dialogResponseActionEvent(self, dialog, responseID):
+        # OK was clicked and there is text
+        if responseID == Gtk.ResponseType.OK and not self.entry.get_text_length() < 1:
+            self.entryText = self.entry.get_text()
+            self.status = True
+
+        # Ok was clicked and there is no text
+        elif responseID == Gtk.ResponseType.OK and self.entry.get_text_length() < 1:
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "The entry must not be empty.")
+            dialog.run()
+            dialog.destroy()
+
+        # The operation was canceled
+        elif responseID == Gtk.ResponseType.CANCEL or responseID == Gtk.ResponseType.DELETE_EVENT:
+            self.entryText = None
+            self.status = True
+
+#class LoggingDialog(Gtk.Dialog):
+
+#    def __init__(self, parent, processName, processCommand):
+#        Gtk.Dialog.__init__(self, processName, parent, 0,
+#            (Gtk.STOCK_OK, Gtk.ResponseType.OK))
+
+#        self.processName = processName
+#        self.processCommand = processCommand
+
+#        self.set_default_size(500, 500)
+#        self.set_deletable(False)
+
+        # This is the outer box, we need another box inside for formatting
+#        self.dialogBox = self.get_content_area()
+
+#        self.scrollableWindow = Gtk.ScrolledWindow()
+#        self.scrollableWindow.set_min_content_width(400)
+#        self.scrollableWindow.set_min_content_height(450)
+
+#        self.dialogBox.add(self.scrollableWindow)
+
+#        self.textView = Gtk.TextView()
+#        self.textView.set_editable(False)
+#        self.textView.set_cursor_visible(False)
+#        self.textView.set_wrap_mode(True)
+#        self.scrollableWindow.add(self.textView)
+#        self.textBuffer = self.textView.get_buffer()
+
+#        self.set_response_sensitive(Gtk.ResponseType.OK, False)
+#        self.connect("response", self.dialogResponseActionEvent)
+#        self.show_all()
+
+        # command example ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
+#        self.process = subprocess.Popen(self.processCommand, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#        self.t = threading.Thread(target=self.runWorker, args=[self.process])
+#        self.t.start()
+
+#    def runWorker(self, process):
+#        end = self.textBuffer.get_end_iter()
+#        self.textBuffer.insert(end, "Starting "+self.processName+"...\n")
+#        for line in iter(process.stdout.readline, b''):
+#            end = self.textBuffer.get_end_iter()
+#            line = line.strip()+"\n"
+            # idle_add is needed for a thread-safe function, without it an assertion error will occur
+            #GObject.idle_add(self.addLine, line)
+#            Gdk.threads_enter()
+#            end = self.textBuffer.get_end_iter()
+#            self.textBuffer.insert(end, line)
+#            Gdk.threads_leave()
+#        end = self.textBuffer.get_end_iter()
+#        self.textBuffer.insert(end, self.processName+" Finished...\n")
+#        self.set_response_sensitive(Gtk.ResponseType.OK, True)
+
+#    def addLine(self, line):
+#        end = self.textBuffer.get_end_iter()
+#        self.textBuffer.insert(end, line)
+
+#    def dialogResponseActionEvent(self, dialog, responseID):
+        # OK was clicked and there is text
+#        if responseID == Gtk.ResponseType.OK and self.process.poll() is not None:
+#            self.destroy()
+
+
+class ExportImportProgressDialog(Gtk.Dialog):
+    def __init__(self, parent, message, currentTotal, total):
+        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0)
+
+        self.set_default_size(50, 75)
+        self.set_deletable(False)
+
+        self.currentTotal = currentTotal
+        self.total = total
+
+        # This is the outer box, we need another box inside for formatting
+        self.dialogBox = self.get_content_area()
+        self.outerVerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.dialogBox.add(self.outerVerBox)
+
+        self.progressbar = Gtk.ProgressBar()
+        self.progressbar.set_show_text(True)
+        self.outerVerBox.pack_start(self.progressbar, False, False, PADDING)
+
+        self.progressbar.set_text(message)
+
+        self.timeout_id = GObject.timeout_add(1000, self.on_timeout, None)
+
+        self.show_all()
+
+    def on_timeout(self, user_data):
+
+        new_value = self.currentTotal[0] / self.total
+
+        if new_value >= 1:
+            self.destroy()
+            return False
+
+        self.progressbar.set_fraction(new_value)
+
+        # As this is a timeout function, return True so that it
+        # continues to get called
+        return True
+
+class SpinnerDialog(Gtk.Dialog):
+
+    def __init__(self, parent, message):
+        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0)
+
+        self.set_deletable(False)
+
+        self.dialogBox = self.get_content_area()
+        self.outerVerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.label = Gtk.Label(message)
+        self.spinner = Gtk.Spinner()
+        self.dialogBox.add(self.outerVerBox)
+        self.outerVerBox.pack_start(self.label, False, False, PADDING)
+        self.outerVerBox.pack_start(self.spinner, False, False, PADDING)
+
+        self.show_all()
+        self.spinner.start()
+
+def WarningDialog(self, message):
+    dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, message)
+    dialog.run()
+    dialog.destroy()
+
+
 if __name__ == "__main__":
-    GObject.threads_init()
-    Gdk.threads_init()
     app = Application()
     app.run(sys.argv)
