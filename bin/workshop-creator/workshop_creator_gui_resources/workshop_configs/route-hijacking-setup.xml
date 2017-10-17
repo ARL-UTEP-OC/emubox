@@ -1,0 +1,28 @@
+<xml>
+  <vbox-setup>
+    <path-to-vboxmanage>C:\Program Files\Oracle\VirtualBox\VBoxManage.exe</path-to-vboxmanage>
+  </vbox-setup>
+  <testbed-setup>
+    <network-config>
+      <ip-address>localhost</ip-address>
+    </network-config>
+    <vm-set>
+      <base-groupname>Route_Hijacking_Exercise</base-groupname>
+      <num-clones>8</num-clones>
+      <clone-snapshots>true</clone-snapshots>
+      <linked-clones>false</linked-clones>
+      <base-outname>101</base-outname>
+      <vrdp-baseport>1011</vrdp-baseport>
+      <vm>
+        <name>kali-2016.2-debian_ecel</name>
+        <vrdp-enabled>true</vrdp-enabled>
+        <internalnet-basename>intnet</internalnet-basename>
+      </vm>
+      <vm>
+        <name>ubuntu-core4.7</name>
+        <vrdp-enabled>false</vrdp-enabled>
+        <internalnet-basename>intnet</internalnet-basename>
+      </vm>
+    </vm-set>
+  </testbed-setup>
+</xml>

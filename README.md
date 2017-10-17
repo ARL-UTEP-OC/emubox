@@ -5,6 +5,8 @@
 * VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack (tested with [v5.1.10](https://www.virtualbox.org/wiki/Download_Old_Builds_5_1))
 * Flask (tested with [v0.12](http://pypi.python.org/pypi/Flask/0.12))
 * VirtualEnv (tested with [v15.1.0](https://virtualenv.pypa.io/en/stable/))
+* PyGTK (requires v3.10.2, tested using [Windows Binary](https://sourceforge.net/projects/pygobjectwin32/files/pygi-aio-3.10.2-win32_rev18-setup.exe/download))
+* LXML (tested with [v4.0.0](http://lxml.de/changes-4.0.0.html) via PIP installer)
 
 ## Description
 EmuBox uses the Flask python microframework as the web server gateway interface (WSGI) application.
@@ -21,6 +23,11 @@ The Workshop Creator automates the creation of workshop units (sets of VMs that 
 During the cloning process, this component adjusts VRDP ports and internal
 network adapter names so that each group is isolated and uniquely accessible by
 participants.
+
+### Workshop Creator GUI
+The Workshop Creator GUI provides a graphical interface to design workshop units and modify their parameters.  The user can then run the Workshop Creator script via the interface, eliminating the need to set command line parameters manually.
+
+To run the Workshop Creator GUI, navigate to the container directory in a command line and enter the command "python workshop_creator_gui.py".
 
 ### Workshop Manager
 

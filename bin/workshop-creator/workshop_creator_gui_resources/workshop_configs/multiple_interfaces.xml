@@ -1,0 +1,35 @@
+<xml>
+  <vbox-setup>
+    <path-to-vboxmanage>C:\Program Files\Oracle\VirtualBox\VBoxManage.exe</path-to-vboxmanage>
+  </vbox-setup>
+  <testbed-setup>
+    <network-config>
+      <ip-address>localhost</ip-address>
+    </network-config>
+    <vm-set>
+      <base-groupname>Multi_Interfaces</base-groupname>
+      <num-clones>8</num-clones>
+      <clone-snapshots>true</clone-snapshots>
+      <linked-clones>true</linked-clones>
+      <base-outname>101</base-outname>
+      <vrdp-baseport>1011</vrdp-baseport>
+      <vm>
+        <name>kali-2016.2-debian_ecel</name>
+        <vrdp-enabled>true</vrdp-enabled>
+        <internalnet-basename>intnetA</internalnet-basename>
+        <internalnet-basename>intnetB</internalnet-basename>
+      </vm>
+      <vm>
+        <name>ubuntu-core4.7</name>
+        <vrdp-enabled>false</vrdp-enabled>
+        <internalnet-basename>intnetB</internalnet-basename>
+        <internalnet-basename>intnetC</internalnet-basename>
+      </vm>
+      <vm>
+        <name>windows7_HW_v3</name>
+        <vrdp-enabled>false</vrdp-enabled>
+        <internalnet-basename>intnetC</internalnet-basename>
+      </vm>
+    </vm-set>
+  </testbed-setup>
+</xml>

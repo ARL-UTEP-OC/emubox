@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>EmuBox</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    </head>
+
+    <body>
+        <h1 align="center">Welcome to EmuBox</h1>
+        <h3 align="center">Please connect to one of the following with remote desktop.</h3>
+
+        <table style="width:50%" border="1" cellpadding="5" cellspacing="5" align="center">
+        <thead>
+            <tr>
+                <th>Workshop Name</th>
+                <th>Number Available</th>
+                <th>Materials</th>
+                <th>Connection Link</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for workshop in templateAvailable %}
+            <tr>
+                <td>
+                    <center> {{ workshop.workshopName }} </center>
+                </td>
+                <td>
+                    <center> There <span class="workshop_queue" id="{{ workshop.workshopName }}"></span> available! </center>
+                </td>
+                <td>
+                    {% for material in workshop.materials %}
+                        <center> {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/> </center>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if workshop.q.qsize() %}
+                        <center>
+                            Windows: <a href="/ms-rdp/{{ workshop.workshopName}}">MS-RDP</a><br/>
+                            Linux: <a href="/rdesktop/{{ workshop.workshopName}}">rdesktop</a>
+                        </center>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+
+        <script>
+            window.setInterval(updateQueueStatuses, 1000); // Call function every second
+            function updateQueueStatuses() {
+                    $(".workshop_queue").each(function() {
+                        var $this = $(this);
+                        $.ajax({
+                            url: "/getQueueSize/"+$(this).attr("id"),
+                            dataType: "json",
+                            success: function(response) {
+                                if (response == 1)
+                                    $this.text(" is 1 workshop");
+                                else
+                                    $this.text(" are " + response + " workshops ");
+                            }
+                        });
+                    });
+            }
+        </script>
+    </body>
+</html>

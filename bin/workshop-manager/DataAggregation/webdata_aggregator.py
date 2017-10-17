@@ -12,8 +12,16 @@ gevent.monkey.patch_all()
 #to reduce stdout
 import logging
 
+# Queue import
+from Queue import *
+
+from Workshop_Unit import Workshop_Unit
+from Workshop import Workshop
+
+
 probeTime = 5
 aggregatedInfo = []
+availableWorkshops = []
 
 # vars needed for gevent (lock)
 aggregatedInfoSem = BoundedSemaphore(1)
@@ -22,11 +30,12 @@ def cleanup():
     logging.info("Cleaning up webdata aggregator...")
     try:
 
-        logging.info("Clean up complete. Exitting...")
+        logging.info("Clean up complete. Exiting...")
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
 
 def aggregateData():
+    """ Communicates with VBox Manager to gather and consolidate virtual machine informaiton into Workshop Units """
     global aggregatedInfo
     while True:
         try:
@@ -60,18 +69,38 @@ def aggregateData():
                             if os.path.isfile(os.path.join(materialsPath,file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
                         logging.debug("FOUND FILES IN DIR: "+str(files))
-                    aggregatedInfo.append({"workshopName" : workshopName, "VM Name" : vm["name"], "ms-rdp" : rdpFilename, "rdesktop" : rdesktopFilename, "state" : vmInfo[1], "materials" : filesPaths})
+                    aggregatedInfo.append(Workshop_Unit(workshopName, vm["name"], rdpFilename, rdesktopFilename, vmInfo[1], filesPaths))
+            aggregateAvailableWorkshops()
             aggregatedInfoSem.release()
             time.sleep(probeTime)
         except Exception as e:
-            logging.error("AGGREGATION: An error occured: " + str(e))
+            logging.error("AGGREGATION: An error occurred: " + str(e))
             traceback.print_exc()
             exit()
             time.sleep(probeTime)
 
 def getAggregatedInfo():
+    """ Returns: List of Workshop Units that are aggregated from the VBox Monitor. """
     #aggregatedInfoSem.wait()
     return aggregatedInfo
+
+def aggregateAvailableWorkshops():
+    """ Goes through a list of Workshop Units and creates a list Workshops whose queues contain Workshop Units that are "Available". """
+    global availableWorkshops
+    availableInfo = filter(lambda x: x.state == "Available", aggregatedInfo)  # get list of available workshops
+    availableWorkshops = []
+    while len(availableInfo) > 0:
+        curr_workshop_unit = availableInfo[0] # take first available workshop and get tmp list of all other workshops like it
+        curr_workshop = Workshop(curr_workshop_unit.workshopName, curr_workshop_unit.materials)
+        tmp = filter(lambda x: x.workshopName == curr_workshop.workshopName, availableInfo)
+        for w in tmp:  # put all like-workshops in a queue
+            curr_workshop.q.put(w)
+        availableWorkshops.append(curr_workshop)
+        availableInfo = filter(lambda x: x.workshopName != curr_workshop.workshopName, availableInfo)  # remove workshops put in queue
+
+def getAvailableWorkshops():
+    """ Returns: List of Workshop objects whose queues contain Workshop Units that are "Available". """
+    return availableWorkshops
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
