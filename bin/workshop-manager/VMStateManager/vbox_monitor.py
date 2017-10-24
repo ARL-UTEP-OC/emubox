@@ -21,7 +21,7 @@ lockWaitTime = 5
 
 ####vars needed for testbed manager threads:
 mgr = VirtualBoxManager(None, None)
-vbox = mgr.vbox
+vbox = mgr.getVirtualBox()
 session = mgr.getSessionObject(vbox)
 
 groupToVms = {}
@@ -45,7 +45,8 @@ def getAvailableInfo():
 def getVMInfo(session, machine):
     answer = {}
     answer["name"] = str(machine.name)
-    answer["groups"] = machine.groups
+    ##Change for XPCOM
+    answer["groups"] = mgr.getArray(machine,'groups')
     answer["vrde"] = machine.VRDEServer.enabled
     answer["vrdeproperty[TCP/Ports]"] = str(machine.VRDEServer.getVRDEProperty('TCP/Ports'))
     answer["VMState"] = machine.state
@@ -250,9 +251,11 @@ def manageStates():
             currGroupToVms = {}
 
             # first get all vms
-            for mach in vbox.machines:
+            ##Change for XPCOM
+            for mach in mgr.getArray(vbox,'machines'):
+                print "MACHINE STATE!!!!!!!"
                 logging.debug("getting info for machine"+str(mach.name))
-                # print "MACHINE STATE!!!!!!!",mach.name,mach.state
+                print "MACHINE STATE!!!!!!!",mach.name,mach.state
                 currvms[str(mach.name)] = getVMInfo(session, mach)
 
             # for each vm get info and place in state list
