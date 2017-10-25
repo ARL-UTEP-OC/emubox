@@ -63,9 +63,15 @@ class BaseWidget(Gtk.Box):
         self.vBoxManageEntry = Gtk.Entry()
         self.ipAddressEntry = Gtk.Entry()
         self.baseGroupNameEntry = Gtk.Entry()
-        self.numClonesEntry = Gtk.Entry()
-        self.cloneSnapshotsEntry = Gtk.Entry()
-        self.linkedClonesEntry = Gtk.Entry()
+        self.numClonesEntry = Gtk.SpinButton()
+        self.numClonesEntry.set_range(1, 50)
+        self.numClonesEntry.set_increments(1, 5)
+        self.cloneSnapshotsEntry = Gtk.ComboBoxText()
+        self.cloneSnapshotsEntry.insert_text(0, "true")
+        self.cloneSnapshotsEntry.insert_text(1, "false")
+        self.linkedClonesEntry = Gtk.ComboBoxText()
+        self.linkedClonesEntry.insert_text(0, "true")
+        self.linkedClonesEntry.insert_text(1, "false")
         self.baseOutnameEntry = Gtk.Entry()
         self.vrdpBaseportEntry = Gtk.Entry()
 
@@ -120,6 +126,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
 
         self.label = Gtk.Label("Internalnet Basename:")
         self.entry = Gtk.Entry()
+        self.removeInetButton = Gtk.Button.new_with_label("-")
 
         self.initialize()
 
@@ -127,6 +134,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
         self.add(self.outerHorBox)
 
         self.outerHorBox.pack_start(self.label, False, False, PADDING)
+        self.outerHorBox.pack_end(self.removeInetButton, False, False, PADDING)
         self.outerHorBox.pack_end(self.entry, False, False, PADDING)
 
 # This class is a container that will hold the vm information
@@ -150,7 +158,10 @@ class VMWidget(Gtk.Box):
 
         # Declaration of entrys
         self.nameEntry = Gtk.Entry()
-        self.vrdpEnabledEntry = Gtk.Entry()
+        self.vrdpEnabledEntry = Gtk.ComboBoxText()
+        self.vrdpEnabledEntry.insert_text(0, "true")
+        self.vrdpEnabledEntry.insert_text(1, "false")
+        self.addInetButton = Gtk.Button.new_with_label("Add Internalnet Basename")
 
         self.initializeContainers()
         self.initializeLabels()
@@ -161,6 +172,7 @@ class VMWidget(Gtk.Box):
         self.outerVertBox.add(self.nameHorBox)
         self.outerVertBox.add(self.vrdpEnabledHorBox)
         self.outerVertBox.add(self.iNetVerBox)
+        self.outerVertBox.add(self.addInetButton)
 
     def initializeLabels(self):
         self.nameHorBox.pack_start(self.nameLabel, False, False, PADDING)
@@ -179,6 +191,7 @@ class VMWidget(Gtk.Box):
         # Clear the list of widgets
         self.inetBasenameWidgetList = []
 
+        self.sizeOfList=len(internalNetList)
         for internalNet in internalNetList:
             inetWidget = InternalnetBasenameWidget()
             inetWidget.entry.set_text(internalNet)
@@ -192,15 +205,16 @@ class VMWidget(Gtk.Box):
 
     def addInet(self, eventHandler):
         inet = InternalnetBasenameWidget()
+        inet.entry.set_text("default_inet")
         inet.connect("button-press-event", eventHandler)
         self.inetBasenameWidgetList.append(inet)
         self.iNetVerBox.pack_start(inet, False, False, 0)
 
-    def removeInet(self, inetWidget):
+    def removeInet(self, inetNumber):
 
         if len(self.inetBasenameWidgetList) > 1:
-            self.iNetVerBox.remove(inetWidget)
-            self.inetBasenameWidgetList.remove(inetWidget)
+            self.iNetVerBox.remove(self.inetBasenameWidgetList[inetNumber])
+            self.inetBasenameWidgetList.remove(self.inetBasenameWidgetList[inetNumber])
 
 # This class is a widget that is a grid, it holds the structure of the tree view
 class WorkshopTreeWidget(Gtk.Grid):
@@ -295,9 +309,13 @@ class AppWindow(Gtk.ApplicationWindow):
         addInet = Gtk.MenuItem("Add INet")
         addInet.connect("activate", self.addInetEventHandler)
         self.inetMenu.append(addInet)
-        removeInet = Gtk.MenuItem("Remove INet")
-        removeInet.connect("activate", self.removeInetEventHandler)
-        self.inetMenu.append(removeInet)
+        #removeInet = Gtk.MenuItem("Remove INet")
+        #removeInet.connect("activate", self.removeInetEventHandler)
+        #self.inetMenu.append(removeInet)
+
+        self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
+
+
 
         # Currentwidget in focus
         self.focusedInetWidget = None
@@ -309,15 +327,19 @@ class AppWindow(Gtk.ApplicationWindow):
         # Here we will have all the menu items
         self.addWorkshop = Gtk.MenuItem("Add Workshop")
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
-        self.createWorkshop = Gtk.MenuItem("Run Workshop")
+        self.createWorkshop = Gtk.MenuItem("Create Clones")
         self.createWorkshop.connect("activate", self.runWorkshopActionEvent)
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
         self.removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
         self.exportWorkshop = Gtk.MenuItem("Export Workshop")
         self.exportWorkshop.connect("activate", self.exportWorkshopActionEvent)
-
         self.addVM = Gtk.MenuItem("Add VM")
         self.addVM.connect("activate", self.addVMActionEvent)
+        self.createRDP = Gtk.MenuItem("Create RDP Files")
+        self.createRDP.connect("activate", self.createRDPActionEvent)
+        self.restoreSnapshots = Gtk.MenuItem("Restore Snapshots")
+        self.restoreSnapshots.connect("activate", self.restoreSnapshotsActionEvent)
+        
         self.removeVM = Gtk.MenuItem("Remove VM")
         self.removeVM.connect("activate", self.removeVMActionEvent)
 
@@ -329,11 +351,19 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(self.createWorkshop)
         self.workshopMenu.append(self.removeWorkshop)
         self.workshopMenu.append(self.exportWorkshop)
+        self.workshopMenu.append(Gtk.SeparatorMenuItem())
+        self.workshopMenu.append(self.createRDP)
+        self.workshopMenu.append(self.restoreSnapshots)
+        
+
+        #context menu for blank space
+        self.blankMenu = Gtk.Menu()
+        self.blankMenu.append(self.addWorkshop)
 
         # VM context menu
         self.vmMenu = Gtk.Menu()
         self.vmMenu.append(self.removeVM)
-        
+
 
     def initializeContainers(self):
         self.add(self.windowBox)
@@ -381,9 +411,17 @@ class AppWindow(Gtk.ApplicationWindow):
             self.baseWidget.vBoxManageEntry.set_text(self.session.currentWorkshop.pathToVBoxManage)
             self.baseWidget.ipAddressEntry.set_text(self.session.currentWorkshop.ipAddress)
             self.baseWidget.baseGroupNameEntry.set_text(self.session.currentWorkshop.baseGroupName)
-            self.baseWidget.numClonesEntry.set_text(self.session.currentWorkshop.numOfClones)
-            self.baseWidget.cloneSnapshotsEntry.set_text(self.session.currentWorkshop.cloneSnapshots)
-            self.baseWidget.linkedClonesEntry.set_text(self.session.currentWorkshop.linkedClones)
+            self.baseWidget.numClonesEntry.set_value(int(float(self.session.currentWorkshop.numOfClones)))
+            #self.baseWidget.cloneSnapshotsEntry.set_text(self.session.currentWorkshop.cloneSnapshots)
+            self.holdClone=0
+            if self.session.currentWorkshop.cloneSnapshots == "false":
+                self.holdClone=1
+            self.baseWidget.cloneSnapshotsEntry.set_active(self.holdClone)
+            #self.baseWidget.linkedClonesEntry.set_text(self.session.currentWorkshop.linkedClones)
+            self.holdClone=0
+            if self.session.currentWorkshop.linkedClones == "false":
+                self.holdClone=1
+            self.baseWidget.linkedClonesEntry.set_active(self.holdClone)
             self.baseWidget.baseOutnameEntry.set_text(self.session.currentWorkshop.baseOutName)
             self.baseWidget.vrdpBaseportEntry.set_text(self.session.currentWorkshop.vrdpBaseport)
 
@@ -423,9 +461,16 @@ class AppWindow(Gtk.ApplicationWindow):
             self.scrolledInnerBox.pack_start(self.vmWidget, False, False, PADDING)
 
             self.vmWidget.nameEntry.set_text(self.session.currentVM.name)
-            self.vmWidget.vrdpEnabledEntry.set_text(self.session.currentVM.vrdpEnabled)
+            self.holdVRDP=0
+            if self.session.currentVM.vrdpEnabled == "false":
+                self.holdVRDP=1
+            self.vmWidget.vrdpEnabledEntry.set_active(self.holdVRDP)
             self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
             self.vmWidget.initializeSignals(self.inetActionEvent)
+
+            if len(self.vmWidget.inetBasenameWidgetList) > 1:
+                for k,rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
+                    rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
 
             self.actionBox.show_all()
 
@@ -450,15 +495,24 @@ class AppWindow(Gtk.ApplicationWindow):
     def softSave(self):
 
         if self.isParent == True:
-            self.session.softSaveWorkshop(self.baseWidget.vBoxManageEntry.get_text(), self.baseWidget.ipAddressEntry.get_text(), self.baseWidget.baseGroupNameEntry.get_text(), self.baseWidget.numClonesEntry.get_text(), self.baseWidget.cloneSnapshotsEntry.get_text(), self.baseWidget.linkedClonesEntry.get_text(), self.baseWidget.baseOutnameEntry.get_text(), self.baseWidget.vrdpBaseportEntry.get_text())
+            self.holdSnaps="true"
+            if self.baseWidget.cloneSnapshotsEntry.get_active_text() == "false":
+                self.holdSnaps="false"
+            self.holdLinked="true"
+            if self.baseWidget.linkedClonesEntry.get_active_text() == "false":
+                self.holdLinked="false"
+            self.session.softSaveWorkshop(self.baseWidget.vBoxManageEntry.get_text(), self.baseWidget.ipAddressEntry.get_text(), self.baseWidget.baseGroupNameEntry.get_text(), str(self.baseWidget.numClonesEntry.get_value_as_int()), self.holdSnaps, self.holdLinked, self.baseWidget.baseOutnameEntry.get_text(), self.baseWidget.vrdpBaseportEntry.get_text())
 
         elif self.isParent == False:
 
             self.holdInternalnetBasenameList = []
             for inetWidget in self.vmWidget.inetBasenameWidgetList:
                 self.holdInternalnetBasenameList.append(inetWidget.entry.get_text())
-                
-            self.session.softSaveVM(self.vmWidget.nameEntry.get_text(), self.vmWidget.vrdpEnabledEntry.get_text(), self.holdInternalnetBasenameList)
+
+            self.holdVRDP="true"
+            if self.vmWidget.vrdpEnabledEntry.get_active_text() == "false":
+                self.holdVRDP="false"
+            self.session.softSaveVM(self.vmWidget.nameEntry.get_text(), self.holdVRDP, self.holdInternalnetBasenameList)
 
     # Will save all changed to the disk
     def hardSave(self):
@@ -469,6 +523,12 @@ class AppWindow(Gtk.ApplicationWindow):
     def fullSave(self):
         self.softSave()
         self.hardSave()
+
+    def createRDPActionEvent(self, menuItem):
+        self.session.runScript("workshop-rdp.py")
+        
+    def restoreSnapshotsActionEvent(self, menuItem):
+        self.session.runScript("workshop-restore.py")
 
     def inetActionEvent(self, widget, event):
         if event.button == 3:
@@ -482,8 +542,8 @@ class AppWindow(Gtk.ApplicationWindow):
         self.vmWidget.addInet(self.inetActionEvent)
         self.actionBox.show_all()
 
-    def removeInetEventHandler(self, menuItem):
-        self.vmWidget.removeInet(self.focusedInetWidget)
+    def removeInetEventHandler(self, menuItem, *data):
+        self.vmWidget.removeInet(data[0])
         self.actionBox.show_all()
 
     def treeViewActionEvent(self, treeView, event):
@@ -505,6 +565,10 @@ class AppWindow(Gtk.ApplicationWindow):
                 elif not model.iter_has_child(treeIter):
                     self.vmMenu.show_all()
                     self.vmMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+
+            else:
+                self.blankMenu.show_all()
+                self.blankMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
     def addNewWorkshop(self, workshopName, vmName):
         self.session.addWorkshop(workshopName, vmName)
@@ -529,11 +593,11 @@ class AppWindow(Gtk.ApplicationWindow):
         command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
         t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
         t.start()
-#        self.runLogging("Workshop Creator", command)
-#        t = threading.Thread(target=self.runLogging, args=["Workshop Creator", command])
-#        t.start()
-#        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
-#        loggingDialog.run()
+        #        self.runLogging("Workshop Creator", command)
+        #        t = threading.Thread(target=self.runLogging, args=["Workshop Creator", command])
+        #            t.start()
+        #        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
+        #        loggingDialog.run()
 
     def addWorkshopActionEvent(self, menuItem):
         workshopDialog = EntryDialog(self, "Enter a workshop name.")
@@ -560,8 +624,8 @@ class AppWindow(Gtk.ApplicationWindow):
         d = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK_CANCEL, "Are you sure you want to permanently delete this workshop?")
         response = d.run()
         d.destroy()
-        
-        if response == Gtk.ResponseType.OK:       
+
+        if response == Gtk.ResponseType.OK:
             model = self.workshopTree.treeStore
             self.session.removeWorkshop()
             model.remove(self.focusedTreeIter)
@@ -624,15 +688,15 @@ class AppWindow(Gtk.ApplicationWindow):
             t.start()
             #for vm in holdVMs:
                 #holdLogging.append(LoggingDialog(self, "Export", [VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"]))
-#            self.session.exportWorkshop(folderPath, spinnerDialog, spinnerDialog2)
+                #self.session.exportWorkshop(folderPath, spinnerDialog, spinnerDialog2)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
-#    def exportOVAs(self, holdVMs)
-#        for vm in holdVMs:
-#            os.system('"'+VBOXMANAGE_DIRECTORY+'" export "'+vm.name+'" -o "'+folderPath+'/'+vmname+'.ova"')
-#        self.session.exportWorkshop(folderPath
+            #    def exportOVAs(self, holdVMs)
+            #        for vm in holdVMs:
+            #            os.system('"'+VBOXMANAGE_DIRECTORY+'" export "'+vm.name+'" -o "'+folderPath+'/'+vmname+'.ova"')
+            #        self.session.exportWorkshop(folderPath
 
     # Event, executes when import is called
     def importActionEvent(self):
@@ -700,10 +764,10 @@ class AppWindow(Gtk.ApplicationWindow):
     def on_delete(self, event, widget):
         self.fullSave()
 
-        
-#    def runLogging(self, inName, command):
-#        loggingDialog = LoggingDialog(self, inName, command)
-#        loggingDialog.run()
+
+        #    def runLogging(self, inName, command):
+        #        loggingDialog = LoggingDialog(self, inName, command)
+        #        loggingDialog.run()
 
 # This class is the main application
 class Application(Gtk.Application):
