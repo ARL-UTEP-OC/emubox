@@ -92,7 +92,7 @@ This will start a flask webserver and a backend monitor for virtualbox VMs.
 ### Windows
 In the directory where you installed EmuBox, type:
 ```
-workshop-manager\Scripts\activate
+source workshop-manager\Scripts\activate
 cd workshop-manager
 python instantiator.py
 ```
