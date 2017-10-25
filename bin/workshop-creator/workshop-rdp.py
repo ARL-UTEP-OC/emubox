@@ -140,8 +140,9 @@ for vm in vmset.findall('vm'):
         vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
         if vrdpEnabled and vrdpEnabled == 'true':
             newVRDPname = str(vrdpBaseport)
-            create_rdp_file(baseGroupname+"\RDP",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
-            create_rdesktop_file(baseGroupname+"\RDP",newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
+            fullPath = os.path.join(baseGroupname,"RDP")
+            create_rdp_file(fullPath,newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
+            create_rdesktop_file(fullPath,newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
             vrdpBaseport = str(int(vrdpBaseport) + 1)
 print """
 **************************************************************************************
