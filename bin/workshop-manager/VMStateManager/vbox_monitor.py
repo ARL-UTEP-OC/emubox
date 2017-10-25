@@ -88,7 +88,7 @@ def powerdownMachine(session, machine):
         # if can't get console, this means that the vm is probably off
         if console != None:
             logging.debug("Calling Power Down API Function")
-            progress = console.powerdown()
+            progress = console.powerDown()
             progress.waitForCompletion(-1)
         session.unlockMachine()
         return 0
