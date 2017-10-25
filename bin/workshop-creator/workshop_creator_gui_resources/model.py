@@ -19,6 +19,14 @@ class Session:
       self.currentVM = None
       self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
     
+    def runScript(self, script):
+        if self.currentWorkshop != None:
+            t = threading.Thread(target=self.scriptWorker, args=[WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script])
+            t.start()
+            
+    def scriptWorker(self, filePath, script):
+        subprocess.call(["python", script, filePath])
+    
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         unzip = zipfile.ZipFile(zipPath, 'r')
