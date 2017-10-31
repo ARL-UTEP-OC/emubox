@@ -253,9 +253,7 @@ def manageStates():
             # first get all vms
             ##Change for XPCOM
             for mach in mgr.getArray(vbox,'machines'):
-                print "MACHINE STATE!!!!!!!"
                 logging.debug("getting info for machine"+str(mach.name))
-                print "MACHINE STATE!!!!!!!",mach.name,mach.state
                 currvms[str(mach.name)] = getVMInfo(session, mach)
 
             # for each vm get info and place in state list
