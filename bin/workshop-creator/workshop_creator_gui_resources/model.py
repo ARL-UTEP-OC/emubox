@@ -11,6 +11,7 @@ from lxml import etree
 
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
+WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 
 class Session:
     def __init__(self):
@@ -18,34 +19,34 @@ class Session:
       self.currentWorkshop = None
       self.currentVM = None
       self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
-    
+
     def runScript(self, script):
         if self.currentWorkshop != None:
             t = threading.Thread(target=self.scriptWorker, args=[WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script])
             t.start()
-            
+
     def scriptWorker(self, filePath, script):
         subprocess.call(["python", script, filePath])
-    
+
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         unzip = zipfile.ZipFile(zipPath, 'r')
         unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.close()
         spinnerDialog.destroy()
-    
-    def importUnzip(zipPath, spinnerDialog):
+
+    def importUnzip(self, zipPath, spinnerDialog):
         t = threading.Thread(target=self.unzipWorker, args=[zipPath, spinnerDialog])
         t.start()
-    
-    def importToVBox(tempPath, spinnerDialog):
-        t = threading.Thread(target=importWorker, args=[tempPath, spinnerDialog])
+
+    def importToVBox(self, tempPath, spinnerDialog):
+        t = threading.Thread(target=self.importWorker, args=[tempPath, spinnerDialog])
         t.start()
-        
-    def importWorker(tempPath, spinnerDialog):
+
+    def importWorker(self, tempPath, spinnerDialog):
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
         spinnerDialog.destroy()
-    
+
     # Thread function, performs zipping operaiton
     def zipWorker(self, folderPath, spinnerDialog):
         d = folderPath
@@ -65,38 +66,33 @@ class Session:
         shutil.rmtree(folderPath)
         #need to find a way to re-enable warning msg
         #WarningDialog(self, "Export completed.")
-      
-    def exportZipFiles(self, folderPath, spinnerDialog):    
+
+    def exportZipFiles(self, folderPath, spinnerDialog):
             shutil.copy2("workshop_creator_gui_resources/workshop_configs/"+self.currentWorkshop.filename+".xml", folderPath)
             t = threading.Thread(target=self.zipWorker, args=[folderPath, spinnerDialog])
             t.start()
 
-      
+
     def getCurrentVMList(self):
         return self.currentWorkshop.vmList
-      
+
     def exportWorkshop(self, folderPath, spinnerDialog):
-        
+
         if not os.path.exists(folderPath):
             os.makedirs(folderPath)
-                    
+
+        if not os.path.exists(folderPath+"/Materials/"):
+            os.makedirs(folderPath+"/Materials/")
+        for material in self.currentWorkshop.materialList:
+            shutil.copy2(WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+material.name, folderPath+"/Materials")
+
         for vm in self.currentWorkshop.vmList:
             subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', folderPath+'/'+vm.name+'.ova'])
-        
 
-
-       # for vm in self.currentWorkshop.vmList:
-       #     progress = LoggingDialog(self, "Export", [VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"])
-       #     progress.run()
-
-#        for progress in holdLogging:
-#            progress.run()
-        
-        #spinnerDialog = SpinnerDialog(self, "Zipping files, this may take a few minutes...")
 
         self.exportZipFiles(folderPath, spinnerDialog)
         #spinnerDialog2.run()
-    
+
     def getAvailableVMs(self):
         vmList = subprocess.check_output([VBOXMANAGE_DIRECTORY, "list", "vms"])
         vmList = re.findall("\"(.*)\"", vmList)
@@ -110,26 +106,43 @@ class Session:
                     break
             if thisMatchFound == False:
                 matchFound = False
-        
+
         return matchFound
-    
+
     def removeVM(self):
-    
+
         self.currentWorkshop.vmList.remove(self.currentVM)
-      
+
+    def removeMaterial(self):
+        self.holdDirectory = WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"
+        if os.path.exists(self.holdDirectory+self.currentMaterial.name):
+            os.remove(self.holdDirectory+self.currentMaterial.name)
+        self.currentWorkshop.materialList.remove(self.currentMaterial)
+
     def removeWorkshop(self):
-    
+
         os.remove(WORKSHOP_CONFIG_DIRECTORY+"/"+self.currentWorkshop.filename+".xml")
         self.workshopList.remove(self.currentWorkshop)
 
     def addWorkshop(self, workshopName, vmName):
-    
+
         self.workshopList.append(Workshop(workshopName, vmName))
-        
+
     def addVM(self, vmName):
-        
+
         self.currentWorkshop.addVM(vmName)
-      
+
+    def addMaterial(self, materialAddress):
+        self.holdName = os.path.basename(materialAddress)
+        self.currentWorkshop.addMaterial(materialAddress, self.holdName)
+
+        self.holdDirectory = WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"
+        if not os.path.exists(self.holdDirectory):
+            os.makedirs(self.holdDirectory)
+
+        if not os.path.exists(self.holdDirectory+material.name):
+            shutil.copy2(materialAddress, self.holdDirectory+self.holdName)
+
     # This will load xml files
     def loadXMLFiles(self, directory):
 
@@ -140,9 +153,9 @@ class Session:
                 workshop = Workshop(filename, None)
                 workshop.loadFileConfig(filename)
                 self.workshopList.append(workshop)
-    
+
     def softSaveWorkshop(self, inPath, inIPAddress, inBaseGroupName, inCloneNumber, inCloneSnapshots, inLinkedClones, inBaseOutName, inVRDPBaseport):
-        
+
         self.currentWorkshop.pathToVBoxManage = inPath
         self.currentWorkshop.ipAddress = inIPAddress
         self.currentWorkshop.baseGroupName = inBaseGroupName
@@ -151,16 +164,30 @@ class Session:
         self.currentWorkshop.linkedClones = inLinkedClones
         self.currentWorkshop.baseOutName = inBaseOutName
         self.currentWorkshop.vrdpBaseport = inVRDPBaseport
-        
-    def softSaveVM(self, inVMName, inVRDPEnabled, inInternalnetBasenameList):
-    
-        self.currentVM.name = inVMName
-        self.currentVM.vrdpEnabled = inVRDPEnabled
 
-        self.currentVM.internalnetBasenameList = inInternalnetBasenameList
-        
+    def softSaveMaterial(self, inMaterialName):
+        if self.currentMaterial.name != inMaterialName:
+            os.rename(WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+self.currentMaterial.name, WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+inMaterialName)
+            self.currentMaterial.name = inMaterialName
+
+    def softSaveVM(self, inVMName, inVRDPEnabled, inInternalnetBasenameList):
+
+        self.somethingChanged = ((self.currentVM.name != inVMName) or (self.currentVM.vrdpEnabled != inVRDPEnabled))
+        if not self.somethingChanged:
+            self.somethingChanged = (self.currentVM.internalnetBasenameList != inInternalnetBasenameList)
+
+        if self.somethingChanged:
+            print("changing VM stuff, then RDP")
+            self.currentVM.name = inVMName
+            self.currentVM.vrdpEnabled = inVRDPEnabled
+            self.hardSave()
+            self.runScript("workshop-rdp.py")
+        else:
+            print("ignoring VM stuff, no change")
+
+
     def hardSave(self):
-    
+
         for workshop in self.workshopList:
 
             # Create root of XML etree
@@ -192,11 +219,28 @@ class Session:
                 for internalnet in vm.internalnetBasenameList:
                     etree.SubElement(vm_element, "internalnet-basename").text = internalnet
 
+            self.holdDirectory = WORKSHOP_MATERIAL_DIRECTORY+workshop.filename+"/"
+            if not os.path.exists(self.holdDirectory):
+                os.makedirs(self.holdDirectory)
+
+            for material in workshop.materialList:
+                material_element = etree.SubElement(vm_set_element, "material")
+                etree.SubElement(material_element, "address").text = material.address
+                etree.SubElement(material_element, "name").text = material.name
+
             # Create tree for writing to XML file
             tree = etree.ElementTree(root)
 
             # Write tree to XML config file
             tree.write(WORKSHOP_CONFIG_DIRECTORY+workshop.filename+".xml", pretty_print = True)
+
+class Material:
+    def __init__(self, materialAddress, materialName):
+
+        self.address = materialAddress
+        self.name = materialName
+        #self.name = self.address.split('\\')
+        #self.name = self.name[len(self.name)-1]
 
 class VM:
 
@@ -233,9 +277,14 @@ class Workshop:
           vm=VM(vmName)
           self.vmList.append(vm);
 
+        self.materialList = []
+
     def addVM(self, vmName):
-        
+
         self.vmList.append(VM(vmName))
+
+    def addMaterial(self, materialAddress, materialName):
+        self.materialList.append(Material(materialAddress, materialName))
 
     def loadFileConfig(self, inputFile):
 
@@ -265,3 +314,7 @@ class Workshop:
             for internalnet in internalnetList:
                 currentVM.internalnetBasenameList.append(internalnet.text.rstrip().lstrip())
             self.vmList.append(currentVM)
+
+        for material in vmset.findall('material'):
+            currentMaterial = Material(material.find('address').text.rstrip().lstrip(), material.find('name').text.rstrip().lstrip())
+            self.materialList.append(currentMaterial)
