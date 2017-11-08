@@ -16,6 +16,7 @@ from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 
 from workshop_creator_gui_resources.model import Workshop
 from workshop_creator_gui_resources.model import VM
+from workshop_creator_gui_resources.model import Material
 from workshop_creator_gui_resources.model import Session
 
 import workshop_creator_gui_resources.gui_constants as gui_constants
@@ -27,6 +28,9 @@ WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_DIRECTORY = gui_constants.WORKSHOP_CREATOR_DIRECTORY
+WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
+VM_TREE_LABEL = "V: "
+MATERIAL_TREE_LABEL = "M: "
 
 
 # This class is a container that contains the base GUI
@@ -137,6 +141,37 @@ class InternalnetBasenameWidget(Gtk.EventBox):
         self.outerHorBox.pack_end(self.removeInetButton, False, False, PADDING)
         self.outerHorBox.pack_end(self.entry, False, False, PADDING)
 
+# This class is a container that will hold the material information
+class MaterialWidget(Gtk.Box):
+
+    def __init__(self):
+        super(MaterialWidget, self).__init__()
+
+        self.set_border_width(PADDING)
+
+        # Declaration of boxes
+        self.outerVertBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
+        self.addressHorBox = Gtk.Box(spacing=BOX_SPACING)
+        self.nameHorBox = Gtk.Box(spacing=BOX_SPACING)
+
+        # Declaration of labels
+        self.nameLabel = Gtk.Label("Name:")
+
+        # Declaration of entrys
+        self.nameEntry = Gtk.Entry()
+
+        #initialize containers
+        self.add(self.outerVertBox)
+        self.outerVertBox.add(self.addressHorBox)
+        self.outerVertBox.add(self.nameHorBox)
+
+        #initialize labels
+        self.nameHorBox.pack_start(self.nameLabel, False, False, PADDING)
+
+        #initialize entries
+        self.nameHorBox.pack_end(self.nameEntry, False, False, PADDING)
+
+
 # This class is a container that will hold the vm information
 class VMWidget(Gtk.Box):
 
@@ -242,14 +277,16 @@ class WorkshopTreeWidget(Gtk.Grid):
             treeIter = self.treeStore.append(None, [workshop.filename])
 
             for vm in workshop.vmList:
-                self.treeStore.append(treeIter, [vm.name])
+                self.treeStore.append(treeIter, [VM_TREE_LABEL+vm.name])
+            for material in workshop.materialList:
+                self.treeStore.append(treeIter, [MATERIAL_TREE_LABEL+material.name])
 
     def clearTreeStore(self):
         self.treeStore.clear()
 
     def addNode(self, workshopName, vmName):
         treeIter = self.treeStore.append(None, [workshopName])
-        self.treeStore.append(treeIter, [vmName])
+        self.treeStore.append(treeIter, [VM_TREE_LABEL+vmName])
 
     def addChildNode(self, workshopTreeIter, vmName):
         self.treeStore.append(workshopTreeIter, [vmName])
@@ -280,8 +317,11 @@ class AppWindow(Gtk.ApplicationWindow):
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
+        self.currentModel = None
+        self.currentIter = None
         self.baseWidget = BaseWidget()
         self.vmWidget = VMWidget()
+        self.materialWidget = MaterialWidget()
 
         # if the currently highlighted tree element is a parent, its a workshop
         self.isParent = None
@@ -335,18 +375,21 @@ class AppWindow(Gtk.ApplicationWindow):
         self.exportWorkshop.connect("activate", self.exportWorkshopActionEvent)
         self.addVM = Gtk.MenuItem("Add VM")
         self.addVM.connect("activate", self.addVMActionEvent)
+        self.addMaterial = Gtk.MenuItem("Add Material File")
+        self.addMaterial.connect("activate", self.addMaterialActionEvent)
         self.createRDP = Gtk.MenuItem("Create RDP Files")
         self.createRDP.connect("activate", self.createRDPActionEvent)
         self.restoreSnapshots = Gtk.MenuItem("Restore Snapshots")
         self.restoreSnapshots.connect("activate", self.restoreSnapshotsActionEvent)
-        
-        self.removeVM = Gtk.MenuItem("Remove VM")
-        self.removeVM.connect("activate", self.removeVMActionEvent)
+
+        self.removeItem = Gtk.MenuItem("Remove Workshop Item")
+        self.removeItem.connect("activate", self.removeVMActionEvent)
 
 
         # Workshop context menu
         self.workshopMenu = Gtk.Menu()
         self.workshopMenu.append(self.addVM)
+        self.workshopMenu.append(self.addMaterial)
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
         self.workshopMenu.append(self.createWorkshop)
         self.workshopMenu.append(self.removeWorkshop)
@@ -354,15 +397,15 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
         self.workshopMenu.append(self.createRDP)
         self.workshopMenu.append(self.restoreSnapshots)
-        
+
 
         #context menu for blank space
         self.blankMenu = Gtk.Menu()
         self.blankMenu.append(self.addWorkshop)
 
         # VM context menu
-        self.vmMenu = Gtk.Menu()
-        self.vmMenu.append(self.removeVM)
+        self.itemMenu = Gtk.Menu()
+        self.itemMenu.append(self.removeItem)
 
 
     def initializeContainers(self):
@@ -379,12 +422,14 @@ class AppWindow(Gtk.ApplicationWindow):
         self.scrolledActionBox.set_min_content_height(600)
 
     def onItemSelected(self, selection):
+        self.softSave()
         model, treeiter = selection.get_selected()
+        self.currentModel = model
+        self.currentIter = treeiter
 
         if treeiter == None:
             return
 
-        self.softSave()
 
         if model.iter_has_child(treeiter):
             self.isParent = True
@@ -445,12 +490,22 @@ class AppWindow(Gtk.ApplicationWindow):
                 return
 
             self.currentVM = None
+            self.currentMaterial = None
+            self.session.currentVM = None
+            self.session.currentMaterial = None
             matchFound = False
             for vmWidget in self.session.currentWorkshop.vmList:
-                if vmName == vmWidget.name:
+                if vmName == VM_TREE_LABEL+vmWidget.name:
                     self.session.currentVM = vmWidget
                     matchFound = True
                     break
+
+            if not matchFound:
+                for materialWidget in self.session.currentWorkshop.materialList:
+                    if vmName == MATERIAL_TREE_LABEL+materialWidget.name:
+                        self.session.currentMaterial = materialWidget
+                        matchFound = True
+                        break
 
             if not matchFound:
                 return
@@ -458,19 +513,25 @@ class AppWindow(Gtk.ApplicationWindow):
             for widget in self.scrolledInnerBox.get_children():
                 self.scrolledInnerBox.remove(widget)
 
-            self.scrolledInnerBox.pack_start(self.vmWidget, False, False, PADDING)
+            if self.session.currentVM != None:
+                self.scrolledInnerBox.pack_start(self.vmWidget, False, False, PADDING)
 
-            self.vmWidget.nameEntry.set_text(self.session.currentVM.name)
-            self.holdVRDP=0
-            if self.session.currentVM.vrdpEnabled == "false":
-                self.holdVRDP=1
-            self.vmWidget.vrdpEnabledEntry.set_active(self.holdVRDP)
-            self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
-            self.vmWidget.initializeSignals(self.inetActionEvent)
+                self.vmWidget.nameEntry.set_text(self.session.currentVM.name)
+                self.holdVRDP=0
+                if self.session.currentVM.vrdpEnabled == "false":
+                    self.holdVRDP=1
+                self.vmWidget.vrdpEnabledEntry.set_active(self.holdVRDP)
+                self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
+                self.vmWidget.initializeSignals(self.inetActionEvent)
 
-            if len(self.vmWidget.inetBasenameWidgetList) > 1:
-                for k,rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
-                    rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
+                if len(self.vmWidget.inetBasenameWidgetList) > 1:
+                    for k,rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
+                        rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
+
+            elif self.session.currentMaterial != None:
+                self.scrolledInnerBox.pack_start(self.materialWidget, False, False, PADDING)
+
+                self.materialWidget.nameEntry.set_text(self.session.currentMaterial.name)
 
             self.actionBox.show_all()
 
@@ -505,14 +566,21 @@ class AppWindow(Gtk.ApplicationWindow):
 
         elif self.isParent == False:
 
-            self.holdInternalnetBasenameList = []
-            for inetWidget in self.vmWidget.inetBasenameWidgetList:
-                self.holdInternalnetBasenameList.append(inetWidget.entry.get_text())
+            if self.session.currentVM != None:
+                self.currentModel.set(self.currentIter, 0, VM_TREE_LABEL+self.vmWidget.nameEntry.get_text())
+                self.holdInternalnetBasenameList = []
+                for inetWidget in self.vmWidget.inetBasenameWidgetList:
+                    self.holdInternalnetBasenameList.append(inetWidget.entry.get_text())
 
-            self.holdVRDP="true"
-            if self.vmWidget.vrdpEnabledEntry.get_active_text() == "false":
-                self.holdVRDP="false"
-            self.session.softSaveVM(self.vmWidget.nameEntry.get_text(), self.holdVRDP, self.holdInternalnetBasenameList)
+                self.holdVRDP="true"
+                if self.vmWidget.vrdpEnabledEntry.get_active_text() == "false":
+                    self.holdVRDP="false"
+                self.session.softSaveVM(self.vmWidget.nameEntry.get_text(), self.holdVRDP, self.holdInternalnetBasenameList)
+            elif self.session.currentMaterial != None:
+                self.currentModel.set(self.currentIter, 0, MATERIAL_TREE_LABEL+self.materialWidget.nameEntry.get_text())
+                self.session.softSaveMaterial(self.materialWidget.nameEntry.get_text())
+
+
 
     # Will save all changed to the disk
     def hardSave(self):
@@ -526,7 +594,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def createRDPActionEvent(self, menuItem):
         self.session.runScript("workshop-rdp.py")
-        
+
     def restoreSnapshotsActionEvent(self, menuItem):
         self.session.runScript("workshop-restore.py")
 
@@ -563,8 +631,8 @@ class AppWindow(Gtk.ApplicationWindow):
                     self.workshopMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
                 elif not model.iter_has_child(treeIter):
-                    self.vmMenu.show_all()
-                    self.vmMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+                    self.itemMenu.show_all()
+                    self.itemMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
             else:
                 self.blankMenu.show_all()
@@ -579,10 +647,15 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def addNewVM(self, vmName):
         self.session.addVM(vmName)
-        self.workshopTree.addChildNode(self.focusedTreeIter, vmName)
+        self.workshopTree.addChildNode(self.focusedTreeIter, VM_TREE_LABEL+vmName)
 
         self.softSave()
         self.hardSave()
+
+    def addNewMaterial(self, materialAddress):
+        holdName = os.path.basename(materialAddress)
+        self.session.addMaterial(materialAddress)
+        self.workshopTree.addChildNode(self.focusedTreeIter, MATERIAL_TREE_LABEL+holdName)
 
     def runWorkshopActionEvent(self, menuItem):
         if self.session.currentWorkshop is None:
@@ -630,6 +703,21 @@ class AppWindow(Gtk.ApplicationWindow):
             self.session.removeWorkshop()
             model.remove(self.focusedTreeIter)
 
+    def addMaterialActionEvent(self, menuItem):
+        dialog = Gtk.FileChooserDialog("Please choose a file", self,
+        Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.OK:
+            self.addNewMaterial(dialog.get_filename())
+            #self.actionBox.show_all()
+        elif response == Gtk.ResponseType.CANCEL:
+            print("Cancel was selected")
+
+        dialog.destroy()
+
     def addVMActionEvent(self, menuItem):
         vmDialog = ListEntryDialog(self, "Enter a VM name.")
         vmText = None
@@ -643,14 +731,20 @@ class AppWindow(Gtk.ApplicationWindow):
             self.addNewVM(vmText)
 
     def removeVMActionEvent(self, menuItem):
-        if len(self.session.currentWorkshop.vmList) > 1:
+        if self.session.currentVM != None:
+            if len(self.session.currentWorkshop.vmList) > 1:
+                model = self.workshopTree.treeStore
+                self.session.removeVM()
+                model.remove(self.focusedTreeIter)
+            else:
+                dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "Cannot delete the last VM in a Workshop.")
+                dialog.run()
+                dialog.destroy()
+
+        elif self.session.currentMaterial != None:
             model = self.workshopTree.treeStore
-            self.session.removeVM()
+            self.session.removeMaterial()
             model.remove(self.focusedTreeIter)
-        else:
-            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "Cannot delete the last VM in a Workshop.")
-            dialog.run()
-            dialog.destroy()
 
 
     # Event, executes when export is called
@@ -720,6 +814,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
             ovaList = []
             xmlList = []
+            materialList = []
             # Get all files that end with .ova
             for filename in os.listdir(tempPath):
                 if filename.endswith(".ova"):
@@ -727,38 +822,34 @@ class AppWindow(Gtk.ApplicationWindow):
                 elif filename.endswith(".xml"):
                     xmlList.append(filename)
 
-            #total = len(ovaList) * 22
+            for filename in os.listdir(tempPath+"/Materials/"):
+                materialList.append(filename)
 
-            #currentTotal = []
-            #currentTotal.append(0)
 
-            #threads = []
             for ova in ovaList:
-                #p = subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath+ova], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                #t = threading.Thread(target=self.importWorker, args=[p, currentTotal])
-                #threads.append(t)
-                #t.start()
                 spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
                 self.session.importToVBox(tempPath+ova, spinnerDialog)
 
             for xml in xmlList:
                 shutil.copy2(tempPath+xml, WORKSHOP_CONFIG_DIRECTORY)
-                shutil.rmtree(baseTempPath)
+
+            holdMatPath = WORKSHOP_MATERIAL_DIRECTORY+(os.path.splitext(xmlList[0])[0])+"/"
+            if not os.path.exists(holdMatPath):
+                os.makedirs(holdMatPath)
+            for material in materialList:
+                if not os.path.exists(holdMatPath+material):
+                    shutil.copy2(tempPath+"/Materials/"+material, holdMatPath)
 
 
+            self.session.loadXMLFiles(tempPath)
+            self.workshopTree.clearTreeStore()
+            self.workshopTree.populateTreeStore(self.session.workshopList)
+
+
+            shutil.rmtree(baseTempPath)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-
-    # Thread function, imports files
-    def importWorker(self, process, currentTotal):
-
-        character = None
-        while process.poll() is None and character != "":
-            character = process.stdout.read(1)
-            if character == "%":
-                currentTotal[0] = currentTotal[0] + 1
-
 
     # Executes when the window is closed
     def on_delete(self, event, widget):
