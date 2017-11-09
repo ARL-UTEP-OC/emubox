@@ -180,6 +180,7 @@ class Session:
             print("changing VM stuff, then RDP")
             self.currentVM.name = inVMName
             self.currentVM.vrdpEnabled = inVRDPEnabled
+            #self.currentVM.internalnetBasenameList = inInternalnetBasenameList
             self.hardSave()
             self.runScript("workshop-rdp.py")
         else:
@@ -267,8 +268,8 @@ class Workshop:
         self.numOfClones = "1" # Int
         self.cloneSnapshots = "false" # Bool
         self.linkedClones = "false" # Bool
-        self.baseOutName = "" # String
-        self.vrdpBaseport = "VRDP Baseport" # int
+        self.baseOutName = "101" # String
+        self.vrdpBaseport = "1011" # int
 
 
         self.vmList = [] # VM
