@@ -12,6 +12,7 @@ from lxml import etree
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
+WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
 
 class Session:
     def __init__(self):
@@ -85,6 +86,12 @@ class Session:
             os.makedirs(folderPath+"/Materials/")
         for material in self.currentWorkshop.materialList:
             shutil.copy2(WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+material.name, folderPath+"/Materials")
+
+        if not os.path.exists(folderPath+"/RDP/"):
+            os.makedirs(folderPath+"/RDP/")
+        if os.path.exists(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename):
+            for rdpfile in os.listdir(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename):
+                shutil.copy2(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename+"/"+rdpfile, folderPath+"/RDP/")
 
         for vm in self.currentWorkshop.vmList:
             subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', folderPath+'/'+vm.name+'.ova'])
@@ -177,14 +184,11 @@ class Session:
             self.somethingChanged = (self.currentVM.internalnetBasenameList != inInternalnetBasenameList)
 
         if self.somethingChanged:
-            print("changing VM stuff, then RDP")
             self.currentVM.name = inVMName
             self.currentVM.vrdpEnabled = inVRDPEnabled
             #self.currentVM.internalnetBasenameList = inInternalnetBasenameList
             self.hardSave()
             self.runScript("workshop-rdp.py")
-        else:
-            print("ignoring VM stuff, no change")
 
 
     def hardSave(self):
