@@ -815,6 +815,7 @@ class AppWindow(Gtk.ApplicationWindow):
             ovaList = []
             xmlList = []
             materialList = []
+            rdpList = []
             # Get all files that end with .ova
             for filename in os.listdir(tempPath):
                 if filename.endswith(".ova"):
@@ -824,6 +825,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
             for filename in os.listdir(tempPath+"/Materials/"):
                 materialList.append(filename)
+
+            for filename in os.listdir(tempPath+"/RDP/"):
+                rdpList.append(filename)
 
 
             for ova in ovaList:
@@ -839,6 +843,13 @@ class AppWindow(Gtk.ApplicationWindow):
             for material in materialList:
                 if not os.path.exists(holdMatPath+material):
                     shutil.copy2(tempPath+"/Materials/"+material, holdMatPath)
+
+            holdRDPPath = WORKSHOP_RDP_DIRECTORY+(os.path.splitext(xmlList[0])[0])+"/"
+            if not os.path.exists(holdRDPPath):
+                os.makedirs(holdRDPPath)
+            for rdp in rdpList:
+                if not os.path.exists(holdRDPPath+rdp):
+                    shutil.copy2(tempPath+"/RDP/"+rdp, holdRDPPath)
 
 
             self.session.loadXMLFiles(tempPath)

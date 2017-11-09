@@ -5,6 +5,8 @@ import shlex
 import sys
 import os
 
+WORKSHOP_RDP_LOCATION = "workshop_creator_gui_resources/workshop_rdp/"
+
 def printError(message):
     print "\r\n\r\n!!!!!!!!!!\r\nERROR:\r\n", message, "\r\n!!!!!!!!!!\r\n"
     print "Exiting..."
@@ -71,7 +73,7 @@ kdcproxyname:s:
 		print "Complete"
 	except Exception as e:
 		print "ERROR creating RDP File:", e
-		
+
 def create_rdesktop_file(directory, filename, ip, port):
 	if port:
 		ip = ip + ":" + port
@@ -90,12 +92,16 @@ rdesktop -g 1280x768 -a 16 -T "Route Hijacking" """+ip+"""
 		print "Complete"
 	except Exception as e:
 		print "ERROR creating RDP File:", e
-	
+
 if len(sys.argv) < 2:
     print "Usage: python workshop-rdp.py <input filename>"
     exit()
 
 inputFilename = sys.argv[1]
+inputFileBasename = os.path.splitext(os.path.basename(inputFilename))[0]
+
+if not os.path.exists(WORKSHOP_RDP_LOCATION):
+    os.makedirs(WORKSHOP_RDP_LOCATION)
 
 tree = ET.parse(inputFilename)
 root = tree.getroot()
@@ -117,6 +123,7 @@ baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
 
 vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
 
+
 for vm in vmset.findall('vm'):
     myBaseOutname = baseOutname
     for i in range(1, numClones + 1):
@@ -129,7 +136,7 @@ for vm in vmset.findall('vm'):
             print "VM not found: ", vmname
             print "Exiting"
             exit()
-        
+
         # The new vm name ending with myBaseOutname
         newvmName = vmname + myBaseOutname + str(i)
 
@@ -140,8 +147,8 @@ for vm in vmset.findall('vm'):
         vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
         if vrdpEnabled and vrdpEnabled == 'true':
             newVRDPname = str(vrdpBaseport)
-            create_rdp_file(baseGroupname+"\RDP",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
-            create_rdesktop_file(baseGroupname+"\RDP",newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
+            create_rdp_file(WORKSHOP_RDP_LOCATION+inputFileBasename+"/",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
+            create_rdesktop_file(WORKSHOP_RDP_LOCATION+inputFileBasename+"/",newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
             vrdpBaseport = str(int(vrdpBaseport) + 1)
 print """
 **************************************************************************************
