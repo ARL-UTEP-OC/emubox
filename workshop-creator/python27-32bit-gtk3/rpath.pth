@@ -1,0 +1,1 @@
+import distutils.sysconfig, sys, os; os.environ['PATH'] = os.path.join(distutils.sysconfig.get_python_lib(),'gnome;') + os.getenv('PATH')
