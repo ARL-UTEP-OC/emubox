@@ -666,6 +666,8 @@ class AppWindow(Gtk.ApplicationWindow):
         command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
         t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
         t.start()
+
+        self.session.runWorkshop()
         #        self.runLogging("Workshop Creator", command)
         #        t = threading.Thread(target=self.runLogging, args=["Workshop Creator", command])
         #            t.start()
