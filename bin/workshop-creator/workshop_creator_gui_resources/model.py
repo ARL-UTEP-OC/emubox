@@ -13,6 +13,7 @@ VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
+MANAGER_SAVE_DIRECTORY = gui_constants.MANAGER_SAVE_DIRECTORY
 
 class Session:
     def __init__(self):
@@ -20,6 +21,28 @@ class Session:
       self.currentWorkshop = None
       self.currentVM = None
       self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
+
+    def runWorkshop(self):
+        if self.currentWorkshop != None:
+            self.holdDirectory = MANAGER_SAVE_DIRECTORY+self.currentWorkshop.filename+"/"
+            if not os.path.exists(self.holdDirectory):
+                os.makedirs(self.holdDirectory)
+            if not os.path.exists(self.holdDirectory+"Materials/"):
+                os.makedirs(self.holdDirectory+"Materials/")
+            if not os.path.exists(self.holdDirectory+"RDP/"):
+                os.makedirs(self.holdDirectory+"RDP/")
+
+            for holdFile in os.listdir(self.holdDirectory+"Materials/"):
+                os.remove(self.holdDirectory+"Materials/"+holdFile)
+
+            for holdFile in os.listdir(self.holdDirectory+"RDP/"):
+                os.remove(self.holdDirectory+"RDP/"+holdFile)
+
+            for material in self.currentWorkshop.materialList:
+                shutil.copy2(WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+material.name, self.holdDirectory+"/Materials/")
+
+            for rdpfile in os.listdir(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename):
+                shutil.copy2(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename+"/"+rdpfile, self.holdDirectory+"/RDP/")
 
     def runScript(self, script):
         if self.currentWorkshop != None:
@@ -162,6 +185,12 @@ class Session:
                 self.workshopList.append(workshop)
 
     def softSaveWorkshop(self, inPath, inIPAddress, inBaseGroupName, inCloneNumber, inCloneSnapshots, inLinkedClones, inBaseOutName, inVRDPBaseport):
+        self.oldNumOfClones = self.currentWorkshop.numOfClones
+        self.oldCloneSnapshots = self.currentWorkshop.cloneSnapshots
+        self.oldLinkedClones = self.currentWorkshop.linkedClones
+        self.oldBaseGroupName = self.currentWorkshop.baseGroupName
+        self.oldBaseOutName = self.currentWorkshop.baseOutName
+        self.oldVRDPBaseport = self.currentWorkshop.vrdpBaseport
 
         self.currentWorkshop.pathToVBoxManage = inPath
         self.currentWorkshop.ipAddress = inIPAddress
@@ -172,10 +201,19 @@ class Session:
         self.currentWorkshop.baseOutName = inBaseOutName
         self.currentWorkshop.vrdpBaseport = inVRDPBaseport
 
+        if (self.oldNumOfClones != self.currentWorkshop.numOfClones) or (self.oldCloneSnapshots != self.currentWorkshop.cloneSnapshots) or (self.oldLinkedClones != self.currentWorkshop.linkedClones) or (self.oldBaseGroupName != self.currentWorkshop.baseGroupName) or (self.oldBaseOutName != self.currentWorkshop.baseOutName) or (self.oldVRDPBaseport != self.currentWorkshop.vrdpBaseport):
+            self.hardSave()
+            self.runRDPScript()
+
     def softSaveMaterial(self, inMaterialName):
         if self.currentMaterial.name != inMaterialName:
             os.rename(WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+self.currentMaterial.name, WORKSHOP_MATERIAL_DIRECTORY+self.currentWorkshop.filename+"/"+inMaterialName)
             self.currentMaterial.name = inMaterialName
+
+    def runRDPScript(self):
+        for rdpfile in os.listdir(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename):
+            os.remove(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename+"/"+rdpfile)
+        self.runScript("workshop-rdp.py")
 
     def softSaveVM(self, inVMName, inVRDPEnabled, inInternalnetBasenameList):
 
@@ -188,7 +226,7 @@ class Session:
             self.currentVM.vrdpEnabled = inVRDPEnabled
             #self.currentVM.internalnetBasenameList = inInternalnetBasenameList
             self.hardSave()
-            self.runScript("workshop-rdp.py")
+            self.runRDPScript()
 
 
     def hardSave(self):
@@ -230,7 +268,6 @@ class Session:
 
             for material in workshop.materialList:
                 material_element = etree.SubElement(vm_set_element, "material")
-                etree.SubElement(material_element, "address").text = material.address
                 etree.SubElement(material_element, "name").text = material.name
 
             # Create tree for writing to XML file
