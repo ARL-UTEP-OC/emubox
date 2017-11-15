@@ -10,36 +10,38 @@
         <h1 align="center">Welcome to EmuBox</h1>
         <h3 align="center">Please connect to one of the following with remote desktop.</h3>
 
-        <table style="width:50%" border="1" cellpadding="5" cellspacing="5" align="center">
+        <table style="width:75%" border="1" cellpadding="5" cellspacing="5" align="center">
         <thead>
             <tr>
-                <th>Workshop Name</th>
-                <th>Number Available</th>
-                <th>Materials</th>
-                <th>Connection Link</th>
+                <th style="text-align: center">Workshop Name</th>
+                <th style="text-align: center">Number Available</th>
+                <th style="text-align: center">Materials</th>
+                <th style="text-align: center">Connection Link</th>
             </tr>
         </thead>
         <tbody>
-        {% for workshop in templateAvailable %}
+        {% for workshop in workshops %}
             <tr>
                 <td>
-                    <center> {{ workshop.workshopName }} </center>
+                    <div style="text-align: center"> {{ workshop.workshopName }} </div>
                 </td>
                 <td>
-                    <center> There <span class="workshop_queue" id="{{ workshop.workshopName }}"></span> available! </center>
+                    <div style="text-align: center"><span class="workshop_queue" id="{{ workshop.workshopName }}"></span> workshops available! </div>
                 </td>
                 <td>
                     {% for material in workshop.materials %}
-                        <center> {{ loop.index }}. <a href="{{ material[0] }}">{{ material[1] }} </a> <br/> </center>
+                        <div style="text-align: center"> -<a href="{{ material[0] }}">{{ material[1] }} </a> <br/> </div>
                     {% endfor %}
                 </td>
                 <td>
-                    {% if workshop.q.qsize() %}
-                        <center>
-                            Windows: <a href="/ms-rdp/{{ workshop.workshopName}}">MS-RDP</a><br/>
-                            Linux: <a href="/rdesktop/{{ workshop.workshopName}}">rdesktop</a>
-                        </center>
-                    {% endif %}
+                    <div id = "download_links_{{ workshop.workshopName }}">
+                        <div id="ms_rdp_{{ workshop.workshopName }}" style="text-align: center">
+                            Windows: <a href="/checkout/ms-rdp/{{ workshop.workshopName}}">MS-RDP</a>
+                        </div>
+                        <div id="rdesktop_{{ workshop.workshopName }}" style="text-align: center">
+                            Linux: <a href="/checkout/rdesktop/{{ workshop.workshopName}}">rdesktop</a>
+                        </div>
+                    </div>
                 </td>
             </tr>
         {% endfor %}
@@ -47,18 +49,22 @@
         </table>
 
         <script>
-            window.setInterval(updateQueueStatuses, 1000); // Call function every second
-            function updateQueueStatuses() {
+            window.setInterval(updateStatuses, 1000); // Call function every second
+            function updateStatuses() {
                     $(".workshop_queue").each(function() {
-                        var $this = $(this);
+                        var $this = $(this)
+                        var id = $(this).attr("id");
                         $.ajax({
-                            url: "/getQueueSize/"+$(this).attr("id"),
+                            url: "/getQueueSize/" + id,
                             dataType: "json",
                             success: function(response) {
-                                if (response == 1)
-                                    $this.text(" is 1 workshop");
+                                var s = "download_links_" + id;
+                                if (response === 0)
+                                    $('#' + s).hide();
                                 else
-                                    $this.text(" are " + response + " workshops ");
+                                    $('#' + s).show();
+                                $this.text(response);
+                                $this.text();
                             }
                         });
                     });

@@ -1,6 +1,7 @@
 import time
 import traceback
 import VMStateManager.vbox_monitor
+from vboxapi import VirtualBoxManager
 import os
 
 # gevent imports
@@ -12,19 +13,20 @@ gevent.monkey.patch_all()
 #to reduce stdout
 import logging
 
-# Queue import
-from Queue import *
-
+from Workshop_Queue import Workshop_Queue
 from Workshop_Unit import Workshop_Unit
-from Workshop import Workshop
 
+mgr = VirtualBoxManager(None, None)
 
 probeTime = 5
 aggregatedInfo = []
 availableWorkshops = []
+unitsOnHold = []
+checkoutTime = 30
 
 # vars needed for gevent (lock)
 aggregatedInfoSem = BoundedSemaphore(1)
+
 
 def cleanup():
     logging.info("Cleaning up webdata aggregator...")
@@ -34,73 +36,107 @@ def cleanup():
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
 
+def unitIsAvailable(vms):
+    for vm in vms:
+        if (vm not in VMStateManager.vbox_monitor.availableState and VMStateManager.vbox_monitor.vms[vm]["vrde"]) \
+                or (VMStateManager.vbox_monitor.vms[vm]["VMState"] != mgr.constants.MachineState_Running):
+            return False
+    return True
+
+def getAvailableUnits():
+    availableUnits = []
+    getGroupToVms = VMStateManager.vbox_monitor.getGroupToVms().copy()
+    while(getGroupToVms):
+        unit = getGroupToVms.popitem()
+        if unitIsAvailable(unit[1]):
+            workshopName = unit[0].split('/')[1]
+            rdp_files = getRDPPath(unit, workshopName)
+            rdesktop_files = getRDesktopPath(unit, workshopName)
+            if len(rdp_files) and (len(rdp_files) == len(rdesktop_files)):
+                availableUnits.append(Workshop_Unit(workshopName, unit[1], rdp_files, rdesktop_files))
+    return availableUnits
+
+
 def aggregateData():
-    """ Communicates with VBox Manager to gather and consolidate virtual machine informaiton into Workshop Units """
+    """ Communicates with VBox Manager to gather and consolidate virtual machine information into Workshop Units """
     global aggregatedInfo
+    global availableWorkshops
+
     while True:
         try:
-            #should scan file system and then aggregate any information at the unit level
-            monitorInfo = VMStateManager.vbox_monitor.getAvailableInfo()
+            # should scan file system and then aggregate any information at the unit level
+            availableUnits = getAvailableUnits()
             aggregatedInfoSem.wait()
             aggregatedInfoSem.acquire()
-            aggregatedInfo = []
-            for vmInfo in monitorInfo:
-                vm = vmInfo[0]
-                workshopName = vm["groups"][0].split("/")[1]
-                if len(workshopName) < 0:
-                    workshopName = vm["groups"][0]
-                logging.debug( "WORKSHOP NAME: "+ str(workshopName))
-                ###########Look for RDP Info########
-                rdpFilename = os.path.join("WorkshopData", workshopName,"RDP", vm["name"]+"_"+vm["vrdeproperty[TCP/Ports]"]+".rdp").replace('\\', '/')
-                rdesktopFilename = os.path.join("WorkshopData", workshopName, "RDP",vm["name"] + "_" + vm["vrdeproperty[TCP/Ports]"] + ".sh").replace('\\', '/')
-                logging.debug( "LOOKING FOR "+str(rdpFilename) + " or " + str(rdesktopFilename))
-                if os.path.isfile(rdpFilename) == False:
-                    rdpFilename = ""
-                if os.path.isfile(rdesktopFilename) == False:
-                    rdesktopFilename = ""
-
-                if rdpFilename != "" or rdesktopFilename != "":
-                    logging.debug("FOUND FILE")
+            for unit in availableUnits:
+                workshopName = unit.workshopName
+                workshopExists = False
+                for workshop in availableWorkshops:
+                    if workshopName == workshop.workshopName:
+                        workshopExists = True
+                        break
+                if not workshopExists:
                     filesPaths = []
-                    materialsPath = os.path.join("WorkshopData", workshopName,"Materials")
+                    materialsPath = os.path.join("WorkshopData", workshopName, "Materials")
                     if os.path.isdir(materialsPath):
                         files = os.listdir(materialsPath)
                         for file in files:
-                            if os.path.isfile(os.path.join(materialsPath,file)):
+                            if os.path.isfile(os.path.join(materialsPath, file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
-                        logging.debug("FOUND FILES IN DIR: "+str(files))
-                    aggregatedInfo.append(Workshop_Unit(workshopName, vm["name"], rdpFilename, rdesktopFilename, vmInfo[1], filesPaths))
-            aggregateAvailableWorkshops()
+                    curr_workshop_queue = Workshop_Queue(workshopName, filesPaths)
+                    curr_workshop_queue.q.put(unit)
+                    availableWorkshops.append(curr_workshop_queue)
+                elif workshopExists:
+                    workshop_queue = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
+                    if unit not in workshop_queue.q.queue and unit not in unitsOnHold:
+                        workshop_queue.q.put(unit)
             aggregatedInfoSem.release()
             time.sleep(probeTime)
+            for workshop in availableWorkshops:
+                workshop.q.queue.clear()
         except Exception as e:
             logging.error("AGGREGATION: An error occurred: " + str(e))
             traceback.print_exc()
             exit()
             time.sleep(probeTime)
 
+
 def getAggregatedInfo():
     """ Returns: List of Workshop Units that are aggregated from the VBox Monitor. """
     #aggregatedInfoSem.wait()
     return aggregatedInfo
 
-def aggregateAvailableWorkshops():
-    """ Goes through a list of Workshop Units and creates a list Workshops whose queues contain Workshop Units that are "Available". """
-    global availableWorkshops
-    availableInfo = filter(lambda x: x.state == "Available", aggregatedInfo)  # get list of available workshops
-    availableWorkshops = []
-    while len(availableInfo) > 0:
-        curr_workshop_unit = availableInfo[0] # take first available workshop and get tmp list of all other workshops like it
-        curr_workshop = Workshop(curr_workshop_unit.workshopName, curr_workshop_unit.materials)
-        tmp = filter(lambda x: x.workshopName == curr_workshop.workshopName, availableInfo)
-        for w in tmp:  # put all like-workshops in a queue
-            curr_workshop.q.put(w)
-        availableWorkshops.append(curr_workshop)
-        availableInfo = filter(lambda x: x.workshopName != curr_workshop.workshopName, availableInfo)  # remove workshops put in queue
 
 def getAvailableWorkshops():
     """ Returns: List of Workshop objects whose queues contain Workshop Units that are "Available". """
     return availableWorkshops
+
+def checkoutUnit(unit):
+    unitsOnHold.append(unit)
+    time.sleep(checkoutTime)
+    unitsOnHold.remove(unit)
+
+def getRDPPath(unit, workshopName):
+    rdpPaths = []
+    for vm in unit[1]:
+        if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
+            rdpPath = os.path.join("WorkshopData", workshopName, "RDP",
+                               VMStateManager.vbox_monitor.vms[vm]["name"] + "_" +
+                                       VMStateManager.vbox_monitor.vms[vm]["vrdeproperty[TCP/Ports]"] +
+                                       ".rdp").replace('\\', '/')
+            rdpPaths.append(rdpPath)
+    return rdpPaths
+
+def getRDesktopPath(unit, workshopName):
+    rdesktopPaths = []
+    for vm in unit[1]:
+        if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
+            rdesktopPath = os.path.join("WorkshopData", workshopName, "RDP",
+                                   VMStateManager.vbox_monitor.vms[vm]["name"] + "_" +
+                                   VMStateManager.vbox_monitor.vms[vm]["vrdeproperty[TCP/Ports]"] +
+                                   ".sh").replace('\\', '/')
+            rdesktopPaths.append(rdesktopPath)
+    return rdesktopPaths
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

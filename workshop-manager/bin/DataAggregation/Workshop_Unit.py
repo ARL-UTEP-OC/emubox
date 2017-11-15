@@ -1,30 +1,26 @@
 class Workshop_Unit:
-    """ A Workshop Unit encapsulates a single Workshop Unit.
+    """ A Workshop_Unit encapsulates Workshop Units.
 
-        Attributes:
-            workshopName (str): The name of the workshop.
-            vmName (str): The name of the virtual machine running the workshop unit.
-            ms_rdp (str): The filename of the Microsoft Remote Desktop (.rdp) file used to connect to the workshop unit.
-            rdesktop (str): The filename of the Linux rdesktop file used to connect to the workshop unit
-            state (str): The state of the virtual machine hosting the workshop unit (Available / Unavailable).
-            materials (list of str): A list of relative paths to materials associated with the workshop.
-
+    Attributes:
+        workshopName (str): The name of the workshop.
+        vms (list of str): A list of Virtual Box VMs that are used for a specific unit.
+        rdp_files (list of str): A list of paths to rdp files that are used to connect to vms.
+        rdesktop_files (list of str): A list of paths to rdesktop files that are used to connect ot vms.
     """
 
-    def __init__(self, workshopName, vmName, ms_rdp, rdesktop, state, materials):
+    def __init__(self, workshopName, vms, rdp_files, rdesktop_files):
         """ Constructor for a Workshop Unit object.
+
         Args:
             workshopName (str): The name of the workshop.
-            vmName (str): The name of the virtual machine running the workshop unit.
-            ms_rdp (str): The filename of the Microsoft Remote Desktop (.rdp) file used to connect to the workshop unit.
-            rdesktop (str): The filename of the Linux rdesktop file used to connect to the workshop unit
-            state (str): The state of the virtual machine hosting the workshop unit (Available / Unavailable).
-            materials (list of str): A list of relative paths to materials associated with the workshop.
-
+            materials (list of str): A list of names of Virtual Box VMs that are used for a specific unit.
+            rdp_files (list of str): A list of paths to rdp files that are used to connect to vms.
+            rdesktop_files (list of str): A list of paths to rdesktop files that are used to connect ot vms.
         """
         self.workshopName = workshopName
-        self.vmName = vmName
-        self.ms_rdp = ms_rdp
-        self.rdesktop = rdesktop
-        self.state = state
-        self.materials = materials
+        self.vms = vms
+        self.rdp_files = rdp_files
+        self.rdesktop_files = rdesktop_files
+
+    def __eq__(self, other):
+        return (self.workshopName == other.workshopName) and (self.vms == other.vms) and (self.rdp_files == other.rdp_files) and (self.rdesktop_files == other.rdesktop_files)
