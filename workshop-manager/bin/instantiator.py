@@ -103,11 +103,12 @@ def checkoutRDP(workshopName):
 
         zipSem.acquire()
         zip_file_name = "Workshop" + str(i) + ".zip"
+        zip_file_path = os.path.join("WorkshopData", workshopName, zip_file_name)
         i += 1
-        zip_files(rdpPaths, zip_file_name)
-        threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_name,)))
+        zip_files(rdpPaths, zip_file_path)
+        threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
         zipSem.release()
-        return render_template('download.html', download_path=zip_file_name)
+        return render_template('download.html', download_path=zip_file_path)
     else:
         return "Sorry, there are no workshops available."
 
@@ -128,11 +129,12 @@ def checkoutrdesktop(workshopName):
 
         zipSem.acquire()
         zip_file_name = unit.workshopName + "_" + str(i) + ".zip"
+        zip_file_path = os.path.join("WorkshopData", workshopName, zip_file_name)
         i += 1
-        zip_files(rdesktopPaths, zip_file_name)
-        threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_name,)))
+        zip_files(rdesktopPaths, zip_file_path)
+        threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
         zipSem.release()
-        return render_template('download.html', download_path=zip_file_name)
+        return render_template('download.html', download_path=zip_file_path)
     else:
         return "Sorry, there are no workshops available."
 
