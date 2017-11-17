@@ -111,3 +111,12 @@ tbody:hover tr:hover td {
 img {
     width:100%;
 }
+
+#myBar {
+    width: 1%;
+    height: 50px;
+    background-color: #4CAF50;
+    text-align: center; /* To center it horizontally (if you want) */
+    line-height: 30px; /* To center it vertically */
+    color: white;
+}

@@ -8,7 +8,9 @@
 
     <body>
         <h2 align="center">Your download will be available in:</h2>
-
+        <div id="myProgress">
+              <div id="myBar">0%</div>
+        </div>
         <div id="countdown" style="text-align: center">
             <span id="minutes">00</span>:<span id="seconds">00</span>
         </div>
@@ -27,6 +29,7 @@
             var downloadButton = document.getElementById("download_button");
 
             function UpdateTime() {
+                var counter = setInterval(UpdateTime, 1000);
                 var cTime = new Date().getTime();
                 var diff = cTime - sTime;
                 var seconds = countDown - Math.floor(diff / 1000);
@@ -45,7 +48,22 @@
                 }
             }
             UpdateTime();
-            var counter = setInterval(UpdateTime, 500);
+
+            function move() {
+                var elem = document.getElementById("myBar");
+                var width = 1;
+                var id = setInterval(frame, 50);
+                function frame() {
+                    if (width >= 100) {
+                        clearInterval(id);
+                    } else {
+                        width++;
+                        elem.style.width = width + '%';
+                        elem.innerHTML = width  + '%';
+                    }
+                }
+            }
+            move();
         </script>
     </body>
 </html>
