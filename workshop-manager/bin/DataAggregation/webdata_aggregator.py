@@ -90,10 +90,10 @@ def aggregateData():
                     workshop_queue = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
                     if unit not in workshop_queue.q.queue and unit not in unitsOnHold:
                         workshop_queue.q.put(unit)
-            aggregatedInfoSem.release()
             time.sleep(probeTime)
             for workshop in availableWorkshops:
                 workshop.q.queue.clear()
+            aggregatedInfoSem.release()
         except Exception as e:
             logging.error("AGGREGATION: An error occurred: " + str(e))
             traceback.print_exc()
@@ -112,9 +112,12 @@ def getAvailableWorkshops():
     return availableWorkshops
 
 def checkoutUnit(unit):
-    unitsOnHold.append(unit)
+    #unitsOnHold.append(unit)
     time.sleep(checkoutTime)
     unitsOnHold.remove(unit)
+
+def putOnHold(unit):
+    unitsOnHold.append(unit)
 
 def getRDPPath(unit, workshopName):
     rdpPaths = []

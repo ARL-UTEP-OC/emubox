@@ -94,6 +94,7 @@ def checkoutRDP(workshopName):
     if workshop.q.qsize():
         unit = workshop.q.get()
         threadsToRunSem.acquire()
+        DataAggregation.webdata_aggregator.putOnHold(unit)
         threadsToRun.append(threading.Thread(target=DataAggregation.webdata_aggregator.checkoutUnit, args=(unit,)))
         threadsToRunSem.release()
         rdpPaths = unit.rdp_files
@@ -120,6 +121,7 @@ def checkoutrdesktop(workshopName):
     if workshop.q.qsize():
         unit = workshop.q.get()
         threadsToRunSem.acquire()
+        DataAggregation.webdata_aggregator.putOnHold(unit)
         threadsToRun.append(threading.Thread(target=DataAggregation.webdata_aggregator.checkoutUnit, args=(unit,)))
         threadsToRunSem.release()
         rdesktopPaths = unit.rdesktop_files
