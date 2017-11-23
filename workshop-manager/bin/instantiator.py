@@ -1,12 +1,7 @@
 # gevent imports
-import gevent
-import gevent.monkey
-import threading
-from gevent.pywsgi import WSGIServer
-gevent.monkey.patch_all()
+import gevent, gevent.monkey
 
-import os
-import time
+import os, time, threading
 
 # to reduce stdout
 import logging
@@ -14,24 +9,24 @@ import logging
 # catch signal for quitting
 import signal
 
-# Flask imports
-from flask import Flask
-from flask import make_response
-from functools import wraps, update_wrapper
-from datetime import datetime
-from flask import render_template
-from flask import send_from_directory
-from flask import jsonify
-
-from gevent.lock import BoundedSemaphore
-
 # DataAggregation
 import DataAggregation.webdata_aggregator
 
 # VM State Manager
 import VMStateManager.vbox_monitor
 
+# For zipping files
 import zipfile
+
+# Flask imports
+from flask import Flask, make_response, render_template, send_from_directory, jsonify
+from functools import wraps, update_wrapper
+from gevent.lock import BoundedSemaphore
+from gevent.pywsgi import WSGIServer
+
+gevent.monkey.patch_all()
+
+
 
 # Webserver commands
 app = Flask(__name__)
