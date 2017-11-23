@@ -49,7 +49,6 @@
         </table>
 
         <script>
-{#            window.setInterval(updateStatuses, 1000); // Call function every second#}
             updateStatuses();
             function updateStatuses() {
                 $(".workshop_queue").each(function() {
@@ -58,6 +57,7 @@
                     $.ajax({
                         url: "/pollQueueSize/" + id + "/" + $this.text() + "/",
                         dataType: "json",
+                        timeout: 36000,
                         success: function(response) {
                             var s = "download_links_" + id;
                             if (response === 0)

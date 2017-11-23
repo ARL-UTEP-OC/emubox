@@ -149,13 +149,10 @@ def giveQueueSize(workshopName, client_size):
         # poll the database
         while True:
             print "sleeping"
-            time.sleep(0.5)
+            time.sleep(1)
             curr_size = workshop.q.qsize()
-            if (int(curr_size) is not int(client_size)):
-                break
-                print curr_size, " and ", client_size
+            if (int(curr_size) is not int(client_size)): # change detected, send new size to clients
                 return jsonify(curr_size)
-        return jsonify(curr_size)
     else:
         return jsonify("0")
 
