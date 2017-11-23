@@ -140,12 +140,22 @@ def checkoutrdesktop(workshopName):
     else:
         return "Sorry, there are no workshops available."
 
-@app.route('/getQueueSize/<workshopName>')
-def giveQueueSize(workshopName):
+@app.route('/pollQueueSize/<workshopName>/<client_size>/')
+def giveQueueSize(workshopName, client_size):
     """ Catch AJAX Requests for Queue Size. """
     availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
+    workshop = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
     if (availableWorkshops):
-        return jsonify(filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0].q.qsize())
+        # poll the database
+        while True:
+            print "sleeping"
+            time.sleep(0.5)
+            curr_size = workshop.q.qsize()
+            if (int(curr_size) is not int(client_size)):
+                break
+                print curr_size, " and ", client_size
+                return jsonify(curr_size)
+        return jsonify(curr_size)
     else:
         return jsonify("0")
 
