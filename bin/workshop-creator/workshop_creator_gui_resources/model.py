@@ -170,7 +170,7 @@ class Session:
         if not os.path.exists(self.holdDirectory):
             os.makedirs(self.holdDirectory)
 
-        if not os.path.exists(self.holdDirectory+material.name):
+        if not os.path.exists(self.holdDirectory+self.holdName):
             shutil.copy2(materialAddress, self.holdDirectory+self.holdName)
 
     # This will load xml files
@@ -358,5 +358,5 @@ class Workshop:
             self.vmList.append(currentVM)
 
         for material in vmset.findall('material'):
-            currentMaterial = Material(material.find('address').text.rstrip().lstrip(), material.find('name').text.rstrip().lstrip())
+            currentMaterial = Material('', material.find('name').text.rstrip().lstrip())
             self.materialList.append(currentMaterial)
