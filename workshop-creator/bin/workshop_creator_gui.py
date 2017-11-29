@@ -308,6 +308,9 @@ class AppWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super(AppWindow, self).__init__(*args, **kwargs)
 
+        #fix error when soft saving
+        self.isRemoveVM = False
+
         # Layout container initialization
         self.windowBox = Gtk.Box(spacing=BOX_SPACING)
         self.actionBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
@@ -567,7 +570,8 @@ class AppWindow(Gtk.ApplicationWindow):
         elif self.isParent == False:
 
             if self.session.currentVM != None:
-                self.currentModel.set(self.currentIter, 0, VM_TREE_LABEL+self.vmWidget.nameEntry.get_text())
+                if not self.isRemoveVM:
+                    self.currentModel.set(self.currentIter, 0, VM_TREE_LABEL+self.vmWidget.nameEntry.get_text())
                 self.holdInternalnetBasenameList = []
                 for inetWidget in self.vmWidget.inetBasenameWidgetList:
                     self.holdInternalnetBasenameList.append(inetWidget.entry.get_text())
@@ -577,9 +581,10 @@ class AppWindow(Gtk.ApplicationWindow):
                     self.holdVRDP="false"
                 self.session.softSaveVM(self.vmWidget.nameEntry.get_text(), self.holdVRDP, self.holdInternalnetBasenameList)
             elif self.session.currentMaterial != None:
-                self.currentModel.set(self.currentIter, 0, MATERIAL_TREE_LABEL+self.materialWidget.nameEntry.get_text())
+                if not self.isRemoveVM:
+                    self.currentModel.set(self.currentIter, 0, MATERIAL_TREE_LABEL+self.materialWidget.nameEntry.get_text())
                 self.session.softSaveMaterial(self.materialWidget.nameEntry.get_text())
-
+            self.isRemoveVM = False
 
 
     # Will save all changed to the disk
@@ -733,10 +738,11 @@ class AppWindow(Gtk.ApplicationWindow):
             self.addNewVM(vmText)
 
     def removeVMActionEvent(self, menuItem):
+        model = self.workshopTree.treeStore
         if self.session.currentVM != None:
             if len(self.session.currentWorkshop.vmList) > 1:
-                model = self.workshopTree.treeStore
                 self.session.removeVM()
+                self.isRemoveVM=True
                 model.remove(self.focusedTreeIter)
             else:
                 dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "Cannot delete the last VM in a Workshop.")
@@ -744,8 +750,8 @@ class AppWindow(Gtk.ApplicationWindow):
                 dialog.destroy()
 
         elif self.session.currentMaterial != None:
-            model = self.workshopTree.treeStore
             self.session.removeMaterial()
+            self.isRemoveVM=True
             model.remove(self.focusedTreeIter)
 
 
