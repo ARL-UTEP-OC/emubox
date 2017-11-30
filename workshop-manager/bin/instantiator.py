@@ -1,7 +1,12 @@
 # gevent imports
-import gevent, gevent.monkey
+import gevent
+import gevent.monkey
+import threading
+from gevent.pywsgi import WSGIServer
+gevent.monkey.patch_all()
 
-import os, time, threading
+import os
+import time
 
 # to reduce stdout
 import logging
@@ -9,24 +14,24 @@ import logging
 # catch signal for quitting
 import signal
 
+# Flask imports
+from flask import Flask
+from flask import make_response
+from functools import wraps, update_wrapper
+from datetime import datetime
+from flask import render_template
+from flask import send_from_directory
+from flask import jsonify
+
+from gevent.lock import BoundedSemaphore
+
 # DataAggregation
 import DataAggregation.webdata_aggregator
 
 # VM State Manager
 import VMStateManager.vbox_monitor
 
-# For zipping files
 import zipfile
-
-# Flask imports
-from flask import Flask, make_response, render_template, send_from_directory, jsonify
-from functools import wraps, update_wrapper
-from gevent.lock import BoundedSemaphore
-from gevent.pywsgi import WSGIServer
-
-gevent.monkey.patch_all()
-
-
 
 # Webserver commands
 app = Flask(__name__)
@@ -135,19 +140,12 @@ def checkoutrdesktop(workshopName):
     else:
         return "Sorry, there are no workshops available."
 
-@app.route('/pollQueueSize/<workshopName>/<client_size>/')
-def giveQueueSize(workshopName, client_size):
+@app.route('/getQueueSize/<workshopName>')
+def giveQueueSize(workshopName):
     """ Catch AJAX Requests for Queue Size. """
     availableWorkshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
-    workshop = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
     if (availableWorkshops):
-        # poll the database
-        while True:
-            print "sleeping"
-            time.sleep(1)
-            curr_size = workshop.q.qsize()
-            if (int(curr_size) is not int(client_size)): # change detected, send new size to clients
-                return jsonify(curr_size)
+        return jsonify(filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0].q.qsize())
     else:
         return jsonify("0")
 
