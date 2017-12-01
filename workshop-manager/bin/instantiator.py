@@ -1,37 +1,17 @@
+# Project imports
+import DataAggregation.webdata_aggregator, VMStateManager.vbox_monitor, os, time, logging, signal, zipfile
+
 # gevent imports
-import gevent
-import gevent.monkey
+import gevent, gevent.monkey; gevent.monkey.patch_all()
 import threading
 from gevent.pywsgi import WSGIServer
-gevent.monkey.patch_all()
-
-import os
-import time
-
-# to reduce stdout
-import logging
-
-# catch signal for quitting
-import signal
-
-# Flask imports
-from flask import Flask
-from flask import make_response
-from functools import wraps, update_wrapper
-from datetime import datetime
-from flask import render_template
-from flask import send_from_directory
-from flask import jsonify
-
 from gevent.lock import BoundedSemaphore
 
-# DataAggregation
-import DataAggregation.webdata_aggregator
+# Flask imports
+from flask import Flask, make_response, render_template, send_from_directory, jsonify
 
-# VM State Manager
-import VMStateManager.vbox_monitor
-
-import zipfile
+# nocache imports
+from functools import wraps, update_wrapper
 
 # Webserver commands
 app = Flask(__name__)

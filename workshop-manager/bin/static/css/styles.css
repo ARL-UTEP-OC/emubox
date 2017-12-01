@@ -1,5 +1,5 @@
 body {
-	background: #fafafa url(/static/noise-diagonal.png);
+	background: #fafafa url(../noise-diagonal.png);
 	color: #444;
 	font: 100%/30px 'Helvetica Neue', helvetica, arial, sans-serif;
 	text-shadow: 0 1px 0 #fff;
@@ -79,11 +79,11 @@ td:last-child {
 }	
 
 tr {
-	background: url(/static/noise-diagonal.png);	
+	background: url(../noise-diagonal.png);
 }
 
 tr:nth-child(odd) td {
-	background: #f1f1f1 url(/static/noise-diagonal.png);	
+	background: #f1f1f1 url(../noise-diagonal.png);
 }
 
 tr:last-of-type td {
@@ -98,15 +98,15 @@ tr:last-of-type td:last-child {
 	box-shadow: inset -1px -1px 0 #fff;
 }	
 
-tbody:hover td {
-	color: transparent;
-	text-shadow: 0 0 3px #aaa;
-}
+/*tbody:hover td {*/
+	/*color: transparent;*/
+	/*text-shadow: 0 0 3px #aaa;*/
+/*}*/
 
-tbody:hover tr:hover td {
-	color: #444;
-	text-shadow: 0 1px 0 #fff;
-}
+/*tbody:hover tr:hover td {*/
+	/*color: #444;*/
+	/*text-shadow: 0 1px 0 #fff;*/
+/*}*/
 
 img {
     width:100%;
