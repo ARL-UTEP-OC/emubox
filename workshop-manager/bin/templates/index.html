@@ -2,8 +2,8 @@
 <html>
     <head>
         <title>EmuBox</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.2.1.min.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     </head>
 
     <body>
@@ -51,23 +51,23 @@
         <script>
             window.setInterval(updateStatuses, 1000); // Call function every second
             function updateStatuses() {
-                    $(".workshop_queue").each(function() {
-                        var $this = $(this)
-                        var id = $(this).attr("id");
-                        $.ajax({
-                            url: "/getQueueSize/" + id,
-                            dataType: "json",
-                            success: function(response) {
-                                var s = "download_links_" + id;
-                                if (response === 0)
-                                    $('#' + s).hide();
-                                else
-                                    $('#' + s).show();
-                                $this.text(response);
-                                $this.text();
-                            }
-                        });
+                $(".workshop_queue").each(function() {
+                    var $this = $(this)
+                    var id = $(this).attr("id");
+                    $.ajax({
+                        url: "/getQueueSize/" + id,
+                        dataType: "json",
+                        success: function(response) {
+                            var s = "download_links_" + id;
+                            if (response === 0)
+                                $('#' + s).hide();
+                            else
+                                $('#' + s).show();
+                            $this.text(response);
+                            $this.text();
+                        }
                     });
+                });
             }
         </script>
     </body>

@@ -2,8 +2,8 @@
 <html>
     <head>
         <title>EmuBox</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.2.1.min.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     </head>
 
     <body>
@@ -49,6 +49,7 @@
             }
             UpdateTime();
 
+            {# Progress Bar from https://www.w3schools.com/w3css/w3css_progressbar.asp #}
             function move() {
                 var elem = document.getElementById("myBar");
                 var width = 1;
