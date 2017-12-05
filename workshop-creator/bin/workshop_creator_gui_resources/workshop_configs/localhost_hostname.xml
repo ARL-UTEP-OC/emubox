@@ -18,11 +18,9 @@
         <vrdp-enabled>true</vrdp-enabled>
         <internalnet-basename>intnet</internalnet-basename>
       </vm>
-      <vm>
-        <name>ubuntu-core4.7</name>
-        <vrdp-enabled>false</vrdp-enabled>
-        <internalnet-basename>intnet</internalnet-basename>
-      </vm>
+      <material>
+        <name>Class Diagram.png</name>
+      </material>
     </vm-set>
   </testbed-setup>
 </xml>
