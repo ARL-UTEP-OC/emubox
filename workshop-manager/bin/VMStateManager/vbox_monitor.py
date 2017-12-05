@@ -37,9 +37,17 @@ vms = {}
 queueStateSem = BoundedSemaphore(1)
 availableInfoSem = BoundedSemaphore(1)
 
+def getGroupToVms():
+    return groupToVms
+
+
+def getAvailableState():
+    return availableState
+
 def getAvailableInfo():
     #availableInfoSem.wait()
     return availableInfo
+
 
 ####functions needed for testbed manager threads:
 def getVMInfo(session, machine):

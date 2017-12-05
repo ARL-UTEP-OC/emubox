@@ -1,35 +1,47 @@
+# Project imports
+import DataAggregation.webdata_aggregator, VMStateManager.vbox_monitor, os, time, logging, signal, zipfile
+
 # gevent imports
-import gevent
-import gevent.monkey
+import gevent, gevent.monkey; gevent.monkey.patch_all()
+import threading
 from gevent.pywsgi import WSGIServer
-gevent.monkey.patch_all()
-
-import os
-
-# to reduce stdout
-import logging
-
-# catch signal for quitting
-import signal
+from gevent.lock import BoundedSemaphore
 
 # Flask imports
-from flask import Flask
-from flask import make_response
+from flask import Flask, make_response, render_template, send_from_directory, jsonify
+
+# nocache imports
 from functools import wraps, update_wrapper
-from datetime import datetime
-from flask import render_template
-from flask import send_from_directory
-from flask import jsonify
-
-# DataAggregation
-import DataAggregation.webdata_aggregator
-
-# VM State Manager
-import VMStateManager.vbox_monitor
 
 # Webserver commands
 app = Flask(__name__)
 app.debug = True
+
+threadsToRun = []
+threadsToRunSem = threading.Semaphore(1)
+threadTime = 2
+threadHandlerSem = threading.Semaphore(1)
+
+zipSem = BoundedSemaphore(1)
+zipClearTime = 15
+i = 0
+
+
+def clearZip(zip_file_name):
+    time.sleep(zipClearTime)
+    os.remove(zip_file_name)
+
+
+def threadHandler():
+    while True:
+        threadHandlerSem.acquire()
+        if len(threadsToRun):
+            for thread in threadsToRun:
+                t = thread
+                threadsToRun.remove(thread)
+                t.start()
+        threadHandlerSem.release()
+        time.sleep(threadTime)
 
 def nocache(view):
     @wraps(view)
@@ -53,25 +65,60 @@ def download(filename):
 @nocache
 def catch_all(path):
     """ Handles all requests to the main index page of the Web Server. """
-    return render_template('index.html', templateAvailable=DataAggregation.webdata_aggregator.getAvailableWorkshops())
+    return render_template('index.html', workshops=DataAggregation.webdata_aggregator.getAvailableWorkshops())
 
-@app.route('/ms-rdp/<workshopName>')
-def giveRDP(workshopName):
-    """ Catch rdp requests. """
+@app.route('/checkout/ms-rdp/<workshopName>')
+def checkoutRDP(workshopName):
+    global i
     workshop = filter(lambda x: x.workshopName == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
     if workshop.q.qsize():
-        downloads = os.path.join(app.root_path, "")
-        return send_from_directory(directory=downloads, as_attachment=True, filename=workshop.q.get().ms_rdp, mimetype='application/octet-stream')
-    return "Sorry, there are no workshops available."
+        unit = workshop.q.get()
+        threadsToRunSem.acquire()
+        DataAggregation.webdata_aggregator.putOnHold(unit)
+        threadsToRun.append(threading.Thread(target=DataAggregation.webdata_aggregator.checkoutUnit, args=(unit,)))
+        threadsToRunSem.release()
+        rdpPaths = unit.rdp_files
 
-@app.route('/rdesktop/<workshopName>')
-def giverdesktop(workshopName):
-    """ Catch rdesktop requests. """
+        if len(rdpPaths) is 1:
+            return render_template('download.html', download_path=rdpPaths[0])
+
+        zipSem.acquire()
+        zip_file_name = "Workshop" + str(i) + ".zip"
+        zip_file_path = os.path.join("WorkshopData", workshopName, zip_file_name)
+        i += 1
+        zip_files(rdpPaths, zip_file_path)
+        threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
+        zipSem.release()
+        return render_template('download.html', download_path=zip_file_path)
+    else:
+        return "Sorry, there are no workshops available."
+
+
+@app.route('/checkout/rdesktop/<workshopName>')
+def checkoutrdesktop(workshopName):
+    global i
     workshop = filter(lambda x: x.workshopName == workshopName, DataAggregation.webdata_aggregator.getAvailableWorkshops())[0]
     if workshop.q.qsize():
-        downloads = os.path.join(app.root_path, "")
-        return send_from_directory(directory=downloads, as_attachment=True, filename=workshop.q.get().rdesktop, mimetype='application/octet-stream')
-    return "Sorry, there are no workshops available."
+        unit = workshop.q.get()
+        threadsToRunSem.acquire()
+        DataAggregation.webdata_aggregator.putOnHold(unit)
+        threadsToRun.append(threading.Thread(target=DataAggregation.webdata_aggregator.checkoutUnit, args=(unit,)))
+        threadsToRunSem.release()
+        rdesktopPaths = unit.rdesktop_files
+
+        if len(rdesktopPaths) is 1:
+            return render_template('download.html', download_path=rdesktopPaths[0])
+
+        zipSem.acquire()
+        zip_file_name = unit.workshopName + "_" + str(i) + ".zip"
+        zip_file_path = os.path.join("WorkshopData", workshopName, zip_file_name)
+        i += 1
+        zip_files(rdesktopPaths, zip_file_path)
+        threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
+        zipSem.release()
+        return render_template('download.html', download_path=zip_file_path)
+    else:
+        return "Sorry, there are no workshops available."
 
 @app.route('/getQueueSize/<workshopName>')
 def giveQueueSize(workshopName):
@@ -82,6 +129,22 @@ def giveQueueSize(workshopName):
     else:
         return jsonify("0")
 
+''' 
+    zip_files:
+        @src: Iterable object containing one or more element
+        @dst: filename (path/filename if needed)
+        @arcname: Iterable object containing the names we want to give to the elements in the archive (has to correspond to src) 
+'''
+def zip_files(src, dst, arcname=None):
+    zip_ = zipfile.ZipFile(dst, 'w')
+    for i in range(len(src)):
+        if arcname is None:
+            zip_.write(src[i], os.path.basename(src[i]), compress_type = zipfile.ZIP_DEFLATED)
+        else:
+            zip_.write(src[i], arcname[i], compress_type = zipfile.ZIP_DEFLATED)
+    zip_.close()
+
+
 def signal_handler(signal, frame):
     try:
         logging.info("Killing webserver...")
@@ -90,7 +153,7 @@ def signal_handler(signal, frame):
         gevent.kill(srvGreenlet)
         gevent.kill(stateAssignmentThread)
         gevent.kill(restoreThread)
-
+        gevent.kill(threadHandler)
         VMStateManager.vbox_monitor.cleanup()
 
         exit()
@@ -106,11 +169,12 @@ if __name__ == '__main__':
     stateAssignmentThread = gevent.spawn(VMStateManager.vbox_monitor.manageStates)
     restoreThread = gevent.spawn(VMStateManager.vbox_monitor.makeRestoreToAvailableState)
     srvGreenlet = gevent.spawn(httpServer.start)
-    dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateData())
+    dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateData)
+    threadHandler = gevent.spawn(threadHandler)
 
     try:
         # Let threads run until signal is caught
-        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator])
+        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator, threadHandler])
     except Exception as e:
         logging.error("An error occurred in threads" + str(e))
         exit()

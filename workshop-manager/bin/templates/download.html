@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>EmuBox</title>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.2.1.min.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    </head>
+
+    <body>
+        <h2 align="center">Your download will be available in:</h2>
+        <div id="myProgress">
+              <div id="myBar">0%</div>
+        </div>
+        <div id="countdown" style="text-align: center">
+            <span id="minutes">00</span>:<span id="seconds">00</span>
+        </div>
+        <div id="aftercount" style="display:none;text-align: center">Your download is available! Click to download!</div>
+
+        <div style="text-align: center">
+            <a href="../../{{ download_path }}" download>
+                <button id="download_button" disabled style="height:100px;width:200px">Download File</button>
+            </a>
+        </div>
+
+        <script>
+            {# Fiddle from http://jsfiddle.net/ysilvestrov/bUZd8/1/ #}
+            var sTime = new Date().getTime();
+            var countDown = 5;
+            var downloadButton = document.getElementById("download_button");
+
+            function UpdateTime() {
+                var counter = setInterval(UpdateTime, 1000);
+                var cTime = new Date().getTime();
+                var diff = cTime - sTime;
+                var seconds = countDown - Math.floor(diff / 1000);
+                if (seconds >= 0) {
+                    var minutes = Math.floor(seconds / 60);
+                    seconds -= minutes * 60;
+                    $("#minutes").text(minutes < 10 ? "0" + minutes : minutes);
+                    $("#seconds").text(seconds < 10 ? "0" + seconds : seconds);
+                }
+                else {
+                    $("#countdown").hide();
+                    $("#aftercount").show();
+                    clearInterval(counter);
+                    downloadButton.innerHTML = "Download";
+                    downloadButton.removeAttribute('disabled');
+                }
+            }
+            UpdateTime();
+
+            {# Progress Bar from https://www.w3schools.com/w3css/w3css_progressbar.asp #}
+            function move() {
+                var elem = document.getElementById("myBar");
+                var width = 1;
+                var id = setInterval(frame, 50);
+                function frame() {
+                    if (width >= 100) {
+                        clearInterval(id);
+                    } else {
+                        width++;
+                        elem.style.width = width + '%';
+                        elem.innerHTML = width  + '%';
+                    }
+                }
+            }
+            move();
+        </script>
+    </body>
+</html>
