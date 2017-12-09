@@ -13,6 +13,7 @@ from lxml import etree
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
+from workshop_creator_gui_resources.process_window import ProcessWindow
 
 from workshop_creator_gui_resources.model import Workshop
 from workshop_creator_gui_resources.model import VM
@@ -669,8 +670,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
         workshopName = self.session.currentWorkshop.filename
         command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
-        t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
-        t.start()
+        #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
+        #t.start()
+        pw = ProcessWindow(command)
 
         self.session.runWorkshop()
         #        self.runLogging("Workshop Creator", command)
@@ -1082,69 +1084,6 @@ class ListEntryDialog(Gtk.Dialog):
         elif responseID == Gtk.ResponseType.CANCEL or responseID == Gtk.ResponseType.DELETE_EVENT:
             self.entryText = None
             self.status = True
-
-#class LoggingDialog(Gtk.Dialog):
-
-#    def __init__(self, parent, processName, processCommand):
-#        Gtk.Dialog.__init__(self, processName, parent, 0,
-#            (Gtk.STOCK_OK, Gtk.ResponseType.OK))
-
-#        self.processName = processName
-#        self.processCommand = processCommand
-
-#        self.set_default_size(500, 500)
-#        self.set_deletable(False)
-
-        # This is the outer box, we need another box inside for formatting
-#        self.dialogBox = self.get_content_area()
-
-#        self.scrollableWindow = Gtk.ScrolledWindow()
-#        self.scrollableWindow.set_min_content_width(400)
-#        self.scrollableWindow.set_min_content_height(450)
-
-#        self.dialogBox.add(self.scrollableWindow)
-
-#        self.textView = Gtk.TextView()
-#        self.textView.set_editable(False)
-#        self.textView.set_cursor_visible(False)
-#        self.textView.set_wrap_mode(True)
-#        self.scrollableWindow.add(self.textView)
-#        self.textBuffer = self.textView.get_buffer()
-
-#        self.set_response_sensitive(Gtk.ResponseType.OK, False)
-#        self.connect("response", self.dialogResponseActionEvent)
-#        self.show_all()
-
-        # command example ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
-#        self.process = subprocess.Popen(self.processCommand, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-#        self.t = threading.Thread(target=self.runWorker, args=[self.process])
-#        self.t.start()
-
-#    def runWorker(self, process):
-#        end = self.textBuffer.get_end_iter()
-#        self.textBuffer.insert(end, "Starting "+self.processName+"...\n")
-#        for line in iter(process.stdout.readline, b''):
-#            end = self.textBuffer.get_end_iter()
-#            line = line.strip()+"\n"
-            # idle_add is needed for a thread-safe function, without it an assertion error will occur
-            #GObject.idle_add(self.addLine, line)
-#            Gdk.threads_enter()
-#            end = self.textBuffer.get_end_iter()
-#            self.textBuffer.insert(end, line)
-#            Gdk.threads_leave()
-#        end = self.textBuffer.get_end_iter()
-#        self.textBuffer.insert(end, self.processName+" Finished...\n")
-#        self.set_response_sensitive(Gtk.ResponseType.OK, True)
-
-#    def addLine(self, line):
-#        end = self.textBuffer.get_end_iter()
-#        self.textBuffer.insert(end, line)
-
-#    def dialogResponseActionEvent(self, dialog, responseID):
-        # OK was clicked and there is text
-#        if responseID == Gtk.ResponseType.OK and self.process.poll() is not None:
-#            self.destroy()
-
 
 class ExportImportProgressDialog(Gtk.Dialog):
     def __init__(self, parent, message, currentTotal, total):
