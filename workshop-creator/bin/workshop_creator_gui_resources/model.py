@@ -30,9 +30,11 @@ class Session:
                 os.makedirs(self.holdDirectory)
             if not os.path.exists(self.holdDirectory+"Materials/"):
                 os.makedirs(self.holdDirectory+"Materials/")
+            print ("Before RDP Directory",self.holdDirectory+"RDP/")
             if not os.path.exists(self.holdDirectory+"RDP/"):
+                print ("During Making RDP Directory")
                 os.makedirs(self.holdDirectory+"RDP/")
-
+            print ("After making RDP Directory")
             for holdFile in os.listdir(self.holdDirectory+"Materials/"):
                 os.remove(self.holdDirectory+"Materials/"+holdFile)
 
@@ -57,11 +59,9 @@ class Session:
         pw = ProcessWindow(["python", script, filePath])
         #pw = ProcessWindow("python " + script + " " + filePath)
 
-
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         unzip = zipfile.ZipFile(zipPath, 'r')
-        #unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.close()
         spinnerDialog.destroy()
@@ -218,8 +218,10 @@ class Session:
             self.currentMaterial.name = inMaterialName
 
     def runRDPScript(self):
-        for rdpfile in os.listdir(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename):
-            os.remove(WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename+"/"+rdpfile)
+        currWorkshopFilename = WORKSHOP_RDP_DIRECTORY+self.currentWorkshop.filename
+        if os.path.exists(currWorkshopFilename):
+            for rdpfile in os.listdir(currWorkshopFilename):
+                os.remove(currWorkshopFilename+"/"+rdpfile)
         self.runScript("workshop-rdp.py")
 
     def softSaveVM(self, inVMName, inVRDPEnabled, inInternalnetBasenameList):
@@ -272,10 +274,14 @@ class Session:
             self.holdDirectory = WORKSHOP_MATERIAL_DIRECTORY+workshop.filename+"/"
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
-
+                
             for material in workshop.materialList:
                 material_element = etree.SubElement(vm_set_element, "material")
                 etree.SubElement(material_element, "name").text = material.name
+
+            self.holdDirectory = WORKSHOP_RDP_DIRECTORY+workshop.filename+"/"
+            if not os.path.exists(self.holdDirectory):
+                os.makedirs(self.holdDirectory)
 
             # Create tree for writing to XML file
             tree = etree.ElementTree(root)
@@ -313,12 +319,11 @@ class Workshop:
         self.pathToVBoxManage = VBOXMANAGE_DIRECTORY # String
         self.ipAddress = "127.0.0.1" # String
         self.baseGroupName = workshopName # String
-        self.numOfClones = "1" # Int
-        self.cloneSnapshots = "false" # Bool
-        self.linkedClones = "false" # Bool
+        self.numOfClones = "3" # Int
+        self.cloneSnapshots = "true" # Bool
+        self.linkedClones = "true" # Bool
         self.baseOutName = "101" # String
         self.vrdpBaseport = "1011" # int
-
 
         self.vmList = [] # VM
         if vmName!=None:
