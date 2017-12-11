@@ -7,6 +7,7 @@ import re
 import shutil
 import zipfile
 import workshop_creator_gui_resources.gui_constants as gui_constants
+from workshop_creator_gui_resources.process_window import ProcessWindow
 from lxml import etree
 
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
@@ -46,15 +47,21 @@ class Session:
 
     def runScript(self, script):
         if self.currentWorkshop != None:
-            t = threading.Thread(target=self.scriptWorker, args=[WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script])
-            t.start()
+            #t = threading.Thread(target=self.scriptWorker, args=[WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script])
+            self.scriptWorker(WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script)
+            #t.start()
 
     def scriptWorker(self, filePath, script):
-        subprocess.call(["python", script, filePath])
+        #subprocess.call(["python", script, filePath])
+        #pw = ProcessWindow(["ping", "localhost", "-t"])
+        pw = ProcessWindow(["python", script, filePath])
+        #pw = ProcessWindow("python " + script + " " + filePath)
+
 
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         unzip = zipfile.ZipFile(zipPath, 'r')
+        #unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.close()
         spinnerDialog.destroy()

@@ -13,6 +13,7 @@ from lxml import etree
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
+from workshop_creator_gui_resources.process_window import ProcessWindow
 
 from workshop_creator_gui_resources.model import Workshop
 from workshop_creator_gui_resources.model import VM
@@ -29,9 +30,10 @@ GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_DIRECTORY = gui_constants.WORKSHOP_CREATOR_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
+WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
+
 VM_TREE_LABEL = "V: "
 MATERIAL_TREE_LABEL = "M: "
-
 
 # This class is a container that contains the base GUI
 class BaseWidget(Gtk.Box):
@@ -670,8 +672,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
         workshopName = self.session.currentWorkshop.filename
         command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
-        t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
-        t.start()
+        #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
+        #t.start()
+        pw = ProcessWindow(command)
 
         self.session.runWorkshop()
         #        self.runLogging("Workshop Creator", command)
@@ -820,24 +823,28 @@ class AppWindow(Gtk.ApplicationWindow):
             spinnerDialog = SpinnerDialog(self, "Unzipping files, this may take a few minutes...")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
-
+            print ("Decompression complete")
             ovaList = []
             xmlList = []
             materialList = []
             rdpList = []
             # Get all files that end with .ova
-            for filename in os.listdir(tempPath):
-                if filename.endswith(".ova"):
-                    ovaList.append(filename)
-                elif filename.endswith(".xml"):
-                    xmlList.append(filename)
+            if os.path.exists(tempPath):
+                baseFiles = os.listdir(tempPath)
+                for filename in baseFiles:
+                    if filename.endswith(".ova"):
+                        ovaList.append(filename)
+                    elif filename.endswith(".xml"):
+                        xmlList.append(filename)
+            if os.path.exists(tempPath+"/Materials/"):
+                materialsFiles = os.listdir(tempPath+"/Materials/")
+                for filename in materialsFiles:
+                    materialList.append(filename)
 
-            for filename in os.listdir(tempPath+"/Materials/"):
-                materialList.append(filename)
-
-            for filename in os.listdir(tempPath+"/RDP/"):
-                rdpList.append(filename)
-
+            if os.path.exists(tempPath+"/RDP/"):
+                rdpFiles = os.listdir(tempPath+"/RDP/")
+                for filename in rdpFiles:
+                    rdpList.append(filename)
 
             for ova in ovaList:
                 spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
@@ -864,7 +871,6 @@ class AppWindow(Gtk.ApplicationWindow):
             self.session.loadXMLFiles(tempPath)
             self.workshopTree.clearTreeStore()
             self.workshopTree.populateTreeStore(self.session.workshopList)
-
 
             shutil.rmtree(baseTempPath)
 
