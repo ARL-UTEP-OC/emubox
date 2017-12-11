@@ -64,6 +64,7 @@ The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that com
 #### Windows
 In the directory where you extracted EmuBox:
 ```
+cd workshop-manager
 ./install.bat
 ```
 
