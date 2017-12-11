@@ -97,8 +97,8 @@ class BaseWidget(Gtk.Box):
         self.outerVertBox.add(self.ipAddressHorBox)
         self.outerVertBox.add(self.baseGroupNameHorBox)
         self.outerVertBox.add(self.numClonesHorBox)
-        self.outerVertBox.add(self.cloneSnapshotsHorBox)
         self.outerVertBox.add(self.linkedClonesHorBox)
+        self.outerVertBox.add(self.cloneSnapshotsHorBox)
         self.outerVertBox.add(self.baseOutnameHorBox)
         self.outerVertBox.add(self.vrdpBaseportHorBox)
 
@@ -310,7 +310,6 @@ class AppWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super(AppWindow, self).__init__(*args, **kwargs)
 
-        #self.ld = LoggingDialog()
         #fix error when soft saving
         self.isRemoveVM = False
 
@@ -360,8 +359,6 @@ class AppWindow(Gtk.ApplicationWindow):
         #self.inetMenu.append(removeInet)
 
         self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
-
-
 
         # Currentwidget in focus
         self.focusedInetWidget = None
@@ -552,10 +549,8 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if response == Gtk.ResponseType.OK:
             self.baseWidget.vBoxManageEntry.set_text(dialog.get_filename())
-            #self.actionBox.show_all()
         elif response == Gtk.ResponseType.CANCEL:
             print("Cancel was selected")
-
         dialog.destroy()
 
     # Will save all changes to ram
