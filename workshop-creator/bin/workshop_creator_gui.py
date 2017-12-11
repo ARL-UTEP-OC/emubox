@@ -310,6 +310,7 @@ class AppWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super(AppWindow, self).__init__(*args, **kwargs)
 
+        #self.ld = LoggingDialog()
         #fix error when soft saving
         self.isRemoveVM = False
 

@@ -64,6 +64,7 @@ The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that com
 #### Windows
 In the directory where you extracted EmuBox:
 ```
+cd workshop-manager
 ./install.bat
 ```
 
@@ -71,6 +72,7 @@ In the directory where you extracted EmuBox:
 In the directory where you extracted EmuBox:
 ```
 sudo -s
+cd workshop-manager
 ```
 Set the following environment variables
 
@@ -81,7 +83,7 @@ Set the following environment variables
 For example, 
 ```
 export VBOX_INSTALL_PATH=$(which virtualbox)
-export VBOX_SDK_PATH=`pwd`/workshop-manager/VirtualBoxSDK-5.1.20-114628/sdk/
+export VBOX_SDK_PATH=`pwd`/bin/VirtualBoxSDK-5.1.20-114628/sdk/
 export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
 ```
 Now run the installer and start emubox
@@ -96,15 +98,18 @@ This will start a flask webserver and a backend monitor for virtualbox VMs.
 #### Windows
 In the directory where you installed EmuBox, type:
 ```
-workshop-manager\Scripts\activate
 cd workshop-manager
+manager-container\Scripts\activate
+cd bin
 python instantiator.py
 ```
 
 #### Linux
 In the directory where you installed EmuBox, type:
 ```
-source workshop-manager/bin/activate
+sudo -s
+cd workshop-manager
+source manager-container/bin/activate
 ```
 Set the following Environment Variables
 
@@ -113,12 +118,12 @@ Set the following Environment Variables
 
 For example,
 ```
-export VBOX_SDK_PATH=`pwd`/workshop-manager/VirtualBoxSDK-5.1.20-114628/sdk/
+export VBOX_SDK_PATH=`pwd`/bin/VirtualBoxSDK-5.1.20-114628/sdk/
 export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
 ``` 
 
 ```
-cd workshop-manager
+cd bin
 python instantiator.py
 ```
 
