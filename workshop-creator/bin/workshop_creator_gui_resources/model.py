@@ -61,6 +61,7 @@ class Session:
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         unzip = zipfile.ZipFile(zipPath, 'r')
+        #unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.extractall(zipPath+"/../creatorImportTemp")
         unzip.close()
         spinnerDialog.destroy()
