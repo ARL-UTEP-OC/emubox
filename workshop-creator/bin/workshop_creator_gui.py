@@ -779,7 +779,7 @@ class AppWindow(Gtk.ApplicationWindow):
         #currentTotal.append(0)
 
         if response == Gtk.ResponseType.OK:
-            folderPath = dialog.get_filename()+"/"+self.session.currentWorkshop.filename
+            folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
 
             #holdLogging=[]
@@ -787,9 +787,6 @@ class AppWindow(Gtk.ApplicationWindow):
             #holdVMs=self.session.getCurrentVMList()
             t = threading.Thread(target=self.session.exportWorkshop, args=[folderPath, spinnerDialog])
             t.start()
-            #for vm in holdVMs:
-                #holdLogging.append(LoggingDialog(self, "Export", [VBOXMANAGE_DIRECTORY, "export", vm.name, "-o", folderPath+"/"+vm.name+".ova"]))
-                #self.session.exportWorkshop(folderPath, spinnerDialog, spinnerDialog2)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -810,6 +807,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if response == Gtk.ResponseType.OK:
             zipPath = dialog.get_filename()
+            #TODO: fix path reference here
             tempPath = zipPath+"/../creatorImportTemp/"+os.path.splitext(os.path.basename(zipPath))[0]+"/"
             baseTempPath = zipPath+"/../creatorImportTemp/"
             dialog.destroy()
@@ -818,7 +816,7 @@ class AppWindow(Gtk.ApplicationWindow):
             spinnerDialog = SpinnerDialog(self, "Unzipping files, this may take a few minutes...")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
-            print ("Decompression complete")
+
             ovaList = []
             xmlList = []
             materialList = []
@@ -831,37 +829,38 @@ class AppWindow(Gtk.ApplicationWindow):
                         ovaList.append(filename)
                     elif filename.endswith(".xml"):
                         xmlList.append(filename)
-            if os.path.exists(tempPath+"/Materials/"):
-                materialsFiles = os.listdir(tempPath+"/Materials/")
+            materialsPath = os.path.join(tempPath,"Materials")
+            if os.path.exists(materialsPath):
+                materialsFiles = os.listdir(materialsPath)
                 for filename in materialsFiles:
                     materialList.append(filename)
-
-            if os.path.exists(tempPath+"/RDP/"):
-                rdpFiles = os.listdir(tempPath+"/RDP/")
+            rdpPath = os.path.join(tempPath,"RDP")
+            if os.path.exists(rdpPath):
+                rdpFiles = os.listdir(rdpPath)
                 for filename in rdpFiles:
                     rdpList.append(filename)
 
             for ova in ovaList:
                 spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
-                self.session.importToVBox(tempPath+ova, spinnerDialog)
+                #self.session.importToVBox(os.path.join(tempPath,ova), spinnerDialog)
 
             for xml in xmlList:
-                shutil.copy2(tempPath+xml, WORKSHOP_CONFIG_DIRECTORY)
-
+                shutil.copy2(os.path.join(tempPath,xml), WORKSHOP_CONFIG_DIRECTORY)
+			
+			#TODO: fix path reference here
             holdMatPath = WORKSHOP_MATERIAL_DIRECTORY+(os.path.splitext(xmlList[0])[0])+"/"
             if not os.path.exists(holdMatPath):
                 os.makedirs(holdMatPath)
             for material in materialList:
-                if not os.path.exists(holdMatPath+material):
-                    shutil.copy2(tempPath+"/Materials/"+material, holdMatPath)
+                if not os.path.exists(os.path.join(holdMatPath,material)):
+                    shutil.copy2(os.path.join(tempPath,"Materials",material), holdMatPath)
 
             holdRDPPath = WORKSHOP_RDP_DIRECTORY+(os.path.splitext(xmlList[0])[0])+"/"
             if not os.path.exists(holdRDPPath):
                 os.makedirs(holdRDPPath)
             for rdp in rdpList:
                 if not os.path.exists(holdRDPPath+rdp):
-                    shutil.copy2(tempPath+"/RDP/"+rdp, holdRDPPath)
-
+                    shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
 
             self.session.loadXMLFiles(tempPath)
             self.workshopTree.clearTreeStore()
