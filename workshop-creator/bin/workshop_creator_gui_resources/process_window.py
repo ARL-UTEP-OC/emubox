@@ -26,18 +26,15 @@ class ProcessWindow(Gtk.Window):
         self.vbox = Gtk.VBox(False, 5)
         self.vbox.set_border_width(10)
         self.add(self.vbox)
-        self.vbox.show()
         #create the scrolled window
         self.scrolled_window =Gtk.ScrolledWindow()
         #self.scrolled_window.set_usize(460, 100)
         self.vbox.add(self.scrolled_window)
-        self.scrolled_window.show()
         self.text_view = Gtk.TextView()
         self.msg_i = 0
         self.text_buffer = self.text_view.get_buffer()
         self.scrolled_window.add_with_viewport(self.text_view)
         self.text_view.connect("size-allocate", self.autoscroll)
-        self.text_view.show()
         #Show the window
         self.show_all()
         #Start the thread that executes the process and captures its output
@@ -89,7 +86,6 @@ class ProcessWindow(Gtk.Window):
         if self.curr_out_buff_pos > self.curr_read_buff_pos:
             i = self.text_buffer.get_end_iter()
             for x in xrange(self.curr_read_buff_pos, self.curr_out_buff_pos):
-                #print "GOOD reading",self.curr_out_buff[x]
                 self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
             self.curr_read_buff_pos = self.curr_out_buff_pos
         if self.proc_complete != True:

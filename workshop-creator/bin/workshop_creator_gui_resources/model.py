@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import threading
 import re
 import shutil
+import shlex
 import zipfile
 import workshop_creator_gui_resources.gui_constants as gui_constants
 from workshop_creator_gui_resources.process_window import ProcessWindow
@@ -36,32 +37,67 @@ class Session:
                 os.makedirs(rdpPath)
 
             for holdFile in os.listdir(materialsPath):
-                os.remove(os.join.path(materialsPath,holdFile))
+                os.remove(os.path.join(materialsPath,holdFile))
             for holdFile in os.listdir(rdpPath):
                 os.remove(os.path.join(rdpPath,holdFile))
                 
             for material in self.currentWorkshop.materialList:
                 shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,material.name), os.path.join(self.holdDirectory,"Materials"))
-            for rdpfile in os.listdir(os.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)):
-                shutil.copy2(os.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename,rdpfile), os.join(self.holdDirectory,"RDP"))
+            for rdpfile in os.listdir(os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)):
+                shutil.copy2(os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename,rdpfile), os.path.join(self.holdDirectory,"RDP"))
 
     def runScript(self, script):
         if self.currentWorkshop != None:
             #t = threading.Thread(target=self.scriptWorker, args=[WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script])
-            self.scriptWorker(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"), script)
             #t.start()
+            self.scriptWorker(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"), script)
 
     def scriptWorker(self, filePath, script):
         #subprocess.call(["python", script, filePath])
-        #pw = ProcessWindow(["ping", "localhost", "-t"])
         pw = ProcessWindow(["python", script, filePath])
-        #pw = ProcessWindow("python " + script + " " + filePath)
-
+        #pw = ProcessWindow(shlex.split(VBOXMANAGE_DIRECTORY+" export " + " TinyLinux_plus " + " -o " + os.path.join("C:\Users\Acosta\Desktop","A"+'.ova')))
+    
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
-        unzip = zipfile.ZipFile(zipPath, 'r')
-        unzip.extractall(zipPath+"/../creatorImportTemp")
-        unzip.close()
+        spinnerDialog.setTitleVal("Unzipping archive")
+        
+        block_size = 1048576
+        z = zipfile.ZipFile(zipPath, 'r')
+        outputPath = os.path.join(zipPath, "..","creatorImportTemp")
+        members_list = z.namelist()
+               
+        currmem_num = 0
+        for entry_name in members_list:
+            #increment our file progress counter
+            currmem_num = currmem_num + 1
+
+            entry_info = z.getinfo(entry_name)
+            i = z.open(entry_name)
+            if not os.path.exists(outputPath):
+                os.makedirs(outputPath)
+
+            filename = os.path.join(outputPath,entry_name)
+            file_dirname = os.path.dirname(filename)
+            if not os.path.exists(file_dirname):
+                os.makedirs(file_dirname)
+
+            o = open(filename, 'wb')
+            offset = 0
+            int_val = 0
+            while True:
+                b = i.read(block_size)
+                offset += len(b)
+                status = float(offset)/float(entry_info.file_size) * 100.
+                if int(status) > int_val:
+                    int_val = int(status)
+                    spinnerDialog.setProgressVal(float(int_val/100.))
+                    spinnerDialog.setLabelVal("Processing file "+str(currmem_num)+"/"+str(len(members_list))+":\r\n"+entry_name+"\r\nExtracting: "+str(int_val)+" %")
+                if b == '':
+                    break
+                o.write(b)
+        i.close()
+        o.close()
+        
         spinnerDialog.destroy()
 
     def importUnzip(self, zipPath, spinnerDialog):
@@ -78,23 +114,35 @@ class Session:
 
     # Thread function, performs zipping operaiton
     def zipWorker(self, folderPath, spinnerDialog):
+        spinnerDialog.setTitleVal("Exporting to Zip File")
+        spinnerDialog.setLabelVal("HELLO")
         d = folderPath
 
         os.chdir(os.path.dirname(d))
+        contentToZip = os.walk(os.path.basename(d))
+        numFiles = sum([len(files) for r, dirs, files in contentToZip])
+        currFile = 0
+        print("Number files:"+str(numFiles))
         with zipfile.ZipFile(d + '.zip',
                              "w",
                              zipfile.ZIP_DEFLATED,
                              allowZip64=True) as zf:
             for root, _, filenames in os.walk(os.path.basename(d)):
                 for name in filenames:
+                    currFile = currFile+1
                     name = os.path.join(root, name)
                     name = os.path.normpath(name)
+                    status = float(currFile/numFiles)
+                    spinnerDialog.setProgressVal(status)
+                    spinnerDialog.setLabelVal("Processing file "+str(currFile)+"/"+str(numFiles)+":\r\n"+name+"\r\nCompressing: "+str(int(status*100))+" %")
                     zf.write(name, name)
 
-        spinnerDialog.destroy()
-        shutil.rmtree(folderPath)
+        #spinnerDialog.destroy()
+        #shutil.rmtree(folderPath)
         #need to find a way to re-enable warning msg
         #WarningDialog(self, "Export completed.")
+        
+        #spinnerDialog.destroy()               
 
     def exportZipFiles(self, folderPath, spinnerDialog):
             shutil.copy2(os.path.join("workshop_creator_gui_resources","workshop_configs",self.currentWorkshop.filename+".xml"), folderPath)
@@ -106,7 +154,7 @@ class Session:
         return self.currentWorkshop.vmList
 
     def exportWorkshop(self, folderPath, spinnerDialog):
-
+        spinnerDialog.set_title("Exporting VirtualBox VMs")
         if not os.path.exists(folderPath):
             os.makedirs(folderPath)
         materialsPath = os.path.join(folderPath,"Materials")
@@ -123,9 +171,10 @@ class Session:
                 shutil.copy2(os.path.join(rdpFiles,rdpfile), rdpPath)
 
         for vm in self.currentWorkshop.vmList:
-            subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', folderPath+'/'+vm.name+'.ova'])
-
-
+            #subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', os.path.join(folderPath,vm.name+'.ova')])
+            outputOva = os.path.join(folderPath,vm.name+'.ova')
+            pw = ProcessWindow(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o " + outputOva)
+        
         self.exportZipFiles(folderPath, spinnerDialog)
         #spinnerDialog2.run()
 

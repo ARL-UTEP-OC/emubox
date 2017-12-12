@@ -7,6 +7,7 @@ import threading
 import shutil
 import zipfile
 import datetime
+import shlex
 
 from lxml import etree
 
@@ -666,7 +667,7 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = ["python", WORKSHOP_CREATOR_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY+workshopName+".xml"]
+        command = ["python", WORKSHOP_CREATOR_DIRECTORY, os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName)+".xml"]
         #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
         #t.start()
         pw = ProcessWindow(command)
@@ -773,20 +774,15 @@ class AppWindow(Gtk.ApplicationWindow):
         response = dialog.run()
         folderPath = None
 
-        #total = len(self.currentWorkshop.vmList) * 11
-
-        #currentTotal = []
-        #currentTotal.append(0)
-
         if response == Gtk.ResponseType.OK:
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
-
-            #holdLogging=[]
+            #TODO: Transform the spinner into the ProcessOutput Window
             spinnerDialog=SpinnerDialog(self, "Exporting VMs, this may take a few minutes...")
-            #holdVMs=self.session.getCurrentVMList()
-            t = threading.Thread(target=self.session.exportWorkshop, args=[folderPath, spinnerDialog])
-            t.start()
+            self.session.exportWorkshop(folderPath, spinnerDialog)
+            spinnerDialog.destroy()
+            #t = threading.Thread(target=self.session.exportWorkshop, args=[folderPath, spinnerDialog])
+            #t.start()
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -808,12 +804,12 @@ class AppWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             zipPath = dialog.get_filename()
             #TODO: fix path reference here
-            tempPath = zipPath+"/../creatorImportTemp/"+os.path.splitext(os.path.basename(zipPath))[0]+"/"
-            baseTempPath = zipPath+"/../creatorImportTemp/"
+            tempPath = os.path.join(zipPath,"..","creatorImportTemp",os.path.splitext(os.path.basename(zipPath))[0])
+            baseTempPath = os.path.join(zipPath,"..","creatorImportTemp")
             dialog.destroy()
 
             # First we need to unzip the import file to a temp folder
-            spinnerDialog = SpinnerDialog(self, "Unzipping files, this may take a few minutes...")
+            spinnerDialog = SpinnerDialog(self, "Preparing to unzip files")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
 
@@ -842,20 +838,19 @@ class AppWindow(Gtk.ApplicationWindow):
 
             for ova in ovaList:
                 spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
-                #self.session.importToVBox(os.path.join(tempPath,ova), spinnerDialog)
+                self.session.importToVBox(os.path.join(tempPath,ova), spinnerDialog)
 
             for xml in xmlList:
                 shutil.copy2(os.path.join(tempPath,xml), WORKSHOP_CONFIG_DIRECTORY)
 			
-			#TODO: fix path reference here
-            holdMatPath = WORKSHOP_MATERIAL_DIRECTORY+(os.path.splitext(xmlList[0])[0])+"/"
+            holdMatPath = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,(os.path.splitext(xmlList[0])[0]))
             if not os.path.exists(holdMatPath):
                 os.makedirs(holdMatPath)
             for material in materialList:
                 if not os.path.exists(os.path.join(holdMatPath,material)):
                     shutil.copy2(os.path.join(tempPath,"Materials",material), holdMatPath)
 
-            holdRDPPath = WORKSHOP_RDP_DIRECTORY+(os.path.splitext(xmlList[0])[0])+"/"
+            holdRDPPath = os.path.join(WORKSHOP_RDP_DIRECTORY,(os.path.splitext(xmlList[0])[0]))
             if not os.path.exists(holdRDPPath):
                 os.makedirs(holdRDPPath)
             for rdp in rdpList:
@@ -1126,20 +1121,33 @@ class ExportImportProgressDialog(Gtk.Dialog):
 class SpinnerDialog(Gtk.Dialog):
 
     def __init__(self, parent, message):
-        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0)
+        Gtk.Dialog.__init__(self, "", parent, 0)
 
         self.set_deletable(False)
 
         self.dialogBox = self.get_content_area()
-        self.outerVerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.set_resizable(False)
+        self.set_default_size(500, 80)
+        self.outerVerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.label = Gtk.Label(message)
-        self.spinner = Gtk.Spinner()
+        #self.spinner = Gtk.Spinner()
         self.dialogBox.add(self.outerVerBox)
+        self.progress_bar = Gtk.ProgressBar()
         self.outerVerBox.pack_start(self.label, False, False, PADDING)
-        self.outerVerBox.pack_start(self.spinner, False, False, PADDING)
+        #self.outerVerBox.pack_start(self.spinner, False, False, PADDING)
+        self.outerVerBox.pack_start(self.progress_bar, False, False, PADDING)
 
         self.show_all()
-        self.spinner.start()
+        #self.spinner.start()
+        
+    def setProgressVal(self,val):
+		self.progress_bar.set_fraction(val)
+        
+    def setLabelVal(self, text):
+        self.label.set_text(text)
+    
+    def setTitleVal(self, text):
+        self.set_title(text)
 
 def WarningDialog(self, message):
     dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, message)
