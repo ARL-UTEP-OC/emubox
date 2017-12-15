@@ -5,9 +5,11 @@ import os
 from subprocess import Popen, PIPE
 import threading
 
-class ProcessWindow(Gtk.Window):
+class ProcessDialog(Gtk.Dialog):
     def __init__(self, processPath):
+        #Gtk.Window.__init__(self, title="Process Output Console")
         Gtk.Window.__init__(self, title="Process Output Console")
+        #self.set_modal(True)
         #Variables needed for obtaining and displaying process output
         self.p = None
         self.proc_complete = False
@@ -23,13 +25,14 @@ class ProcessWindow(Gtk.Window):
         self.set_size_request(600, 180)
         self.set_border_width(8)
         #Create the VBox in case we want to add additional items later
-        self.vbox = Gtk.VBox(False, 5)
-        self.vbox.set_border_width(10)
-        self.add(self.vbox)
+        self.dialogBox = self.get_content_area()
+        self.mvbox = Gtk.VBox(False, 5)
+        self.mvbox.set_border_width(10)
+        self.dialogBox.add(self.mvbox)
         #create the scrolled window
         self.scrolled_window =Gtk.ScrolledWindow()
         #self.scrolled_window.set_usize(460, 100)
-        self.vbox.add(self.scrolled_window)
+        self.mvbox.add(self.scrolled_window)
         self.text_view = Gtk.TextView()
         self.msg_i = 0
         self.text_buffer = self.text_view.get_buffer()
@@ -64,6 +67,7 @@ class ProcessWindow(Gtk.Window):
             #Need to set proc_complete so that the appendText method can return False
             #and then subsequently, this will stop the GObject timer
             self.proc_complete = True
+            self.destroy()
         except Exception as x:
             logging.error("watchProcess(): Something went wrong while running process: " + str(processPath) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:

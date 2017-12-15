@@ -8,13 +8,14 @@ import shutil
 import zipfile
 import datetime
 import shlex
-
+import logging
 from lxml import etree
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 from workshop_creator_gui_resources.process_window import ProcessWindow
+from workshop_creator_gui_resources.progress_window import ProgressWindow
 
 from workshop_creator_gui_resources.model import Workshop
 from workshop_creator_gui_resources.model import VM
@@ -27,11 +28,14 @@ import workshop_creator_gui_resources.gui_constants as gui_constants
 BOX_SPACING = gui_constants.BOX_SPACING
 PADDING = gui_constants.PADDING
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
-GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
-VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
-WORKSHOP_CREATOR_DIRECTORY = gui_constants.WORKSHOP_CREATOR_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
+GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
+VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
+WORKSHOP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_CREATOR_FILE_PATH
+WORKSHOP_RDP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_RDP_CREATOR_FILE_PATH
+WORKSHOP_RESTORE_FILE_PATH = gui_constants.WORKSHOP_RESTORE_FILE_PATH
+
 
 VM_TREE_LABEL = "V: "
 MATERIAL_TREE_LABEL = "M: "
@@ -41,7 +45,7 @@ class BaseWidget(Gtk.Box):
 
     def __init__(self):
         super(BaseWidget, self).__init__()
-
+        logging.debug("Creating Base Widget")
         self.set_border_width(PADDING)
 
         # Declaration of boxes
@@ -127,6 +131,7 @@ class BaseWidget(Gtk.Box):
 class InternalnetBasenameWidget(Gtk.EventBox):
 
     def __init__(self):
+        logging.debug("Creating InternalnetWidget")
         super(InternalnetBasenameWidget, self).__init__()
 
         self.outerHorBox = Gtk.Box(spacing=BOX_SPACING)
@@ -136,7 +141,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
         self.removeInetButton = Gtk.Button.new_with_label("-")
 
         self.initialize()
-
+    #TODO: is this needed?
     def initialize(self):
         self.add(self.outerHorBox)
 
@@ -148,6 +153,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
 class MaterialWidget(Gtk.Box):
 
     def __init__(self):
+        logging.debug("Initializing Material Widget")
         super(MaterialWidget, self).__init__()
 
         self.set_border_width(PADDING)
@@ -179,6 +185,7 @@ class MaterialWidget(Gtk.Box):
 class VMWidget(Gtk.Box):
 
     def __init__(self):
+        logging.debug("Creating VMWidget")
         super(VMWidget, self).__init__()
 
         self.set_border_width(PADDING)
@@ -258,6 +265,7 @@ class VMWidget(Gtk.Box):
 class WorkshopTreeWidget(Gtk.Grid):
 
     def __init__(self):
+        logging.debug("Creating WorkshopTreeWidget")
         super(WorkshopTreeWidget, self).__init__()
 
         self.set_border_width(PADDING)
@@ -275,7 +283,6 @@ class WorkshopTreeWidget(Gtk.Grid):
         self.set_row_homogeneous(True)
 
     def populateTreeStore(self, workshopList):
-
         for workshop in workshopList:
             treeIter = self.treeStore.append(None, [workshop.filename])
 
@@ -309,9 +316,14 @@ class WorkshopTreeWidget(Gtk.Grid):
 class AppWindow(Gtk.ApplicationWindow):
 
     def __init__(self, *args, **kwargs):
+        logging.debug("Creating AppWindow")
         super(AppWindow, self).__init__(*args, **kwargs)
-
-        #fix error when soft saving
+        self.set_default_size(250, 180)
+        #self.set_resizable(False)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_border_width(8)
+        
+        #TODO: fix error when soft saving
         self.isRemoveVM = False
 
         # Layout container initialization
@@ -426,6 +438,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.scrolledActionBox.set_min_content_height(600)
 
     def onItemSelected(self, selection):
+        logging.debug("Item was selected: " + str(selection))
         self.softSave()
         model, treeiter = selection.get_selected()
         self.currentModel = model
@@ -541,6 +554,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
     # This handles clicking the vboxpath
     def onVBoxPathClicked(self, button):
+        logging.debug("VBox Path Clicked " + str(button))
         dialog = Gtk.FileChooserDialog("Please choose a file", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -550,13 +564,12 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if response == Gtk.ResponseType.OK:
             self.baseWidget.vBoxManageEntry.set_text(dialog.get_filename())
-        elif response == Gtk.ResponseType.CANCEL:
-            print("Cancel was selected")
+        #elif response == Gtk.ResponseType.CANCEL:
         dialog.destroy()
 
     # Will save all changes to ram
     def softSave(self):
-
+        logging.debug("Soft Saving")
         if self.isParent == True:
             self.holdSnaps="true"
             if self.baseWidget.cloneSnapshotsEntry.get_active_text() == "false":
@@ -588,41 +601,48 @@ class AppWindow(Gtk.ApplicationWindow):
 
     # Will save all changed to the disk
     def hardSave(self):
-
+        logging.debug("Hard Saving")
         self.session.hardSave()
 
     # Performs a softsave then a hardsave
     def fullSave(self):
+        logging.debug("Full Saving")
         self.softSave()
         self.hardSave()
 
     def createRDPActionEvent(self, menuItem):
-        self.session.runScript("workshop-rdp.py")
+        logging.debug("createRDPActionEvent() initiated: " + str(menuItem))
+        self.session.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
 
     def restoreSnapshotsActionEvent(self, menuItem):
-        self.session.runScript("workshop-restore.py")
+        logging.debug("restoreSnapshotsActionEvent() initiated")
+        self.session.runScript(WORKSHOP_RESTORE_FILE_PATH)
 
     def inetActionEvent(self, widget, event):
+        logging.debug("inetActionEvent() initiated: " + str(event) + " event.button: " + str(event.button))
         if event.button == 3:
-
+            logging.debug("event.button == 3 ")
             self.focusedInetWidget = widget
-
             self.inetMenu.show_all()
             self.inetMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
     def addInetEventHandler(self, menuItem):
+        logging.debug("addInetEventHandler() initiated: " + str(menuItem))
         self.vmWidget.addInet(self.inetActionEvent)
         self.actionBox.show_all()
 
     def removeInetEventHandler(self, menuItem, *data):
+        logging.debug("removeInetEventHandler() initiated: " + str(menuItem) + " " + str(data))
         self.vmWidget.removeInet(data[0])
         self.actionBox.show_all()
 
     def treeViewActionEvent(self, treeView, event):
+        logging.debug("treeViewActionEvent() initiated: " + str(event))
         # Get the current treeview model
         model = self.workshopTree.treeStore
 
         if event.button == 3:
+            logging.debug("event.button == 3 ")
             pathInfo= treeView.get_path_at_pos(event.x, event.y)
 
             if pathInfo is not None:
@@ -643,6 +663,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 self.blankMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
 
     def addNewWorkshop(self, workshopName, vmName):
+        logging.debug("addNewWorkshop() initiated: " + str(workshopName) + " " + str(vmName))
         self.session.addWorkshop(workshopName, vmName)
         self.workshopTree.addNode(workshopName, vmName)
 
@@ -650,6 +671,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.hardSave()
 
     def addNewVM(self, vmName):
+        logging.debug("addNewVM() initiated: " + str(vmName))
         self.session.addVM(vmName)
         self.workshopTree.addChildNode(self.focusedTreeIter, VM_TREE_LABEL+vmName)
 
@@ -657,18 +679,21 @@ class AppWindow(Gtk.ApplicationWindow):
         self.hardSave()
 
     def addNewMaterial(self, materialAddress):
+        logging.debug("addNewMaterial() initiated: " + str(materialAddress))
         holdName = os.path.basename(materialAddress)
         self.session.addMaterial(materialAddress)
+        logging.debug("adding a child node: " + str(self.focusedTreeIter)+ " " + str(MATERIAL_TREE_LABEL+holdName))
         self.workshopTree.addChildNode(self.focusedTreeIter, MATERIAL_TREE_LABEL+holdName)
 
     def runWorkshopActionEvent(self, menuItem):
+        logging.debug("runWorkshopActionEvent() initiated: " + str(menuItem))
         if self.session.currentWorkshop is None:
             WarningDialog(self.window, "You must select a workshop before you can run the workshop.")
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = ["python", WORKSHOP_CREATOR_DIRECTORY, os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName)+".xml"]
-        #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_DIRECTORY+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
+        command = ["python", WORKSHOP_CREATOR_FILE_PATH, os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName)+".xml"]
+        #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_FILE_PATH+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
         #t.start()
         pw = ProcessWindow(command)
 
@@ -680,6 +705,7 @@ class AppWindow(Gtk.ApplicationWindow):
         #        loggingDialog.run()
 
     def addWorkshopActionEvent(self, menuItem):
+        logging.debug("addWorkshopActionEvent() initiated: " + str(menuItem))
         workshopDialog = EntryDialog(self, "Enter a workshop name.")
         workshopText = None
 
@@ -701,6 +727,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.addNewWorkshop(workshopText, vmText)
 
     def removeWorkshopActionEvent(self, menuItem):
+        logging.debug("removeWorkshopActionEvent() initiated: " + str(menuItem))
         d = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK_CANCEL, "Are you sure you want to permanently delete this workshop?")
         response = d.run()
         d.destroy()
@@ -711,6 +738,7 @@ class AppWindow(Gtk.ApplicationWindow):
             model.remove(self.focusedTreeIter)
 
     def addMaterialActionEvent(self, menuItem):
+        logging.debug("addMaterialActionEvent() initiated: " + str(menuItem))
         dialog = Gtk.FileChooserDialog("Please choose a file", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -720,12 +748,11 @@ class AppWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             self.addNewMaterial(dialog.get_filename())
             #self.actionBox.show_all()
-        elif response == Gtk.ResponseType.CANCEL:
-            print("Cancel was selected")
-
+        #elif response == Gtk.ResponseType.CANCEL:
         dialog.destroy()
 
     def addVMActionEvent(self, menuItem):
+        logging.debug("addVMActionEvent() initiated: " + str(menuItem))
         vmDialog = ListEntryDialog(self, "Enter a VM name.")
         vmText = None
 
@@ -738,6 +765,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.addNewVM(vmText)
 
     def removeVMActionEvent(self, menuItem):
+        logging.debug("removeVMActionEvent() initiated: " + str(menuItem))
         model = self.workshopTree.treeStore
         if self.session.currentVM != None:
             if len(self.session.currentWorkshop.vmList) > 1:
@@ -757,7 +785,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
     # Event, executes when export is called
     def exportWorkshopActionEvent(self, menuItem):
-
+        logging.debug("exportWorkshopActionEvent() initiated: " + str(menuItem))
         matchFound = self.session.getAvailableVMs()
 
         if not matchFound:
@@ -765,7 +793,6 @@ class AppWindow(Gtk.ApplicationWindow):
             dialog.run()
             dialog.destroy()
             return
-
 
         dialog = Gtk.FileChooserDialog("Please choose a folder.", self,
         Gtk.FileChooserAction.SELECT_FOLDER, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -778,9 +805,8 @@ class AppWindow(Gtk.ApplicationWindow):
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
             #TODO: Transform the spinner into the ProcessOutput Window
-            spinnerDialog=SpinnerDialog(self, "Exporting VMs, this may take a few minutes...")
-            self.session.exportWorkshop(folderPath, spinnerDialog)
-            spinnerDialog.destroy()
+            #spinnerDialog=SpinnerDialog(self, "Exporting VMs, this may take a few minutes...")
+            self.session.exportWorkshop(folderPath)
             #t = threading.Thread(target=self.session.exportWorkshop, args=[folderPath, spinnerDialog])
             #t.start()
 
@@ -794,6 +820,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
     # Event, executes when import is called
     def importActionEvent(self):
+        logging.debug("importVMActionEvent() initiated")
         dialog = Gtk.FileChooserDialog("Please choose the zip you wish to import.", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -868,6 +895,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
     # Executes when the window is closed
     def on_delete(self, event, widget):
+        logging.debug("on_delete() initiated: " + str(event) + " " + str(widget))
         self.fullSave()
 
 
@@ -879,6 +907,7 @@ class AppWindow(Gtk.ApplicationWindow):
 class Application(Gtk.Application):
 
     def __init__(self, *args, **kwargs):
+        logging.debug("Creating Application")
         super(Application, self).__init__(*args, application_id="workshop.creator.gui",
                          flags=Gio.ApplicationFlags.FLAGS_NONE,
                          **kwargs)
@@ -937,6 +966,7 @@ class Application(Gtk.Application):
 class EntryDialog(Gtk.Dialog):
 
     def __init__(self, parent, message):
+        logging.debug("Creating EntryDialog: " + str(message))
         Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OK, Gtk.ResponseType.OK))
@@ -963,6 +993,7 @@ class EntryDialog(Gtk.Dialog):
         self.status = None
 
     def dialogResponseActionEvent(self, dialog, responseID):
+        logging.debug("initiated dialogResponseActionEvent: " + str(responseID))
         # OK was clicked and there is text
         if responseID == Gtk.ResponseType.OK and not self.entry.get_text_length() < 1:
             self.entryText = self.entry.get_text()
@@ -982,6 +1013,7 @@ class EntryDialog(Gtk.Dialog):
 class VMTreeWidget(Gtk.Grid):
 
     def __init__(self):
+        logging.debug("Creating VMTreeWidget")
         super(VMTreeWidget, self).__init__()
 
         self.set_border_width(PADDING)
@@ -1017,7 +1049,8 @@ class VMTreeWidget(Gtk.Grid):
 class ListEntryDialog(Gtk.Dialog):
 
     def __init__(self, parent, message):
-        Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0,
+        logging.debug("Creating ListEntryDialog")
+        Gtk.Dialog.__init__(self, "Add an item", parent, 0,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OK, Gtk.ResponseType.OK))
 
@@ -1081,6 +1114,7 @@ class ListEntryDialog(Gtk.Dialog):
 
 class ExportImportProgressDialog(Gtk.Dialog):
     def __init__(self, parent, message, currentTotal, total):
+        logging.debug("Creating ExportImportProgressDialog" )
         Gtk.Dialog.__init__(self, "Workshop Wizard", parent, 0)
 
         self.set_default_size(50, 75)
@@ -1121,6 +1155,7 @@ class ExportImportProgressDialog(Gtk.Dialog):
 class SpinnerDialog(Gtk.Dialog):
 
     def __init__(self, parent, message):
+        logging.debug("Creating Spinner Dialog")
         Gtk.Dialog.__init__(self, "", parent, 0)
 
         self.set_deletable(False)
@@ -1150,11 +1185,14 @@ class SpinnerDialog(Gtk.Dialog):
         self.set_title(text)
 
 def WarningDialog(self, message):
+    logging.debug("Creating Warning Dialog")
     dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, message)
     dialog.run()
     dialog.destroy()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    logging.debug("Starting Program")
     app = Application()
     app.run(sys.argv)
