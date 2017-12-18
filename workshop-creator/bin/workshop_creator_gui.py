@@ -747,8 +747,6 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if response == Gtk.ResponseType.OK:
             self.addNewMaterial(dialog.get_filename())
-            #self.actionBox.show_all()
-        #elif response == Gtk.ResponseType.CANCEL:
         dialog.destroy()
 
     def addVMActionEvent(self, menuItem):
@@ -781,7 +779,6 @@ class AppWindow(Gtk.ApplicationWindow):
             self.session.removeMaterial()
             self.isRemoveVM=True
             model.remove(self.focusedTreeIter)
-
 
     # Event, executes when export is called
     def exportWorkshopActionEvent(self, menuItem):

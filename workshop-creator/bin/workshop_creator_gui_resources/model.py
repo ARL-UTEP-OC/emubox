@@ -1,11 +1,9 @@
-import sys
 import os
 import subprocess
 import xml.etree.ElementTree as ET
 import threading
 import re
 import shutil
-import shlex
 import zipfile
 import logging
 import workshop_creator_gui_resources.gui_constants as gui_constants
@@ -67,8 +65,7 @@ class Session:
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
         #subprocess.call(["python", script, filePath])
         pw = ProcessWindow(["python", script, filePath])
-        #pw = ProcessWindow(shlex.split(VBOXMANAGE_DIRECTORY+" export " + " TinyLinux_plus " + " -o " + os.path.join("C:\Users\Acosta\Desktop","A"+'.ova')))
-    
+
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         logging.debug("unzipWorker() initiated " + str(zipPath))
@@ -129,9 +126,8 @@ class Session:
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
         spinnerDialog.destroy()
 
-    # Thread function, performs zipping operaiton
     def zipWorker(self, folderPath, spinnerDialog):
-        #DO NOT DESTROY PROGRESSWINDOW HERE; do it where it is created
+        #Consider a better design where it is not destroyed here... e.g., a window that is appended instead
         #TODO: This crashed once.. need to fix, how to destroy when done, better design (should the process window spawn the thread?)
         logging.debug("zipWorker() initiated " + str(folderPath))
         
@@ -156,7 +152,6 @@ class Session:
                     status = float(currFile/(numFiles*1.))
                     logging.debug("adjusting dialog progress: " + str(status))
                     spinnerDialog.setLabelVal("Zipping file "+str(currFile)+"/"+str(numFiles)+": "+name)
-                    #progressWindow.appendText("Processing "+str(currFile)+"/"+str(numFiles)+": "+name + "\r\n")
                     spinnerDialog.setProgressVal(status)
                     zf.write(name, name)
         spinnerDialog.setLabelVal("--------Almost finished, cleaning temporary directories--------")
@@ -168,7 +163,6 @@ class Session:
     def exportZipFiles(self, folderPath, spinnerDialog):
         logging.debug("exportZipFiles() initiated " + str(folderPath))
         spinnerDialog.set_title("Zipping content...")
-        #progressWindow = ProgressWindow("Exporting to Zip File")
         shutil.copy2(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"), folderPath)
         t = threading.Thread(target=self.zipWorker, args=[folderPath,spinnerDialog])
         t.start()
