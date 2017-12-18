@@ -22,6 +22,7 @@ VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_CREATOR_FILE_PATH
 WORKSHOP_RDP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_RDP_CREATOR_FILE_PATH
 WORKSHOP_RESTORE_FILE_PATH = gui_constants.WORKSHOP_RESTORE_FILE_PATH
+MANAGER_SAVE_DIRECTORY = gui_constants.MANAGER_SAVE_DIRECTORY
 
 class Session:
     def __init__(self):
@@ -129,7 +130,7 @@ class Session:
         spinnerDialog.destroy()
 
     # Thread function, performs zipping operaiton
-    def zipWorker(self, folderPath, progressWindow):
+    def zipWorker(self, folderPath, spinnerDialog):
         #DO NOT DESTROY PROGRESSWINDOW HERE; do it where it is created
         #TODO: This crashed once.. need to fix, how to destroy when done, better design (should the process window spawn the thread?)
         logging.debug("zipWorker() initiated " + str(folderPath))
@@ -152,32 +153,37 @@ class Session:
                     currFile = currFile+1
                     name = os.path.join(root, name)
                     name = os.path.normpath(name)
-                    status = float(currFile/numFiles)
-                    progressWindow.setProgressVal(status)
-                    progressWindow.appendText("Processing "+str(currFile)+"/"+str(numFiles)+": "+name + "\r\n")
-                    progressWindow.setProgressVal(status)
+                    status = float(currFile/(numFiles*1.))
+                    logging.debug("adjusting dialog progress: " + str(status))
+                    spinnerDialog.setLabelVal("Zipping file "+str(currFile)+"/"+str(numFiles)+": "+name)
+                    #progressWindow.appendText("Processing "+str(currFile)+"/"+str(numFiles)+": "+name + "\r\n")
+                    spinnerDialog.setProgressVal(status)
                     zf.write(name, name)
-        progressWindow.appendText("\r\n--------Complete--------\r\n")
-        #shutil.rmtree(folderPath)
-                 
+        spinnerDialog.setLabelVal("--------Almost finished, cleaning temporary directories--------")
+        spinnerDialog.setProgressVal(1)
+        shutil.rmtree(folderPath, ignore_errors=True)
+        spinnerDialog.setLabelVal("--------Complete--------")
+        spinnerDialog.destroy()
 
-    def exportZipFiles(self, folderPath):
+    def exportZipFiles(self, folderPath, spinnerDialog):
         logging.debug("exportZipFiles() initiated " + str(folderPath))
-        progressWindow = ProgressWindow("Exporting to Zip File")
+        spinnerDialog.set_title("Zipping content...")
+        #progressWindow = ProgressWindow("Exporting to Zip File")
         shutil.copy2(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"), folderPath)
-        t = threading.Thread(target=self.zipWorker, args=[folderPath,progressWindow])
+        t = threading.Thread(target=self.zipWorker, args=[folderPath,spinnerDialog])
         t.start()
         
     def getCurrentVMList(self):
         logging.debug("getCurrentVMList() initiated")
         return self.currentWorkshop.vmList
 
-    def exportWorkshop(self, folderPath):
+    def exportWorkshop(self, folderPath, spinnerDialog):
         logging.debug("exportWorkshop() initiated " + str(folderPath))
         
         if os.path.exists(folderPath):
+            message = "Folder " + folderPath + " already exists. Cancelling export."
             logging.error("Folder " + folderPath + " already exists. Cancelling export.")
-            return     
+            return
         os.makedirs(folderPath)
         materialsPath = os.path.join(folderPath,"Materials")
         if os.path.exists(materialsPath):
@@ -199,17 +205,23 @@ class Session:
                 shutil.copy2(os.path.join(rdpFiles,rdpfile), rdpPath)
         else:
             logging.debug("No RDP file found in path during export: " + str(rdpFiles))
-            
-        for vm in self.currentWorkshop.vmList:
+        vmsToExport =self.currentWorkshop.vmList
+        currVMNum = 0
+        numVMs = len(vmsToExport)
+        for vm in vmsToExport:
             #subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', os.path.join(folderPath,vm.name+'.ova')])
-            logging.debug("Exporting VMS")
+            logging.debug("exportWorkshop(): Exporting VMS loop")
             outputOva = os.path.join(folderPath,vm.name+'.ova')
+            logging.debug("exportWorkshop(): adjusting dialog progress value to " + str(currVMNum/(numVMs*1.)))
+            spinnerDialog.setProgressVal(currVMNum/(numVMs*1.))
+            spinnerDialog.setLabelVal("Exporting VM " + str(currVMNum+1) + "/" + str(numVMs) + ": " + str(vm.name))
+            currVMNum = currVMNum+1
+
             pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o " + outputOva)
             #TODO: need to specify a "transient parent"
             pw.run()
         logging.debug("Done executing process. \r\nCreating zip")
-        self.exportZipFiles(folderPath)
-        #spinnerDialog2.run()
+        self.exportZipFiles(folderPath, spinnerDialog)
 
     def getAvailableVMs(self):
         logging.debug("getAvailableVMs() initiated")
@@ -261,7 +273,7 @@ class Session:
         self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
         if not os.path.exists(self.holdDirectory):
             os.makedirs(self.holdDirectory)
-		
+
         if not os.path.exists(os.path.join(self.holdDirectory,self.holdName)):
             shutil.copy2(materialAddress, os.path.join(self.holdDirectory,self.holdName))
 

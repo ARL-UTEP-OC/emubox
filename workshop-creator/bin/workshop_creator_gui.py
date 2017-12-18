@@ -805,28 +805,25 @@ class AppWindow(Gtk.ApplicationWindow):
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
             #TODO: Transform the spinner into the ProcessOutput Window
-            #spinnerDialog=SpinnerDialog(self, "Exporting VMs, this may take a few minutes...")
-            self.session.exportWorkshop(folderPath)
-            #t = threading.Thread(target=self.session.exportWorkshop, args=[folderPath, spinnerDialog])
-            #t.start()
-
+            spinnerDialog=SpinnerDialog(self, "Exporting to zip, this may take a few minutes...")
+            spinnerDialog.set_title("Exporting...")
+            self.session.exportWorkshop(folderPath, spinnerDialog)
+            spinnerDialog.run()
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK,
+                                       self.session.currentWorkshop.filename + " export complete\r\nFile created in: " + str(folderPath))
+            dialog.run()
+            dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-
-            #    def exportOVAs(self, holdVMs)
-            #        for vm in holdVMs:
-            #            os.system('"'+VBOXMANAGE_DIRECTORY+'" export "'+vm.name+'" -o "'+folderPath+'/'+vmname+'.ova"')
-            #        self.session.exportWorkshop(folderPath
 
     # Event, executes when import is called
     def importActionEvent(self):
         logging.debug("importVMActionEvent() initiated")
-        dialog = Gtk.FileChooserDialog("Please choose the zip you wish to import.", self,
+        dialog = Gtk.FileChooserDialog("Please select a zip file to import.", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 
         response = dialog.run()
-        zipPath = None
 
         if response == Gtk.ResponseType.OK:
             zipPath = dialog.get_filename()
@@ -839,6 +836,7 @@ class AppWindow(Gtk.ApplicationWindow):
             spinnerDialog = SpinnerDialog(self, "Preparing to unzip files")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
+            spinnerDialog.destroy()
 
             ovaList = []
             xmlList = []
@@ -866,6 +864,7 @@ class AppWindow(Gtk.ApplicationWindow):
             for ova in ovaList:
                 spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
                 self.session.importToVBox(os.path.join(tempPath,ova), spinnerDialog)
+                spinnerDialog.run()
 
             for xml in xmlList:
                 shutil.copy2(os.path.join(tempPath,xml), WORKSHOP_CONFIG_DIRECTORY)
@@ -888,7 +887,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.workshopTree.clearTreeStore()
             self.workshopTree.populateTreeStore(self.session.workshopList)
 
-            shutil.rmtree(baseTempPath)
+            shutil.rmtree(baseTempPath, ignore_errors=True)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -1169,7 +1168,6 @@ class SpinnerDialog(Gtk.Dialog):
         self.dialogBox.add(self.outerVerBox)
         self.progress_bar = Gtk.ProgressBar()
         self.outerVerBox.pack_start(self.label, False, False, PADDING)
-        #self.outerVerBox.pack_start(self.spinner, False, False, PADDING)
         self.outerVerBox.pack_start(self.progress_bar, False, False, PADDING)
 
         self.show_all()
@@ -1189,7 +1187,6 @@ def WarningDialog(self, message):
     dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, message)
     dialog.run()
     dialog.destroy()
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
