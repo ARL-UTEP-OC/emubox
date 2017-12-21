@@ -78,6 +78,7 @@ class Session:
                
         currmem_num = 0
         for entry_name in members_list:
+            logging.debug("unzipWorker(): unzipping " + str(entry_name))
             #increment our file progress counter
             currmem_num = currmem_num + 1
 
@@ -107,7 +108,7 @@ class Session:
                 o.write(b)
         i.close()
         o.close()
-        
+        #TODO: This may be causing a crash
         spinnerDialog.destroy()
 
     def importUnzip(self, zipPath, spinnerDialog):
@@ -124,6 +125,7 @@ class Session:
     def importWorker(self, tempPath, spinnerDialog):
         logging.debug("importWorker() initiated " + str(tempPath))
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
+        #TODO: Not sure if this is crashing on import
         spinnerDialog.destroy()
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -231,7 +233,6 @@ class Session:
                     break
             if thisMatchFound == False:
                 matchFound = False
-
         return matchFound
 
     def removeVM(self):
@@ -243,12 +244,21 @@ class Session:
         self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
         materialFile = os.path.join(self.holdDirectory,self.currentMaterial.name)
         if os.path.exists(materialFile):
-            os.remove(materialFile)
+            shutil.rmtree(materialFile, ignore_errors=True)
         self.currentWorkshop.materialList.remove(self.currentMaterial)
 
     def removeWorkshop(self):
         logging.debug("removeWorkshop() initiated ")
+        #remove XML config file
         os.remove(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"))
+        #remove materials associated with this workshop
+        materialPath=os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        if os.path.exists(materialPath):
+            shutil.rmtree(materialPath, ignore_errors=True)
+        #remove rdp files associated with this workshop
+        rdpPath=os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        if os.path.exists(rdpPath):
+            shutil.rmtree(rdpPath, ignore_errors=True)
         self.workshopList.remove(self.currentWorkshop)
 
     def addWorkshop(self, workshopName, vmName):

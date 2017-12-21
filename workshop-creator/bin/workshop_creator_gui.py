@@ -833,7 +833,7 @@ class AppWindow(Gtk.ApplicationWindow):
             spinnerDialog = SpinnerDialog(self, "Preparing to unzip files")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
-            spinnerDialog.destroy()
+            #spinnerDialog.destroy()
 
             ovaList = []
             xmlList = []
@@ -848,20 +848,24 @@ class AppWindow(Gtk.ApplicationWindow):
                     elif filename.endswith(".xml"):
                         xmlList.append(filename)
             materialsPath = os.path.join(tempPath,"Materials")
+            logging.debug("importActionEvent(): Materials folder to search: " + str(materialsPath))
             if os.path.exists(materialsPath):
                 materialsFiles = os.listdir(materialsPath)
+                logging.debug("importActionEvent(): Materials to import: " + str(materialsFiles))
                 for filename in materialsFiles:
+                    logging.debug("importActionEvent(): Adding material to workshop: " + str(filename))
                     materialList.append(filename)
             rdpPath = os.path.join(tempPath,"RDP")
             if os.path.exists(rdpPath):
                 rdpFiles = os.listdir(rdpPath)
                 for filename in rdpFiles:
                     rdpList.append(filename)
-
+            
             for ova in ovaList:
-                spinnerDialog = SpinnerDialog(self, "Importing to VBox...")
+                spinnerDialog = SpinnerDialog(self, "Importing " + str(ova) + " into VirtualBox...")
                 self.session.importToVBox(os.path.join(tempPath,ova), spinnerDialog)
                 spinnerDialog.run()
+                #spinnerDialog.destroy()
 
             for xml in xmlList:
                 shutil.copy2(os.path.join(tempPath,xml), WORKSHOP_CONFIG_DIRECTORY)
@@ -869,8 +873,12 @@ class AppWindow(Gtk.ApplicationWindow):
             holdMatPath = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,(os.path.splitext(xmlList[0])[0]))
             if not os.path.exists(holdMatPath):
                 os.makedirs(holdMatPath)
+                
             for material in materialList:
+                logging.debug("importActionEvent(): Processing file " + str(material))
+                logging.debug("importActionEvent(): Checking for " + os.path.join(holdMatPath,material))
                 if not os.path.exists(os.path.join(holdMatPath,material)):
+                    logging.debug("importActionEvent(): copying file " + str(os.path.join(tempPath,"Materials",material)) + " to " + str(material))
                     shutil.copy2(os.path.join(tempPath,"Materials",material), holdMatPath)
 
             holdRDPPath = os.path.join(WORKSHOP_RDP_DIRECTORY,(os.path.splitext(xmlList[0])[0]))
@@ -879,7 +887,7 @@ class AppWindow(Gtk.ApplicationWindow):
             for rdp in rdpList:
                 if not os.path.exists(holdRDPPath+rdp):
                     shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
-
+            #TODO: need to make sure to save before export!!!!!!! otherwise xml file will not contain materials!
             self.session.loadXMLFiles(tempPath)
             self.workshopTree.clearTreeStore()
             self.workshopTree.populateTreeStore(self.session.workshopList)
