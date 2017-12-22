@@ -799,6 +799,7 @@ class AppWindow(Gtk.ApplicationWindow):
         folderPath = None
 
         if response == Gtk.ResponseType.OK:
+			#self.fullSave()
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
             #TODO: Transform the spinner into the ProcessOutput Window
@@ -888,9 +889,9 @@ class AppWindow(Gtk.ApplicationWindow):
                 if not os.path.exists(holdRDPPath+rdp):
                     shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
             #TODO: need to make sure to save before export!!!!!!! otherwise xml file will not contain materials!
-            self.session.loadXMLFiles(tempPath)
-            self.workshopTree.clearTreeStore()
-            self.workshopTree.populateTreeStore(self.session.workshopList)
+#            self.session.loadXMLFiles(tempPath)
+#            self.workshopTree.clearTreeStore()
+#            self.workshopTree.populateTreeStore(self.session.workshopList)
 
             shutil.rmtree(baseTempPath, ignore_errors=True)
 
@@ -901,11 +902,6 @@ class AppWindow(Gtk.ApplicationWindow):
     def on_delete(self, event, widget):
         logging.debug("on_delete() initiated: " + str(event) + " " + str(widget))
         self.fullSave()
-
-
-        #    def runLogging(self, inName, command):
-        #        loggingDialog = LoggingDialog(self, inName, command)
-        #        loggingDialog.run()
 
 # This class is the main application
 class Application(Gtk.Application):
