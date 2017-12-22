@@ -13,6 +13,11 @@ from flask import Flask, make_response, render_template, send_from_directory, js
 # nocache imports
 from functools import wraps, update_wrapper
 
+from socketio import socketio_manage
+from socketio.server import SocketIOServer
+from socketio.namespace import BaseNamespace
+from socketio.mixins import BroadcastMixin
+
 # Webserver commands
 app = Flask(__name__)
 app.debug = True
@@ -151,6 +156,7 @@ def signal_handler(signal, frame):
         httpServer.stop()
         logging.info("Killing threads...")
         gevent.kill(srvGreenlet)
+        gevent.kill(ioGreenlet)
         gevent.kill(stateAssignmentThread)
         gevent.kill(restoreThread)
         gevent.kill(threadHandler)
@@ -161,20 +167,48 @@ def signal_handler(signal, frame):
         logging.error("Error during cleanup"+str(e))
         exit()
 
+class SocketIOApp(object):
+    """Stream sine values"""
+    def __call__(self, environ, start_response):
+        if environ['PATH_INFO'].startswith('/socket.io'):
+            socketio_manage(environ, {'': QueueStatusHandler})
+
+class QueueStatusHandler(BaseNamespace, BroadcastMixin):
+    def on_run(self):
+        workshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
+        sizes = []
+        for w in workshops:
+            tmp = [w.workshopName, w.q.qsize()]
+            sizes.append(tmp)
+            self.emit('sizes', tmp)
+
+        while True:
+            curr_workshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
+            for w in curr_workshops:
+                wq = filter(lambda x: x[0] == w.workshopName, sizes)[0]
+
+                if wq[1] is not w.q.qsize():
+                    wq[1] = w.q.qsize()
+                    self.emit('sizes', wq)
+            time.sleep(1)
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     logging.basicConfig(level=logging.DEBUG)
 
     httpServer = WSGIServer(('0.0.0.0', 8080), app)
+    sio_server = SocketIOServer(('0.0.0.0', 9090), SocketIOApp(), namespace="socket.io")
     stateAssignmentThread = gevent.spawn(VMStateManager.vbox_monitor.manageStates)
     restoreThread = gevent.spawn(VMStateManager.vbox_monitor.makeRestoreToAvailableState)
     srvGreenlet = gevent.spawn(httpServer.start)
+    ioGreenlet = gevent.spawn(sio_server.serve_forever)
     dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateData)
     threadHandler = gevent.spawn(threadHandler)
 
     try:
         # Let threads run until signal is caught
-        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator, threadHandler])
+        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator, threadHandler, ioGreenlet])
     except Exception as e:
         logging.error("An error occurred in threads" + str(e))
         exit()

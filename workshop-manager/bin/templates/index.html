@@ -3,6 +3,7 @@
     <head>
         <title>EmuBox</title>
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.2.1.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     </head>
 
@@ -26,7 +27,7 @@
                     <div style="text-align: center"> {{ workshop.workshopName }} </div>
                 </td>
                 <td>
-                    <div style="text-align: center"><span class="workshop_queue" id="{{ workshop.workshopName }}"></span> workshops available! </div>
+                    <div style="text-align: center"><span class="workshop_queue" id="{{ workshop.workshopName }}">{{ workshop.q.qsize() }}</span> workshops available! </div>
                 </td>
                 <td>
                     {% for material in workshop.materials %}
@@ -34,13 +35,13 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <div id = "download_links_{{ workshop.workshopName }}">
-                        <div id="ms_rdp_{{ workshop.workshopName }}" style="text-align: center">
-                            Windows: <a href="/checkout/ms-rdp/{{ workshop.workshopName}}">MS-RDP</a>
-                        </div>
-                        <div id="rdesktop_{{ workshop.workshopName }}" style="text-align: center">
-                            Linux: <a href="/checkout/rdesktop/{{ workshop.workshopName}}">rdesktop</a>
-                        </div>
+                    <div id = "download_links_{{ workshop.workshopName }}" style="text-align: center; display:none">
+                        <select id="dl_selector_{{ workshop.workshopName }}">
+                            <option value="/checkout/ms-rdp/{{ workshop.workshopName }}">Windows</option>
+                            <option value="/checkout/rdesktop/{{ workshop.workshopName }}">Linux</option>
+                        </select>
+                        <button id="dl_button_{{ workshop.workshopName }}"
+                                onclick="initiate_download('{{ workshop.workshopName }}');">Submit</button>
                     </div>
                 </td>
             </tr>
@@ -49,26 +50,23 @@
         </table>
 
         <script>
-            window.setInterval(updateStatuses, 1000); // Call function every second
-            function updateStatuses() {
-                $(".workshop_queue").each(function() {
-                    var $this = $(this)
-                    var id = $(this).attr("id");
-                    $.ajax({
-                        url: "/getQueueSize/" + id,
-                        dataType: "json",
-                        success: function(response) {
-                            var s = "download_links_" + id;
-                            if (response === 0)
-                                $('#' + s).hide();
-                            else
-                                $('#' + s).show();
-                            $this.text(response);
-                            $this.text();
-                        }
-                    });
-                });
+            function initiate_download(workshopName) {
+                window.open($("#dl_selector_" + workshopName).val(), "_self");
             }
+
+            var socket = io.connect("http://127.0.0.1:9090");
+            socket.on('connect', function() {
+                socket.emit('run');
+            });
+
+            socket.on('sizes', function(sizes) {
+                if (sizes[1] === 0)
+                    $('#download_links_' + sizes[0]).hide();
+                else
+                    $('#download_links_' + sizes[0]).show();
+                $('#' + sizes[0]).text(sizes[1]);
+            });
+
         </script>
     </body>
 </html>
