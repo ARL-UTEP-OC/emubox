@@ -46,7 +46,7 @@ class ProgressWindow(Gtk.Window):
             
     #public functions to change the window items
     def setProgressVal(self,val):
-		self.progress_bar.set_fraction(val)
+        self.progress_bar.set_fraction(val)
         
     def setTitleVal(self, text):
         self.set_title(text)

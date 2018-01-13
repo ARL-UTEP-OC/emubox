@@ -1175,7 +1175,7 @@ class SpinnerDialog(Gtk.Dialog):
         #self.spinner.start()
         
     def setProgressVal(self,val):
-		self.progress_bar.set_fraction(val)
+        self.progress_bar.set_fraction(val)
         
     def setLabelVal(self, text):
         self.label.set_text(text)

@@ -8,5 +8,5 @@ source ./$VENV_NAME/bin/activate
 pip install lxml
 pip install gi
 cd bin
-echo Type: python3 workshop-creator-gu.py to start the workshop-creator-gui
+echo Type: python3 workshop_creator_gui.py to start the workshop-creator-gui
 
