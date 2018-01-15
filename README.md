@@ -89,7 +89,7 @@ export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
 Now run the installer and start emubox
 ```
 source ./install.sh
-python instantiator.py
+./start_manager.sh
 ```
 
 ## Execution
@@ -99,9 +99,7 @@ This will start a flask webserver and a backend monitor for virtualbox VMs.
 In the directory where you installed EmuBox, type:
 ```
 cd workshop-manager
-manager-container\Scripts\activate
-cd bin
-python instantiator.py
+./start_manager.sh
 ```
 
 #### Linux
@@ -109,22 +107,7 @@ In the directory where you installed EmuBox, type:
 ```
 sudo -s
 cd workshop-manager
-source manager-container/bin/activate
-```
-Set the following Environment Variables
-
-* VBOX_SDK_PATH
-* VBOX_PROGRAM_PATH
-
-For example,
-```
-export VBOX_SDK_PATH=`pwd`/bin/VirtualBoxSDK-5.1.20-114628/sdk/
-export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
-``` 
-
-```
-cd bin
-python instantiator.py
+./start_manager.sh
 ```
 
 NOTE: You must run virtualbox as a sudo user in order for remote display, and hence, emubox, to work correctly.
