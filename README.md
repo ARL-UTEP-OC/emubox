@@ -110,4 +110,27 @@ cd workshop-manager
 ./start_manager.sh
 ```
 
-NOTE: You must run virtualbox as a sudo user in order for remote display, and hence, emubox, to work correctly.
+NOTE: You must run VirtualBox as a sudo user in order for remote display, and hence, emubox, to work correctly.
+
+
+
+###Live Disc###
+A live disc containing preinstalled EmuBox is available here.
+The following are the steps for running EmuBox on the live disc.
+####Optional DHCP Service
+Start DHCP Server
+1. Modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
+/etc/dhcp/dhcpd.conf
+/etc/default/isc-dhcp-server
+2. Modify the following file to set a static IP address to the interface serving DHCP (192.168.1.254/24 is the default IP Address):
+/etc/network/interfaces
+3. Start the dhcp service:
+service isc-dhcp-server start
+
+####EmuBox Manager
+To Start EmuBox:
+1. Open a terminal window and execute the following commands:
+sudo -s
+cd /root/emubox/workshop-manager
+./start_manager.sh
+
