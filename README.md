@@ -112,10 +112,10 @@ cd workshop-manager
 NOTE: You must run VirtualBox as a sudo user in order for remote display, and hence, emubox, to work correctly.
 
 
-###Live Disc###
+### Live Disc
 A live disc containing preinstalled EmuBox is available [here](https://goo.gl/DmrZmj).
 The following are the steps for running EmuBox on the live disc.
-####DHCP Service Configuration (Optional)
+#### DHCP Service Configuration (Optional)
 Start DHCP Server
 1. Modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
 /etc/dhcp/dhcpd.conf
@@ -125,7 +125,7 @@ Start DHCP Server
 3. Start the dhcp service:
 service isc-dhcp-server start
 
-####EmuBox Manager
+#### EmuBox Manager
 To Start EmuBox:
 1. Open a terminal window and execute the following commands:
 sudo -s
