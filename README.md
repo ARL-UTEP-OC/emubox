@@ -128,7 +128,8 @@ service isc-dhcp-server start
 #### EmuBox Manager
 To Start EmuBox:
 1. Open a terminal window and execute the following commands:
+```
 sudo -s
 cd /root/emubox/workshop-manager
 ./start_manager.sh
-
+```
