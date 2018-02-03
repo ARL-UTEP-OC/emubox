@@ -17,7 +17,7 @@ echo set VENV_NAME=creator-container >> start_creator.bat
 echo. >> start_creator.bat
 echo REM activate the container and invoke the gui >> start_creator.bat
 echo %VENV_NAME%\Scripts\activate ^& cd bin ^& python workshop_creator_gui.py >> start_creator.bat
-echo Type: .\start_creator to start the workshop-creator-gui
+echo Type: start_creator.bat to start the workshop-creator-gui
 ) ELSE (
 echo Processing using a 64-bit python27 installation
 %VENV_NAME%\Scripts\activate & pip install lxml & pip install gi & xcopy python27-64bit-gtk3\* "%VENV_NAME%\%PYTHONPACKAGES_PATH%" /E /Y & %VENV_NAME%\Scripts\deactivate
@@ -27,6 +27,6 @@ echo set VENV_NAME=creator-container >> start_creator.bat
 echo. >> start_creator.bat
 echo REM activate the container and invoke the gui >> start_creator.bat
 echo %VENV_NAME%\Scripts\activate ^& cd bin ^& python workshop_creator_gui.py >> start_creator.bat
-echo Type: .\start_creator to start the workshop-creator-gui
+echo Type: start_creator.bat to start the workshop-creator-gui
 )
 
