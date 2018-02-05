@@ -120,7 +120,7 @@ Start DHCP Server
 1. Modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
 /etc/dhcp/dhcpd.conf
 /etc/default/isc-dhcp-server
-2. Modify the following file to set a static IP address to the interface serving DHCP (192.168.1.254/24 is the default IP Address):
+2. Modify the following file to set a static IP address to the interface serving DHCP:
 /etc/network/interfaces
 3. Start the dhcp service:
 service isc-dhcp-server start
