@@ -212,8 +212,7 @@ class Session:
             spinnerDialog.setProgressVal(currVMNum/(numVMs*1.))
             spinnerDialog.setLabelVal("Exporting VM " + str(currVMNum+1) + "/" + str(numVMs) + ": " + str(vm.name))
             currVMNum = currVMNum+1
-
-            pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o " + outputOva)
+            pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
             #TODO: need to specify a "transient parent"
             pw.run()
         logging.debug("Done executing process. \r\nCreating zip")

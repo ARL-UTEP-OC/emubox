@@ -7,7 +7,7 @@ import threading
 
 class ProcessDialog(Gtk.Dialog):
     def __init__(self, processPath):
-        #Gtk.Window.__init__(self, title="Process Output Console")
+        
         Gtk.Window.__init__(self, title="Process Output Console")
         #self.set_modal(True)
         #Variables needed for obtaining and displaying process output
