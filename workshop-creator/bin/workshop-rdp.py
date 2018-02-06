@@ -130,8 +130,8 @@ for vm in vmset.findall('vm'):
         vmname = vm.find('name').text.rstrip().lstrip()
 
         # check to make sure the vm exists:
-        getVMsCmd = " ".join([pathToVirtualBox, "list", "vms"])
-        vmList = subprocess.check_output(getVMsCmd, shell=True)
+        getVMsCmd = [pathToVirtualBox, "list", "vms"]
+        vmList = subprocess.check_output(getVMsCmd)
         if vmname not in vmList:
             print "VM not found: ", vmname
             print "Exiting"
