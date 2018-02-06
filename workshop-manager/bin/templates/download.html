@@ -22,6 +22,29 @@
             </a>
         </div>
 
+        <div id="instructions">
+            {% if download_type == "windows" %}
+            <div>
+                <ol>
+                    <li>When download is available, click the download button.</li>
+                    <li>Select "Open with" and ensure "Remote Desktop Connection" is selected.</li>
+                    <img src="../../static/save_file.PNG">
+                    <li>Click "OK".</li>
+                    <li>A dialogue window will open. Click "Connect".</li>
+                    <img src="../../static/connect.PNG">
+                    <li>A warning dialogue window will open. Click "Yes".</li>
+                    <img src="../../static/verified.PNG">
+                    <li>A Microsoft Remote Desktop Connection window should open and you should be connected!</li>
+                    <img src="../../static/connected.PNG">
+                </ol>
+            </div>
+            {% endif %}
+            {% if download_type == "linux" %}
+                <div>Linux</div>
+            {% endif %}
+
+        </div>
+
         <script>
             {# Fiddle from http://jsfiddle.net/ysilvestrov/bUZd8/1/ #}
             var sTime = new Date().getTime();

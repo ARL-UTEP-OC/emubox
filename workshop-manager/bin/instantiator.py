@@ -85,7 +85,7 @@ def checkoutRDP(workshopName):
         rdpPaths = unit.rdp_files
 
         if len(rdpPaths) is 1:
-            return render_template('download.html', download_path=rdpPaths[0])
+            return render_template('download.html', download_path=rdpPaths[0], download_type="windows")
 
         zipSem.acquire()
         zip_file_name = "Workshop" + str(i) + ".zip"
@@ -94,7 +94,7 @@ def checkoutRDP(workshopName):
         zip_files(rdpPaths, zip_file_path)
         threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
         zipSem.release()
-        return render_template('download.html', download_path=zip_file_path)
+        return render_template('download.html', download_path=zip_file_path, download_type="windows")
     else:
         return "Sorry, there are no workshops available."
 
@@ -112,7 +112,7 @@ def checkoutrdesktop(workshopName):
         rdesktopPaths = unit.rdesktop_files
 
         if len(rdesktopPaths) is 1:
-            return render_template('download.html', download_path=rdesktopPaths[0])
+            return render_template('download.html', download_path=rdesktopPaths[0], download_type="linux")
 
         zipSem.acquire()
         zip_file_name = unit.workshopName + "_" + str(i) + ".zip"
@@ -121,7 +121,7 @@ def checkoutrdesktop(workshopName):
         zip_files(rdesktopPaths, zip_file_path)
         threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
         zipSem.release()
-        return render_template('download.html', download_path=zip_file_path)
+        return render_template('download.html', download_path=zip_file_path, download_type="linux")
     else:
         return "Sorry, there are no workshops available."
 

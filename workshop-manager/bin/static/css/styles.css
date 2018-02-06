@@ -109,7 +109,8 @@ tr:last-of-type td:last-child {
 /*}*/
 
 img {
-    width:100%;
+    width:30%;
+	height:30%;
 }
 
 #myBar {
