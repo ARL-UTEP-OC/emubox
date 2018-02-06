@@ -113,7 +113,7 @@ NOTE: You must run VirtualBox as a sudo user in order for remote display, and he
 
 
 ### Live Disc
-A live disc containing preinstalled EmuBox is available [here](https://goo.gl/DmrZmj).
+A live disc containing preinstalled EmuBox is available [here](https://goo.gl/xmsMik).
 The following are the steps for running EmuBox on the live disc.
 #### DHCP Service Configuration (Optional)
 Start DHCP Server
