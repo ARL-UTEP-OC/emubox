@@ -11,7 +11,7 @@ from gevent.lock import BoundedSemaphore
 gevent.monkey.patch_all()
 
 #to reduce stdout
-import logging
+import logging, zipfile
 
 from Workshop_Queue import Workshop_Queue
 from Workshop_Unit import Workshop_Unit
@@ -111,13 +111,16 @@ def getAvailableWorkshops():
     """ Returns: List of Workshop objects whose queues contain Workshop Units that are "Available". """
     return availableWorkshops
 
+
 def checkoutUnit(unit):
     #unitsOnHold.append(unit)
     time.sleep(checkoutTime)
     unitsOnHold.remove(unit)
 
+
 def putOnHold(unit):
     unitsOnHold.append(unit)
+
 
 def getRDPPath(unit, workshopName):
     rdpPaths = []
@@ -130,6 +133,7 @@ def getRDPPath(unit, workshopName):
             rdpPaths.append(rdpPath)
     return rdpPaths
 
+
 def getRDesktopPath(unit, workshopName):
     rdesktopPaths = []
     for vm in unit[1]:
@@ -140,6 +144,23 @@ def getRDesktopPath(unit, workshopName):
                                    ".sh").replace('\\', '/')
             rdesktopPaths.append(rdesktopPath)
     return rdesktopPaths
+
+
+''' 
+    zip_files:
+        @src: Iterable object containing one or more element
+        @dst: filename (path/filename if needed)
+        @arcname: Iterable object containing the names we want to give to the elements in the archive (has to correspond to src) 
+'''
+def zip_files(src, dst, arcname=None):
+    zip_ = zipfile.ZipFile(dst, 'w')
+    for i in range(len(src)):
+        if arcname is None:
+            zip_.write(src[i], os.path.basename(src[i]), compress_type = zipfile.ZIP_DEFLATED)
+        else:
+            zip_.write(src[i], arcname[i], compress_type = zipfile.ZIP_DEFLATED)
+    zip_.close()
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

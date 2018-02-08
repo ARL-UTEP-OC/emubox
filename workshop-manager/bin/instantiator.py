@@ -1,5 +1,5 @@
 # Project imports
-import DataAggregation.webdata_aggregator, VMStateManager.vbox_monitor, os, time, logging, signal, zipfile
+import DataAggregation.webdata_aggregator, VMStateManager.vbox_monitor, os, time, logging, signal
 
 # gevent imports
 import gevent, gevent.monkey; gevent.monkey.patch_all()
@@ -13,10 +13,9 @@ from flask import Flask, make_response, render_template, send_from_directory, js
 # nocache imports
 from functools import wraps, update_wrapper
 
-from socketio import socketio_manage
 from socketio.server import SocketIOServer
-from socketio.namespace import BaseNamespace
-from socketio.mixins import BroadcastMixin
+from DataAggregation.client_updater import SocketIOApp
+from DataAggregation.webdata_aggregator import zip_files
 
 # Webserver commands
 app = Flask(__name__)
@@ -48,6 +47,7 @@ def threadHandler():
         threadHandlerSem.release()
         time.sleep(threadTime)
 
+
 def nocache(view):
     @wraps(view)
     def no_cache(*args, **kwargs):
@@ -59,11 +59,13 @@ def nocache(view):
         return response
     return update_wrapper(no_cache, view)
 
+
 @app.route('/WorkshopData/<path:filename>', methods=['GET', 'POST'])
 @nocache
 def download(filename):
     downloads = os.path.join(app.root_path, "WorkshopData/")
     return send_from_directory(directory=downloads, as_attachment=True, filename=filename, mimetype='application/octet-stream')
+
 
 # Simple catch-all server
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
@@ -71,6 +73,7 @@ def download(filename):
 def catch_all(path):
     """ Handles all requests to the main index page of the Web Server. """
     return render_template('index.html', workshops=DataAggregation.webdata_aggregator.getAvailableWorkshops())
+
 
 @app.route('/checkout/ms-rdp/<workshopName>')
 def checkoutRDP(workshopName):
@@ -134,21 +137,6 @@ def giveQueueSize(workshopName):
     else:
         return jsonify("0")
 
-''' 
-    zip_files:
-        @src: Iterable object containing one or more element
-        @dst: filename (path/filename if needed)
-        @arcname: Iterable object containing the names we want to give to the elements in the archive (has to correspond to src) 
-'''
-def zip_files(src, dst, arcname=None):
-    zip_ = zipfile.ZipFile(dst, 'w')
-    for i in range(len(src)):
-        if arcname is None:
-            zip_.write(src[i], os.path.basename(src[i]), compress_type = zipfile.ZIP_DEFLATED)
-        else:
-            zip_.write(src[i], arcname[i], compress_type = zipfile.ZIP_DEFLATED)
-    zip_.close()
-
 
 def signal_handler(signal, frame):
     try:
@@ -166,31 +154,6 @@ def signal_handler(signal, frame):
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
         exit()
-
-class SocketIOApp(object):
-    """Stream sine values"""
-    def __call__(self, environ, start_response):
-        if environ['PATH_INFO'].startswith('/socket.io'):
-            socketio_manage(environ, {'': QueueStatusHandler})
-
-class QueueStatusHandler(BaseNamespace, BroadcastMixin):
-    def on_run(self):
-        workshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
-        sizes = []
-        for w in workshops:
-            tmp = [w.workshopName, w.q.qsize()]
-            sizes.append(tmp)
-            self.emit('sizes', tmp)
-
-        while True:
-            curr_workshops = DataAggregation.webdata_aggregator.getAvailableWorkshops()
-            for w in curr_workshops:
-                wq = filter(lambda x: x[0] == w.workshopName, sizes)[0]
-
-                if wq[1] is not w.q.qsize():
-                    wq[1] = w.q.qsize()
-                    self.emit('sizes', wq)
-            time.sleep(1)
 
 
 if __name__ == '__main__':
