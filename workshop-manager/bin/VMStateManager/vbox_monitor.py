@@ -1,24 +1,14 @@
-# Vbox testbed manager imports
-from vboxapi import VirtualBoxManager
 import time
 import traceback
-
-# gevent imports
-import gevent
+import logging
+import gc
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
+from vboxapi import VirtualBoxManager
+from manager_constants import VBOX_PROBETIME, VM_RESTORE_TIME, LOCK_WAIT_TIME
+
+
 gevent.monkey.patch_all()
-
-#to reduce stdout
-import logging
-
-#For cleanup
-import gc
-
-probeTime = 5
-restoreTime = 1
-lockWaitTime = 5
-
 ####vars needed for testbed manager threads:
 mgr = VirtualBoxManager(None, None)
 vbox = mgr.getVirtualBox()
@@ -231,10 +221,10 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
             for rem in vmsToRemoveFromQueue:
                 if rem in restoreSubstates:
                     del restoreSubstates[rem]
-            time.sleep(restoreTime)
+            time.sleep(VM_RESTORE_TIME)
         except Exception as e:
             logging.error("RESTORE: An error occured: "+str(e))
-            time.sleep(lockWaitTime)
+            time.sleep(LOCK_WAIT_TIME)
             pass
 
 
@@ -334,11 +324,11 @@ def manageStates():
             logging.info("available:"+str(availableState))
             logging.info("notAvailable:"+str(notAvailableState))
             logging.info("restore:"+str(restoreState))
-            time.sleep(probeTime)
+            time.sleep(VBOX_PROBETIME)
 
         except Exception as x:
             logging.error("STATES: An error occured:" + str(x))
-            time.sleep(lockWaitTime)
+            time.sleep(LOCK_WAIT_TIME)
 
 def cleanup():
     global mgr

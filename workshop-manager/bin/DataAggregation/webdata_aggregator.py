@@ -1,30 +1,21 @@
 import time
 import traceback
-import VMStateManager.vbox_monitor
-from vboxapi import VirtualBoxManager
 import os
-
-# gevent imports
-import gevent
+import VMStateManager.vbox_monitor
+import logging
+import zipfile
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
-gevent.monkey.patch_all()
-
-#to reduce stdout
-import logging, zipfile
-
+from vboxapi import VirtualBoxManager
 from Workshop_Queue import Workshop_Queue
 from Workshop_Unit import Workshop_Unit
+from manager_constants import VBOX_PROBETIME, CHECKOUT_TIME
 
+gevent.monkey.patch_all()
 mgr = VirtualBoxManager(None, None)
-
-probeTime = 5
 aggregatedInfo = []
 availableWorkshops = []
 unitsOnHold = []
-checkoutTime = 30
-
-# vars needed for gevent (lock)
 aggregatedInfoSem = BoundedSemaphore(1)
 
 
@@ -36,12 +27,14 @@ def cleanup():
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
 
+
 def unitIsAvailable(vms):
     for vm in vms:
         if (vm not in VMStateManager.vbox_monitor.availableState and VMStateManager.vbox_monitor.vms[vm]["vrde"]) \
                 or (VMStateManager.vbox_monitor.vms[vm]["VMState"] != mgr.constants.MachineState_Running):
             return False
     return True
+
 
 def getAvailableUnits():
     availableUnits = []
@@ -90,7 +83,7 @@ def aggregateData():
                     workshop_queue = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
                     if unit not in workshop_queue.q.queue and unit not in unitsOnHold:
                         workshop_queue.q.put(unit)
-            time.sleep(probeTime)
+            time.sleep(VBOX_PROBETIME)
             for workshop in availableWorkshops:
                 workshop.q.queue.clear()
             aggregatedInfoSem.release()
@@ -98,7 +91,7 @@ def aggregateData():
             logging.error("AGGREGATION: An error occurred: " + str(e))
             traceback.print_exc()
             exit()
-            time.sleep(probeTime)
+            time.sleep(VBOX_PROBETIME)
 
 
 def getAggregatedInfo():
@@ -113,8 +106,7 @@ def getAvailableWorkshops():
 
 
 def checkoutUnit(unit):
-    #unitsOnHold.append(unit)
-    time.sleep(checkoutTime)
+    time.sleep(CHECKOUT_TIME)
     unitsOnHold.remove(unit)
 
 
@@ -160,17 +152,3 @@ def zip_files(src, dst, arcname=None):
         else:
             zip_.write(src[i], arcname[i], compress_type = zipfile.ZIP_DEFLATED)
     zip_.close()
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    mydata = aggregateData()
-
-    # stateAggregationThread = gevent.spawn(manageStates)
-    # restoreThread = gevent.spawn(makeRestoreToAvailableState)
-    #
-    # try:
-    #     gevent.joinall([stateAssignmentThread, restoreThread])
-    # except Exception as e:
-    #     logging.error("An error occured in threads"+str(e))
-    #     exit()
