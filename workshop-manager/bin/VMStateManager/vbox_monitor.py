@@ -1,12 +1,13 @@
+import gc
+import logging
 import time
 import traceback
-import logging
-import gc
+
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
 from vboxapi import VirtualBoxManager
-from manager_constants import VBOX_PROBETIME, VM_RESTORE_TIME, LOCK_WAIT_TIME
 
+from manager_constants import LOCK_WAIT_TIME, VBOX_PROBETIME, VM_RESTORE_TIME
 
 gevent.monkey.patch_all()
 ####vars needed for testbed manager threads:

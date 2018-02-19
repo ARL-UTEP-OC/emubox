@@ -1,8 +1,10 @@
 import time
-from DataAggregation.webdata_aggregator import getAvailableWorkshops
+
 from socketio import socketio_manage
-from socketio.namespace import BaseNamespace
 from socketio.mixins import BroadcastMixin
+from socketio.namespace import BaseNamespace
+
+from DataAggregation.webdata_aggregator import getAvailableWorkshops
 
 
 class RequestHandlerApp(object):

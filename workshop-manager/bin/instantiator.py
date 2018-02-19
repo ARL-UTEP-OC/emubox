@@ -1,10 +1,18 @@
-import DataAggregation.webdata_aggregator, VMStateManager.vbox_monitor, logging, signal
-import WebServer
-import gevent, gevent.monkey; gevent.monkey.patch_all()
+import logging
+import signal
+
+import gevent
+import gevent.monkey
 from gevent.pywsgi import WSGIServer
 from socketio.server import SocketIOServer
+
+import DataAggregation.webdata_aggregator
+import VMStateManager.vbox_monitor
+import WebServer
 from RequestHandler.client_updater import RequestHandlerApp
 from WebServer.flask_server import app
+
+gevent.monkey.patch_all()
 
 
 def signal_handler(signal, frame):

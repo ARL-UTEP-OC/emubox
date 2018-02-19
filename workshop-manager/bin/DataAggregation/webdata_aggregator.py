@@ -1,15 +1,17 @@
+import logging
+import os
 import time
 import traceback
-import os
-import VMStateManager.vbox_monitor
-import logging
 import zipfile
+
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
 from vboxapi import VirtualBoxManager
+
+import VMStateManager.vbox_monitor
+from manager_constants import CHECKOUT_TIME, VBOX_PROBETIME
 from Workshop_Queue import Workshop_Queue
 from Workshop_Unit import Workshop_Unit
-from manager_constants import VBOX_PROBETIME, CHECKOUT_TIME
 
 gevent.monkey.patch_all()
 mgr = VirtualBoxManager(None, None)

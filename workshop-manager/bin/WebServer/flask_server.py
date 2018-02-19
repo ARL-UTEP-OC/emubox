@@ -1,13 +1,17 @@
 import os
-import time
 import threading
+import time
 # nocache imports
-from functools import wraps, update_wrapper
-from gevent.lock import BoundedSemaphore
-from flask import Flask, make_response, render_template, send_from_directory, jsonify
-from DataAggregation.webdata_aggregator import zip_files, getAvailableWorkshops, checkoutUnit, putOnHold
-from manager_constants import THREAD_TIME, ZIP_CLEAR_TIME
+from functools import update_wrapper, wraps
 
+from flask import (Flask, jsonify, make_response, render_template,
+                   send_from_directory)
+from gevent.lock import BoundedSemaphore
+
+from DataAggregation.webdata_aggregator import (checkoutUnit,
+                                                getAvailableWorkshops,
+                                                putOnHold, zip_files)
+from manager_constants import THREAD_TIME, ZIP_CLEAR_TIME
 
 app = Flask(__name__)
 threadsToRun = []
