@@ -331,6 +331,14 @@ def manageStates():
             logging.error("STATES: An error occured:" + str(x))
             time.sleep(LOCK_WAIT_TIME)
 
+
+def unitIsAvailable(vm_set):
+    for vm in vm_set:
+        if (vm not in availableState and vms[vm]["vrde"]) or (vms[vm]["VMState"] != mgr.constants.MachineState_Running):
+            return False
+    return True
+
+
 def cleanup():
     global mgr
     global vbox

@@ -6,7 +6,6 @@ import zipfile
 
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
-from vboxapi import VirtualBoxManager
 
 import VMStateManager.vbox_monitor
 from manager_constants import CHECKOUT_TIME, VBOX_PROBETIME
@@ -14,7 +13,6 @@ from Workshop_Queue import Workshop_Queue
 from Workshop_Unit import Workshop_Unit
 
 gevent.monkey.patch_all()
-mgr = VirtualBoxManager(None, None)
 aggregatedInfo = []
 availableWorkshops = []
 unitsOnHold = []
@@ -30,20 +28,12 @@ def cleanup():
         logging.error("Error during cleanup"+str(e))
 
 
-def unitIsAvailable(vms):
-    for vm in vms:
-        if (vm not in VMStateManager.vbox_monitor.availableState and VMStateManager.vbox_monitor.vms[vm]["vrde"]) \
-                or (VMStateManager.vbox_monitor.vms[vm]["VMState"] != mgr.constants.MachineState_Running):
-            return False
-    return True
-
-
 def getAvailableUnits():
     availableUnits = []
     getGroupToVms = VMStateManager.vbox_monitor.getGroupToVms().copy()
     while(getGroupToVms):
         unit = getGroupToVms.popitem()
-        if unitIsAvailable(unit[1]):
+        if VMStateManager.vbox_monitor.unitIsAvailable(unit[1]):
             workshopName = unit[0].split('/')[1]
             rdp_files = getRDPPath(unit, workshopName)
             rdesktop_files = getRDesktopPath(unit, workshopName)
