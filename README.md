@@ -50,22 +50,23 @@ The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that com
 ##### You must install these manually:
 * Python 2.x (tested with [v2.7](https://www.python.org/download/releases/2.7/))
 * VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack (tested with [v5.1.10](https://www.virtualbox.org/wiki/Downloads))
-* PyGI (requires v3.10.2, on Windows, tested using [this Windows Installer](https://sourceforge.net/projects/pygobjectwin32/files/pygi-aio-3.10.2-win32_rev18-setup.exe/download)
+[comment]: <> * PyGI (requires v3.10.2, on Windows, tested using [this Windows Installer](https://sourceforge.net/projects/pygobjectwin32/files/pygi-aio-3.10.2-win32_rev18-setup.exe/download)
     
     Install both:
     * gobject-introspection
     * adg
 
 ##### These are automatically installed with the included install script
-* VirtualEnv (tested with [v15.1.0](https://virtualenv.pypa.io/en/stable/) )
-* LXML (tested with [v4.0.0](http://lxml.de/changes-4.0.0.html) )
-* Flask (tested with [v0.12](http://pypi.python.org/pypi/Flask/0.12) )
+* VirtualEnv [v15.1.0](https://virtualenv.pypa.io/en/stable/)
+* LXML [v4.0.0](http://lxml.de/changes-4.0.0.html)
+* Flask [v0.12](http://pypi.python.org/pypi/Flask/0.12)
+* PyGI based on [this Windows Installer](https://sourceforge.net/projects/pygobjectwin32/files/pygi-aio-3.10.2-win32_rev18-setup.exe/download)
 
 #### Windows
 In the directory where you extracted EmuBox:
 ```
 cd workshop-manager
-./install.bat
+./install_win.bat
 ```
 
 #### Linux
@@ -88,7 +89,7 @@ export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
 ```
 Now run the installer and start emubox
 ```
-source ./install.sh
+source ./install_linux.sh
 ./start_manager.sh
 ```
 
@@ -111,19 +112,37 @@ cd workshop-manager
 ```
 NOTE: You must run VirtualBox as a sudo user in order for remote display, and hence, emubox, to work correctly.
 
-
 ### Live Disc
-A live disc containing preinstalled EmuBox is available [here](https://goo.gl/xmsMik).
+A live disc containing preinstalled EmuBox is available [here](https://goo.gl/TkeqrY).
 The following are the steps for running EmuBox on the live disc.
 #### DHCP Service Configuration (Optional)
-Start DHCP Server
+To enable the DHCP server execute the following steps:
+
 1. Modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
+```
 /etc/dhcp/dhcpd.conf
 /etc/default/isc-dhcp-server
+```
 2. Modify the following file to set a static IP address to the interface serving DHCP:
+```
 /etc/network/interfaces
+```
 3. Start the dhcp service:
+```
 service isc-dhcp-server start
+```
+
+#### Remote Desktop (xrdp) Service Configuration (Optional)
+To enable the Remote Display servuce execute the following steps:
+
+1. Set xfce4 as the desktop environment for the remote session
+```
+echo "xfce4-session" > ~/.xsession
+```
+2. Start the xrdp service
+```
+service xrdp start
+```
 
 #### EmuBox Manager
 To Start EmuBox:
