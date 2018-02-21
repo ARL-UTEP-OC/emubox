@@ -129,11 +129,11 @@ To enable the DHCP server execute the following steps:
 ```
 3. Start the dhcp service:
 ```
-service isc-dhcp-server start
+sudo service isc-dhcp-server start
 ```
 
 #### Remote Desktop (xrdp) Service Configuration (Optional)
-To enable the Remote Display servuce execute the following steps:
+To enable the Remote Display service execute the following steps:
 
 1. Set xfce4 as the desktop environment for the remote session
 ```
@@ -141,7 +141,15 @@ echo "xfce4-session" > ~/.xsession
 ```
 2. Start the xrdp service
 ```
-service xrdp start
+sudo service xrdp start
+```
+
+#### SSH Server configuration (Optional)
+To enable the SSH service execute the following steps:
+
+1. Start the ssh server
+```
+sudo service ssh start
 ```
 
 #### EmuBox Manager
