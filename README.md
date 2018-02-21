@@ -43,18 +43,13 @@ The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that com
 
 ## Installation
 #### EmuBox has been tested on:
-* Windows 7 (32 and 64-bit), Windows Server 2012 (64-bit)
+* Windows 7+ (32 and 64-bit), Windows Server 2012 (64-bit)
 * Ubuntu 16.04 LTE (64-bit)
 
 #### Requirements
 ##### You must install these manually:
 * Python 2.x (tested with [v2.7](https://www.python.org/download/releases/2.7/))
 * VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack (tested with [v5.1.10](https://www.virtualbox.org/wiki/Downloads))
-[comment]: <> * PyGI (requires v3.10.2, on Windows, tested using [this Windows Installer](https://sourceforge.net/projects/pygobjectwin32/files/pygi-aio-3.10.2-win32_rev18-setup.exe/download)
-    
-    Install both:
-    * gobject-introspection
-    * adg
 
 ##### These are automatically installed with the included install script
 * VirtualEnv [v15.1.0](https://virtualenv.pypa.io/en/stable/)
