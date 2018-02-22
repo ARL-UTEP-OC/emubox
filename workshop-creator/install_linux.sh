@@ -2,7 +2,7 @@
 VENV_NAME=creator-container
 
 sudo apt-get install python-gi
-sudo apt-get install pip
+sudo apt-get install python-pip
 
 pip install virtualenv
 virtualenv $VENV_NAME
