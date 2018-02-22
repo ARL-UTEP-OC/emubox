@@ -80,16 +80,6 @@ def checkout(type, workshopName):
         return "Sorry, there are no workshops available."
 
 
-@app.route('/getQueueSize/<workshopName>')
-def giveQueueSize(workshopName):
-    """ Catch AJAX Requests for Queue Size. """
-    availableWorkshops = getAvailableWorkshops()
-    if (availableWorkshops):
-        return jsonify(filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0].q.qsize())
-    else:
-        return jsonify("0")
-
-
 def clearZip(zip_file_name):
     time.sleep(ZIP_CLEAR_TIME)
     os.remove(zip_file_name)
