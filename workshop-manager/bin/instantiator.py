@@ -11,6 +11,7 @@ import VMStateManager.vbox_monitor
 import WebServer
 from RequestHandler.client_updater import RequestHandlerApp
 from WebServer.flask_server import app
+from manager_constants import FLASK_PORT, SOCKET_IO_PORT
 
 gevent.monkey.patch_all()
 
@@ -37,8 +38,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     logging.basicConfig(level=logging.DEBUG)
 
-    httpServer = WSGIServer(('0.0.0.0', 8080), app)
-    sio_server = SocketIOServer(('0.0.0.0', 9090), RequestHandlerApp(), namespace="socket.io")
+    httpServer = WSGIServer(('0.0.0.0', FLASK_PORT), app)
+    sio_server = SocketIOServer(('0.0.0.0', SOCKET_IO_PORT), RequestHandlerApp(), namespace="socket.io")
     stateAssignmentThread = gevent.spawn(VMStateManager.vbox_monitor.manageStates)
     restoreThread = gevent.spawn(VMStateManager.vbox_monitor.makeRestoreToAvailableState)
     srvGreenlet = gevent.spawn(httpServer.start)

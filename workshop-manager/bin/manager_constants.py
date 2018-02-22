@@ -1,6 +1,12 @@
 # The following variables may be modified to change how often certain processes will run.
 # All variables represent time in seconds.
 
+# 'FLASK_PORT' specifies the port that the flask application will listen on.
+FLASK_PORT = 8080
+
+# 'SOCKET_IO_PORT' specified the port that the SocketIO application will listen on.
+SOCKET_IO_PORT = 9090
+
 # 'VBOX_PROBETIME': Used by vbox_monitor. The interval of time it will probe VirtualBox for VM info.
 # Also used by the webdata_aggregator. The interval of time it will probe vbox_monitor for VM info.
 VBOX_PROBETIME = 5

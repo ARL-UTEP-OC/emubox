@@ -11,7 +11,7 @@ from gevent.lock import BoundedSemaphore
 from DataAggregation.webdata_aggregator import (checkoutUnit,
                                                 getAvailableWorkshops,
                                                 putOnHold, zip_files)
-from manager_constants import THREAD_TIME, ZIP_CLEAR_TIME
+from manager_constants import THREAD_TIME, ZIP_CLEAR_TIME, SOCKET_IO_PORT
 
 app = Flask(__name__)
 threadsToRun = []
@@ -45,7 +45,7 @@ def download(filename):
 @nocache
 def catch_all(path):
     """ Handles all requests to the main index page of the Web Server. """
-    return render_template('index.html', workshops=getAvailableWorkshops())
+    return render_template('index.html', workshops=getAvailableWorkshops(), socket_io_port=SOCKET_IO_PORT)
 
 
 @app.route('/checkout/<type>/<workshopName>')

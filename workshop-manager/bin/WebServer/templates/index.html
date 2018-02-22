@@ -54,7 +54,7 @@
                 window.open($("#dl_selector_" + workshopName).val(), "_self");
             }
 
-            var socket = io.connect("http://127.0.0.1:9090");
+            var socket = io.connect("http://" + window.location.hostname + ":" + {{ socket_io_port }});
             socket.on('connect', function() {
                 socket.emit('run');
             });
@@ -66,7 +66,6 @@
                     $('#download_links_' + sizes[0]).show();
                 $('#' + sizes[0]).text(sizes[1]);
             });
-
         </script>
     </body>
 </html>
