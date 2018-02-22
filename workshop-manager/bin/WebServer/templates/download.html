@@ -23,24 +23,36 @@
         </div>
 
         <div id="instructions">
-            {% if download_type == "windows" %}
+            {% if download_type == "ms-rdp" %}
             <div>
                 <ol>
                     <li>When download is available, click the download button.</li>
                     <li>Select "Open with" and ensure "Remote Desktop Connection" is selected.</li>
-                    <img src="../../static/save_file.PNG">
+                    <img src="../../static/ms-rdp-instructions/save_file.PNG">
                     <li>Click "OK".</li>
                     <li>A dialogue window will open. Click "Connect".</li>
-                    <img src="../../static/connect.PNG">
+                    <img src="../../static/ms-rdp-instructions/connect.PNG">
                     <li>A warning dialogue window will open. Click "Yes".</li>
-                    <img src="../../static/verified.PNG">
+                    <img src="../../static/ms-rdp-instructions/verified.PNG">
                     <li>A Microsoft Remote Desktop Connection window should open and you should be connected!</li>
-                    <img src="../../static/connected.PNG">
+                    <img src="../../static/ms-rdp-instructions/connected.PNG">
                 </ol>
             </div>
             {% endif %}
-            {% if download_type == "linux" %}
-                <div>Linux</div>
+            {% if download_type == "rdesktop" %}
+                <div>
+                    <ol>
+                    *NOTE: You must have 'rdesktop' installed already.
+                    <li>When download is available, click the download button.</li>
+                    <li>Select "Save file".</li>
+                    <img src="../../static/rdesktop-instructions/save_file.png">
+                    <li>Navigate using the command line to where the .sh script was saved. </li>
+                    <li>Make the file executable by entering:<br><code>chmod 755 <i>Script_You_Just_Downloaded</i></code></li>
+                    <li>Execute the script now by entering:<br><code>./Script_You_Just_Downloaded</code></li>
+                    <li>rdesktop should have opened and you should have a window similar to the one below:</li>
+                    <img src="../../static/rdesktop-instructions/rdesktop_opened.png">
+                </ol>
+                </div>
             {% endif %}
 
         </div>
