@@ -14,4 +14,4 @@ VBOXMANAGE_DIRECTORY = "C:/Program Files/Oracle/VirtualBox/VBoxManage.exe"
 WORKSHOP_CREATOR_FILE_PATH = os.path.join(os.getcwd(),"workshop-creator.py")
 WORKSHOP_RDP_CREATOR_FILE_PATH = os.path.join(os.getcwd(),"workshop-rdp.py")
 WORKSHOP_RESTORE_FILE_PATH = os.path.join(os.getcwd(),"workshop-restore.py")
-MANAGER_SAVE_DIRECTORY = os.path.join(os.getcwd(),"..","workshop-manager","bin","WorkshopData")
+MANAGER_SAVE_DIRECTORY = os.path.join(os.getcwd(),"..","..","workshop-manager","bin","WorkshopData")
