@@ -1,30 +1,21 @@
+import logging
+import os
 import time
 import traceback
-import VMStateManager.vbox_monitor
-from vboxapi import VirtualBoxManager
-import os
+import zipfile
 
-# gevent imports
-import gevent
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
-gevent.monkey.patch_all()
 
-#to reduce stdout
-import logging
-
+import VMStateManager.vbox_monitor
+from manager_constants import CHECKOUT_TIME, VBOX_PROBETIME
 from Workshop_Queue import Workshop_Queue
 from Workshop_Unit import Workshop_Unit
 
-mgr = VirtualBoxManager(None, None)
-
-probeTime = 5
+gevent.monkey.patch_all()
 aggregatedInfo = []
 availableWorkshops = []
 unitsOnHold = []
-checkoutTime = 30
-
-# vars needed for gevent (lock)
 aggregatedInfoSem = BoundedSemaphore(1)
 
 
@@ -36,19 +27,13 @@ def cleanup():
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
 
-def unitIsAvailable(vms):
-    for vm in vms:
-        if (vm not in VMStateManager.vbox_monitor.availableState and VMStateManager.vbox_monitor.vms[vm]["vrde"]) \
-                or (VMStateManager.vbox_monitor.vms[vm]["VMState"] != mgr.constants.MachineState_Running):
-            return False
-    return True
 
 def getAvailableUnits():
     availableUnits = []
     getGroupToVms = VMStateManager.vbox_monitor.getGroupToVms().copy()
     while(getGroupToVms):
         unit = getGroupToVms.popitem()
-        if unitIsAvailable(unit[1]):
+        if VMStateManager.vbox_monitor.unitIsAvailable(unit[1]):
             workshopName = unit[0].split('/')[1]
             rdp_files = getRDPPath(unit, workshopName)
             rdesktop_files = getRDesktopPath(unit, workshopName)
@@ -90,7 +75,7 @@ def aggregateData():
                     workshop_queue = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
                     if unit not in workshop_queue.q.queue and unit not in unitsOnHold:
                         workshop_queue.q.put(unit)
-            time.sleep(probeTime)
+            time.sleep(VBOX_PROBETIME)
             for workshop in availableWorkshops:
                 workshop.q.queue.clear()
             aggregatedInfoSem.release()
@@ -98,7 +83,7 @@ def aggregateData():
             logging.error("AGGREGATION: An error occurred: " + str(e))
             traceback.print_exc()
             exit()
-            time.sleep(probeTime)
+            time.sleep(VBOX_PROBETIME)
 
 
 def getAggregatedInfo():
@@ -111,13 +96,15 @@ def getAvailableWorkshops():
     """ Returns: List of Workshop objects whose queues contain Workshop Units that are "Available". """
     return availableWorkshops
 
+
 def checkoutUnit(unit):
-    #unitsOnHold.append(unit)
-    time.sleep(checkoutTime)
+    time.sleep(CHECKOUT_TIME)
     unitsOnHold.remove(unit)
+
 
 def putOnHold(unit):
     unitsOnHold.append(unit)
+
 
 def getRDPPath(unit, workshopName):
     rdpPaths = []
@@ -130,6 +117,7 @@ def getRDPPath(unit, workshopName):
             rdpPaths.append(rdpPath)
     return rdpPaths
 
+
 def getRDesktopPath(unit, workshopName):
     rdesktopPaths = []
     for vm in unit[1]:
@@ -141,15 +129,18 @@ def getRDesktopPath(unit, workshopName):
             rdesktopPaths.append(rdesktopPath)
     return rdesktopPaths
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    mydata = aggregateData()
 
-    # stateAggregationThread = gevent.spawn(manageStates)
-    # restoreThread = gevent.spawn(makeRestoreToAvailableState)
-    #
-    # try:
-    #     gevent.joinall([stateAssignmentThread, restoreThread])
-    # except Exception as e:
-    #     logging.error("An error occured in threads"+str(e))
-    #     exit()
+''' 
+    zip_files:
+        @src: Iterable object containing one or more element
+        @dst: filename (path/filename if needed)
+        @arcname: Iterable object containing the names we want to give to the elements in the archive (has to correspond to src) 
+'''
+def zip_files(src, dst, arcname=None):
+    zip_ = zipfile.ZipFile(dst, 'w')
+    for i in range(len(src)):
+        if arcname is None:
+            zip_.write(src[i], os.path.basename(src[i]), compress_type = zipfile.ZIP_DEFLATED)
+        else:
+            zip_.write(src[i], arcname[i], compress_type = zipfile.ZIP_DEFLATED)
+    zip_.close()

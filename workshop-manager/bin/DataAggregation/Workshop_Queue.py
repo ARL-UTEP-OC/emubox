@@ -1,6 +1,7 @@
 # Queue import
 from Queue import Queue
 
+
 class Workshop_Queue:
     """ A Workshop_Queue encapsulates Workshop Units into a structure that features a Queue.
 
