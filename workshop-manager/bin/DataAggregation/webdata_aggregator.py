@@ -1,5 +1,6 @@
 import logging
 import os
+import glob
 import time
 import traceback
 import zipfile
@@ -120,16 +121,14 @@ def getRDPPath(unit, workshopName):
     rdpPaths = []
     for vm in unit[1]:
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
-            rdpPath = os.path.join("WorkshopData", workshopName, "RDP",
-                               VMStateManager.vbox_monitor.vms[vm]["name"] + "_" +
-                                       VMStateManager.vbox_monitor.vms[vm]["vrdeproperty[TCP/Ports]"] +
-                                       ".rdp").replace('\\', '/')
-            logging.info("webdata_aggregator: Checking for file: " + rdpPath)
+            unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
+            logging.info("webdata_aggregator: Checking for rdp file for unit: " + unitName)
+            rdpPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.rdp"))[0]
             if os.path.isfile(rdpPath):
-                logging.info("webdata_aggregator: Found file: " + rdpPath)
+                logging.info("webdata_aggregator: Found rdp file for " + unitName + ": " + rdpPath)
                 rdpPaths.append(rdpPath)
             else:
-                logging.info("webdata_aggregator: Did not find file: " + rdpPath)
+                logging.info("webdata_aggregator: Did not find rdp file for unit: " + unitName)
                 return []
     return rdpPaths
 
@@ -138,16 +137,14 @@ def getRDesktopPath(unit, workshopName):
     rdesktopPaths = []
     for vm in unit[1]:
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
-            rdesktopPath = os.path.join("WorkshopData", workshopName, "RDP",
-                                   VMStateManager.vbox_monitor.vms[vm]["name"] + "_" +
-                                   VMStateManager.vbox_monitor.vms[vm]["vrdeproperty[TCP/Ports]"] +
-                                   ".sh").replace('\\', '/')
-            logging.info("webdata_aggregator: Checking for file: " + rdesktopPath)
+            unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
+            logging.info("webdata_aggregator: Checking for rdesktop file for unit: " + unitName)
+            rdesktopPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.sh"))[0]
             if os.path.isfile(rdesktopPath):
-                logging.info("webdata_aggregator: Found file " + rdesktopPath)
+                logging.info("webdata_aggregator: Found rdesktop file for " + unitName + ": " + rdesktopPath)
                 rdesktopPaths.append(rdesktopPath)
             else:
-                logging.info("webdata_aggregator: Did not find file: " + rdesktopPath)
+                logging.info("webdata_aggregator: Did not rdesktop find for unit: " + unitName)
                 return []
     return rdesktopPaths
 
