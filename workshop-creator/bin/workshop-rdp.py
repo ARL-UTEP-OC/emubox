@@ -16,10 +16,8 @@ def create_rdp_file(directory, filename, ip, port):
 	if port:
 		ip = ip + ":" + port
 		rdp_file_string = \
-"""screen mode id:i:1
+"""screen mode id:i:0
 use multimon:i:0
-desktopwidth:i:1280
-desktopheight:i:768
 session bpp:i:16
 winposstr:s:0,1,594,106,1394,706
 compression:i:1
@@ -79,7 +77,7 @@ def create_rdesktop_file(directory, filename, ip, port):
 		ip = ip + ":" + port
 		rdp_file_string = \
 """#!/bin/sh
-rdesktop -g 1280x768 -a 16 -T "Route Hijacking" """+ip+"""
+rdesktop -g 1280x768 -a 16 -T "EmuBox" """+ip+"""
 
 """
 	try:
