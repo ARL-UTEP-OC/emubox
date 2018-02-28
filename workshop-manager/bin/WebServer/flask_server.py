@@ -1,4 +1,5 @@
 import os
+import logging
 import threading
 import time
 # nocache imports
@@ -34,9 +35,11 @@ def nocache(view):
 
     return update_wrapper(no_cache, view)
 
+
 @app.route('/WorkshopData/<path:filename>', methods=['GET', 'POST'])
 @nocache
 def download(filename):
+    logging.info("flask_server: Download initiated for " + filename)
     downloads = os.path.join(app.root_path, "../WorkshopData/")
     return send_from_directory(directory=downloads, as_attachment=True, filename=filename, mimetype='application/octet-stream')
 
@@ -45,17 +48,20 @@ def download(filename):
 @nocache
 def catch_all(path):
     """ Handles all requests to the main index page of the Web Server. """
+    logging.info("flask_server: Serving HTML page to client.")
     return render_template('index.html', workshops=getAvailableWorkshops(), socket_io_port=SOCKET_IO_PORT)
 
 
 @app.route('/checkout/<type>/<workshopName>')
 def checkout(type, workshopName):
+    logging.info("flask_server: New checkout for Workshop:" + workshopName + " | Type: " + type)
     global i
     workshop = filter(lambda x: x.workshopName == workshopName, getAvailableWorkshops())[0]
     if workshop.q.qsize():
         unit = workshop.q.get()
         threadsToRunSem.acquire()
         putOnHold(unit)
+        logging.info("flask_server: Initiated checkoutUnit().")
         threadsToRun.append(threading.Thread(target=checkoutUnit, args=(unit,)))
         threadsToRunSem.release()
 
@@ -66,6 +72,7 @@ def checkout(type, workshopName):
             file_paths = unit.rdesktop_files
 
         if len(file_paths) is 1:
+            logging.info("flask_server: Initiating redirect to download page with remote desktop file.")
             return render_template('download.html', download_path=file_paths[0], download_type=type)
 
         zipSem.acquire()
@@ -75,13 +82,16 @@ def checkout(type, workshopName):
         zip_files(file_paths, zip_file_path)
         threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
         zipSem.release()
+        logging.info("flask_server: Initiating redirect to download page with remote desktop files archive.")
         return render_template('download.html', download_path=zip_file_path, download_type=type)
     else:
+        logging.info("flask_server: Checkout was unsuccessful as no workshops are available.")
         return "Sorry, there are no workshops available."
 
 
 def clearZip(zip_file_name):
     time.sleep(ZIP_CLEAR_TIME)
+    logging.info("flask_server: Clearing zip file: " + zip_file_name)
     os.remove(zip_file_name)
 
 

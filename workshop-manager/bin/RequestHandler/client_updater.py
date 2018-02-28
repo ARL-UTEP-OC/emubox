@@ -1,4 +1,5 @@
 import time
+import logging
 
 from socketio import socketio_manage
 from socketio.mixins import BroadcastMixin
@@ -27,7 +28,8 @@ class QueueStatusHandler(BaseNamespace, BroadcastMixin):
             for w in curr_workshops:
                 wq = filter(lambda x: x[0] == w.workshopName, sizes)[0]
 
-                if wq[1] is not w.q.qsize():
+                if wq[1] != w.q.qsize():
                     wq[1] = w.q.qsize()
+                    logging.info("client_updater: New update being pushed to clients: " + str(wq))
                     self.emit('sizes', wq)
             time.sleep(1)
