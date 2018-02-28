@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 VENV_NAME=creator-container
 
-sudo apt-get install python-gi
-sudo apt-get install python-pip
+apt-get install python-gi
+apt-get install python-pip
+apt-get install libgirepository1.0-dev
 
 pip install virtualenv
 virtualenv $VENV_NAME
 
 source ./$VENV_NAME/bin/activate
+pip install pygobject
 pip install lxml
 pip install vext
 pip install vext.gi
