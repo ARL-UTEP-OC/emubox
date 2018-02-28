@@ -1,5 +1,6 @@
 import logging
 import os
+import glob
 import time
 import traceback
 import zipfile
@@ -29,6 +30,7 @@ def cleanup():
 
 
 def getAvailableUnits():
+    logging.info("webdata_aggregator: Getting available units.")
     availableUnits = []
     getGroupToVms = VMStateManager.vbox_monitor.getGroupToVms().copy()
     while(getGroupToVms):
@@ -37,8 +39,12 @@ def getAvailableUnits():
             workshopName = unit[0].split('/')[1]
             rdp_files = getRDPPath(unit, workshopName)
             rdesktop_files = getRDesktopPath(unit, workshopName)
+            logging.info("webdata_aggregator: Checking if all remote desktop files are found for " + unit[0])
             if len(rdp_files) and (len(rdp_files) == len(rdesktop_files)):
+                logging.info("webdata_aggregator: All remote desktop files found for " + unit[0])
                 availableUnits.append(Workshop_Unit(workshopName, unit[1], rdp_files, rdesktop_files))
+            else:
+                logging.info("webdata_aggregator: Not all remote desktop files found for " + unit[0])
     return availableUnits
 
 
@@ -61,16 +67,21 @@ def aggregateData():
                         workshopExists = True
                         break
                 if not workshopExists:
+                    logging.info("webdata_aggregator: Aggregating Materials for " + workshopName)
                     filesPaths = []
                     materialsPath = os.path.join("WorkshopData", workshopName, "Materials")
+                    logging.info("webdata_aggregator: Checking if " + materialsPath + " is a directory.")
                     if os.path.isdir(materialsPath):
+                        logging.info("webdata_aggregator: " + materialsPath + " is a directory.")
                         files = os.listdir(materialsPath)
                         for file in files:
                             if os.path.isfile(os.path.join(materialsPath, file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
-                    curr_workshop_queue = Workshop_Queue(workshopName, filesPaths)
-                    curr_workshop_queue.q.put(unit)
-                    availableWorkshops.append(curr_workshop_queue)
+                        curr_workshop_queue = Workshop_Queue(workshopName, filesPaths)
+                        curr_workshop_queue.q.put(unit)
+                        availableWorkshops.append(curr_workshop_queue)
+                    else:
+                        logging.info("webdata_aggregator: " + materialsPath + " is not a directory. Not available.")
                 elif workshopExists:
                     workshop_queue = filter(lambda x: x.workshopName == workshopName, availableWorkshops)[0]
                     if unit not in workshop_queue.q.queue and unit not in unitsOnHold:
@@ -110,11 +121,15 @@ def getRDPPath(unit, workshopName):
     rdpPaths = []
     for vm in unit[1]:
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
-            rdpPath = os.path.join("WorkshopData", workshopName, "RDP",
-                               VMStateManager.vbox_monitor.vms[vm]["name"] + "_" +
-                                       VMStateManager.vbox_monitor.vms[vm]["vrdeproperty[TCP/Ports]"] +
-                                       ".rdp").replace('\\', '/')
-            rdpPaths.append(rdpPath)
+            unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
+            logging.info("webdata_aggregator: Checking for rdp file for unit: " + unitName)
+            rdpPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.rdp"))[0]
+            if os.path.isfile(rdpPath):
+                logging.info("webdata_aggregator: Found rdp file for " + unitName + ": " + rdpPath)
+                rdpPaths.append(rdpPath)
+            else:
+                logging.info("webdata_aggregator: Did not find rdp file for unit: " + unitName)
+                return []
     return rdpPaths
 
 
@@ -122,11 +137,15 @@ def getRDesktopPath(unit, workshopName):
     rdesktopPaths = []
     for vm in unit[1]:
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
-            rdesktopPath = os.path.join("WorkshopData", workshopName, "RDP",
-                                   VMStateManager.vbox_monitor.vms[vm]["name"] + "_" +
-                                   VMStateManager.vbox_monitor.vms[vm]["vrdeproperty[TCP/Ports]"] +
-                                   ".sh").replace('\\', '/')
-            rdesktopPaths.append(rdesktopPath)
+            unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
+            logging.info("webdata_aggregator: Checking for rdesktop file for unit: " + unitName)
+            rdesktopPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.sh"))[0]
+            if os.path.isfile(rdesktopPath):
+                logging.info("webdata_aggregator: Found rdesktop file for " + unitName + ": " + rdesktopPath)
+                rdesktopPaths.append(rdesktopPath)
+            else:
+                logging.info("webdata_aggregator: Did not rdesktop find for unit: " + unitName)
+                return []
     return rdesktopPaths
 
 
@@ -137,6 +156,7 @@ def getRDesktopPath(unit, workshopName):
         @arcname: Iterable object containing the names we want to give to the elements in the archive (has to correspond to src) 
 '''
 def zip_files(src, dst, arcname=None):
+    logging.info("webdata_aggregator: zipping files: " + str(src) + " into " + str(dst))
     zip_ = zipfile.ZipFile(dst, 'w')
     for i in range(len(src)):
         if arcname is None:
