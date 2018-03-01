@@ -123,12 +123,16 @@ def getRDPPath(unit, workshopName):
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
             unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
             logging.info("webdata_aggregator: Checking for rdp file for unit: " + unitName)
-            rdpPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.rdp"))[0]
-            if os.path.isfile(rdpPath):
-                logging.info("webdata_aggregator: Found rdp file for " + unitName + ": " + rdpPath)
-                rdpPaths.append(rdpPath)
+            rdpPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.rdp"))
+            if rdpPath:
+                rdpPath = rdpPath[0]
+                if os.path.isfile(rdpPath):
+                    logging.info("webdata_aggregator: Found rdp file for " + unitName + ": " + rdpPath)
+                    rdpPaths.append(rdpPath)
+                else:
+                    logging.info("webdata_aggregator: Did not find rdp file for unit: " + unitName)
+                    return []
             else:
-                logging.info("webdata_aggregator: Did not find rdp file for unit: " + unitName)
                 return []
     return rdpPaths
 
@@ -139,12 +143,16 @@ def getRDesktopPath(unit, workshopName):
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
             unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
             logging.info("webdata_aggregator: Checking for rdesktop file for unit: " + unitName)
-            rdesktopPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.sh"))[0]
-            if os.path.isfile(rdesktopPath):
-                logging.info("webdata_aggregator: Found rdesktop file for " + unitName + ": " + rdesktopPath)
-                rdesktopPaths.append(rdesktopPath)
+            rdesktopPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.sh"))
+            if rdesktopPath:
+                rdesktopPath = rdesktopPath[0]
+                if os.path.isfile(rdesktopPath):
+                    logging.info("webdata_aggregator: Found rdesktop file for " + unitName + ": " + rdesktopPath)
+                    rdesktopPaths.append(rdesktopPath)
+                else:
+                    logging.info("webdata_aggregator: Did not rdesktop find for unit: " + unitName)
+                    return []
             else:
-                logging.info("webdata_aggregator: Did not rdesktop find for unit: " + unitName)
                 return []
     return rdesktopPaths
 
