@@ -26,7 +26,22 @@
             {% if download_type == "ms-rdp" and zip %}
             <div>
                 <ol>
-                    Instructions for ms-rdp zip
+                    <li>When download is available, click the download button.</li>
+                    <li>Select "Save file".</li>
+                    <img src="../../static/ms-rdp-instructions/save_zip.PNG">
+                    <li>Navgate using Windows File Explorer to where the .zip archive was saved.</li>
+                    <li>Extract the zip archive by right clicking the .zip file and then selecting "Extract all".</li>
+                    <img src="../../static/ms-rdp-instructions/extract_all.PNG">
+                    <li>A window will open up similar to the one below. Click  the "Extract" button.</li>
+                    <img src="../../static/ms-rdp-instructions/extract_window.PNG">
+                    <li>You will now see the extracted remote desktop files similar to below:</li>
+                    <img src="../../static/ms-rdp-instructions/extracted_files.PNG">
+                    <li>Double click on the remote desktop file corresponding to the machine you would like to connect to.<br>A dialogue window will open. Click "Connect".</li>
+                    <img src="../../static/ms-rdp-instructions/connect.PNG">
+                    <li>A warning dialogue window will open. Click "Yes".</li>
+                    <img src="../../static/ms-rdp-instructions/verified.PNG">
+                    <li>A Microsoft Remote Desktop Connection window should open and you should be connected!</li>
+                    <img src="../../static/ms-rdp-instructions/connected.PNG">
                 </ol>
             </div>
             {% endif %}
