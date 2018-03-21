@@ -37,8 +37,8 @@ def getAvailableUnits():
         unit = getGroupToVms.popitem()
         if VMStateManager.vbox_monitor.unitIsAvailable(unit[1]):
             workshopName = unit[0].split('/')[1]
-            rdp_files = getRDPPath(unit, workshopName)
-            rdesktop_files = getRDesktopPath(unit, workshopName)
+            rdp_files = getRemoteDesktopPath(unit, workshopName, "rdp")
+            rdesktop_files = getRemoteDesktopPath(unit, workshopName, "sh")
             logging.info("webdata_aggregator: Checking if all remote desktop files are found for " + unit[0])
             if len(rdp_files) and (len(rdp_files) == len(rdesktop_files)):
                 logging.info("webdata_aggregator: All remote desktop files found for " + unit[0])
@@ -117,44 +117,24 @@ def putOnHold(unit):
     unitsOnHold.append(unit)
 
 
-def getRDPPath(unit, workshopName):
+def getRemoteDesktopPath(unit, workshopName, type):
     rdpPaths = []
     for vm in unit[1]:
         if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
             unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
-            logging.info("webdata_aggregator: Checking for rdp file for unit: " + unitName)
-            rdpPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.rdp"))
+            logging.info("webdata_aggregator: Checking for " + type + " file for unit: " + unitName)
+            rdpPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*." + type))
             if rdpPath:
                 rdpPath = rdpPath[0]
                 if os.path.isfile(rdpPath):
-                    logging.info("webdata_aggregator: Found rdp file for " + unitName + ": " + rdpPath)
+                    logging.info("webdata_aggregator: Found " + type + " file for " + unitName + ": " + rdpPath)
                     rdpPaths.append(rdpPath)
                 else:
-                    logging.info("webdata_aggregator: Did not find rdp file for unit: " + unitName)
+                    logging.info("webdata_aggregator: Did not find " + type + " file for unit: " + unitName)
                     return []
             else:
                 return []
     return rdpPaths
-
-
-def getRDesktopPath(unit, workshopName):
-    rdesktopPaths = []
-    for vm in unit[1]:
-        if VMStateManager.vbox_monitor.vms[vm]["vrde"]:
-            unitName = VMStateManager.vbox_monitor.vms[vm]["name"]
-            logging.info("webdata_aggregator: Checking for rdesktop file for unit: " + unitName)
-            rdesktopPath = glob.glob(os.path.join("WorkshopData", workshopName, "RDP", "*" + unitName + "*.sh"))
-            if rdesktopPath:
-                rdesktopPath = rdesktopPath[0]
-                if os.path.isfile(rdesktopPath):
-                    logging.info("webdata_aggregator: Found rdesktop file for " + unitName + ": " + rdesktopPath)
-                    rdesktopPaths.append(rdesktopPath)
-                else:
-                    logging.info("webdata_aggregator: Did not rdesktop find for unit: " + unitName)
-                    return []
-            else:
-                return []
-    return rdesktopPaths
 
 
 ''' 

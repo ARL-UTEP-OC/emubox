@@ -5,15 +5,17 @@ import traceback
 
 import gevent.monkey
 from gevent.lock import BoundedSemaphore
-from vboxapi import VirtualBoxManager
+from virtualbox import Manager
+from virtualbox.library import SessionState, MachineState, LockType
 
 from manager_constants import LOCK_WAIT_TIME, VBOX_PROBETIME, VM_RESTORE_TIME
 
+
 gevent.monkey.patch_all()
-####vars needed for testbed manager threads:
-mgr = VirtualBoxManager(None, None)
-vbox = mgr.getVirtualBox()
-session = mgr.getSessionObject(vbox)
+
+mgr = Manager()
+vbox = mgr.get_virtualbox()
+session = mgr.get_session()
 
 groupToVms = {}
 availableState = []
@@ -36,7 +38,6 @@ def getAvailableState():
     return availableState
 
 def getAvailableInfo():
-    #availableInfoSem.wait()
     return availableInfo
 
 
@@ -44,27 +45,24 @@ def getAvailableInfo():
 def getVMInfo(session, machine):
     answer = {}
     answer["name"] = str(machine.name)
-    ##Change for XPCOM
-    answer["groups"] = mgr.getArray(machine,'groups')
-    answer["vrde"] = machine.VRDEServer.enabled
-    answer["vrdeproperty[TCP/Ports]"] = str(machine.VRDEServer.getVRDEProperty('TCP/Ports'))
+    answer["groups"] = machine.groups
+    answer["vrde"] = machine.vrde_server.enabled
+    answer["vrdeproperty[TCP/Ports]"] = str(machine.vrde_server.get_vrde_property('TCP/Ports'))
     answer["VMState"] = machine.state
 
     # need active machine/console for the following:
-    if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Running:
-        #logging.debug("session is locked or machine is not running, cannot get console (1)"+str(session.state))
+    if session.state != SessionState(1) or machine.state != MachineState(5):
+        logging.debug("session is locked or machine is not running, cannot get console (1)"+str(session.state))
         return answer
-    #print "mstate",machine.state,"constant",mgr.constants.MachineState_Running,"result",machine.state == mgr.constants.MachineState_Running
-    machine.lockMachine(session, mgr.constants.LockType_Shared)
+    machine.lock_machine(session, LockType(1))
     console = session.console
     if console == None:
-        # if can't get console, this means that the vm is probably off
-        #logging.debug("cannot get console (2), machine is probably off")
-        session.unlockMachine()
+        logging.debug("cannot get console (2), machine is probably off")
+        session.unlock_machine()
         return answer
 
-    answer["VRDEActiveConnection"] = console.VRDEServerInfo.active
-    res = console.display.getScreenResolution(0)
+    answer["VRDEActiveConnection"] = console.vrde_server_info.active
+    res = console.display.get_screen_resolution(0)
     # try to set it to 16 bpp to reduce throughput requirements
     # if res > 16:
     #    logging.debug("Sending hint to adjust resolution")
@@ -72,70 +70,69 @@ def getVMInfo(session, machine):
     #    res = console.display.getScreenResolution(0)
     #    logging.debug("After adjustment request"+str(res))
     answer["VideoMode"] = res[2]
-    session.unlockMachine()
-
+    session.unlock_machine()
     return answer
 
 
 def powerdownMachine(session, machine):
     try:
-        if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Running:
+        if session.state != SessionState(1) or machine.state != MachineState(5):
             logging.debug("session is locked or machine is not running, not powering down")
             return -1
-        machine.lockMachine(session, mgr.constants.LockType_Shared)
+        machine.lock_machine(session, LockType(1))
         console = session.console
-        # if can't get console, this means that the vm is probably off
         if console != None:
             logging.debug("Calling Power Down API Function")
-            progress = console.powerDown()
-            progress.waitForCompletion(-1)
-        session.unlockMachine()
+            progress = console.power_down()
+            progress.wait_for_completion(-1)
+        else:
+            logging.info("can't get console, vm is probably off")
+        session.unlock_machine()
         return 0
     except Exception as e:
-        logging.error("error during powerdown"+ str(e))
-        session.unlockMachine()
+        logging.error("error during powerdown" + str(e))
+        session.unlock_machine()
         return -1
 
 
 def restoreMachine(session, machine):
-    if session.state != mgr.constants.SessionState_Unlocked or (machine.state != mgr.constants.MachineState_PoweredOff and machine.state != mgr.constants.MachineState_Aborted):
+    if session.state != SessionState(1) or (machine.state != MachineState(1) and machine.state != MachineState(4)):
         logging.debug("session is locked or machine is not powered off, not restoring vm. Session State:" + str(session.state) + "Machine State:" + str(machine.state))
         return -1
     try:
-        machine.lockMachine(session, mgr.constants.LockType_Shared)
-        snap = machine.currentSnapshot
+        machine.lock_machine(session, LockType(1))
+        snap = machine.current_snapshot
         # have to reference using session for some weird reason!
         logging.debug("Calling Restore API Function")
-        progress = session.machine.restoreSnapshot(snap)
-        progress.waitForCompletion(-1)
-        session.unlockMachine()
+        progress = session.machine.restore_snapshot(snap)
+        progress.wait_for_completion(-1)
+        session.unlock_machine()
         return 0
     except Exception as e:
         logging.error("Error in Restore: " + str(mgr) + " " + str(e))
         traceback.print_exc()
-        session.unlockMachine()
+        session.unlock_machine()
         return -1
-
 
 
 def startMachine(session, machine):
     try:
-        if session.state != mgr.constants.SessionState_Unlocked or machine.state != mgr.constants.MachineState_Saved:
+        if session.state != SessionState(1) or machine.state != MachineState(2):
             logging.debug( "session is locked, not starting vm")
             return -1
-            logging.debug("Calling Launch API Function")
-        progress = machine.launchVMProcess(session, "headless", "")
-        progress.waitForCompletion(-1)
-        session.unlockMachine()
+        logging.debug("Calling Launch API Function")
+        progress = machine.launch_vm_process(session, "headless", "")
+        progress.wait_for_completion(-1)
+        session.unlock_machine()
         return 0
     except Exception as e:
         logging.error("error during start" + str(e))
-        session.unlockMachine()
+        session.unlock_machine()
         return -1
 
-def makeAvailableToNotAvailable(vmNameList):
-    # print "making notAvailable",vmNameList,"\n"
 
+def makeAvailableToNotAvailable(vmNameList):
+    logging.info("making Available to NotAvailable: " + str(vmNameList))
     for vmName in vmNameList:
         queueStateSem.wait()
         queueStateSem.acquire()
@@ -145,8 +142,7 @@ def makeAvailableToNotAvailable(vmNameList):
 
 
 def makeNotAvailableToRestoreState(vmNameList):
-    # print "making notAvailableToRestore:",vmNameList,"\n"
-
+    logging.info("making NotAvailable to Restore: " + str(vmNameList))
     for vmName in vmNameList:
         queueStateSem.wait()
         queueStateSem.acquire()
@@ -160,7 +156,6 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
     global groupToVms
     restoreSubstates = {}
     while True:
-        # print "making restoreToAvailable:",vmNameList,"\n"
         try:
             # Need to reload all vms that are in the group of the vm in the "restore" state
             # get each vm in restoreState list
@@ -184,30 +179,30 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 logging.debug("Processing state for:"+str(substate)+str(restoreSubstates[substate]))
                 queueStateSem.wait()
                 queueStateSem.acquire()
-                mach = vbox.findMachine(substate)
+                mach = vbox.find_machine(substate)
                 vmState = getVMInfo(session, mach)["VMState"]
                 queueStateSem.release()
                 logging.debug("currState:" + str(vmState))
                 result = -1
-                if restoreSubstates[substate] == "pending" and vmState == mgr.constants.MachineState_Running:
+                if restoreSubstates[substate] == "pending" and vmState == MachineState(5):
                     logging.debug("CALLING POWEROFF"+str(substate)+":"+str(restoreSubstates[substate]))
                     result = powerdownMachine(session, mach)
                     if result != -1:
                         restoreSubstates[substate] = "poweroff_sent"
 
-                elif restoreSubstates[substate] == "poweroff_sent" and vmState == mgr.constants.MachineState_PoweredOff or vmState == mgr.constants.MachineState_Aborted:
+                elif restoreSubstates[substate] == "poweroff_sent" and vmState == MachineState(1) or vmState == MachineState(4):
                     logging.debug("CALLING RESTORE"+str(substate)+":"+str(restoreSubstates[substate]))
                     result = restoreMachine(session, mach)
                     if result != -1:
                         restoreSubstates[substate] = "restorecurrent_sent"
 
-                elif restoreSubstates[
-                    substate] == "restorecurrent_sent" and vmState == mgr.constants.MachineState_Saved:
+                elif restoreSubstates[substate] == "restorecurrent_sent" and vmState == MachineState(2):
                     logging.debug("CALLING STARTVM"+str(substate)+":"+str(restoreSubstates[substate]))
                     result = startMachine(session, mach)
                     if result != -1:
                         restoreSubstates[substate] = "startvm_sent"
-                elif restoreSubstates[substate] == "startvm_sent" and vmState == mgr.constants.MachineState_Running:
+
+                elif restoreSubstates[substate] == "startvm_sent" and vmState == MachineState(5):
                     restoreSubstates[substate] = "complete"
                     queueStateSem.wait()
                     queueStateSem.acquire()
@@ -230,7 +225,7 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
 
 
 def makeNewToAvailableState(vmNameList):
-    # print "making available:",vmNameList,"\n"
+    logging.info("making New to Available: " + str(vmNameList))
     for vmName in vmNameList:
         queueStateSem.wait()
         queueStateSem.acquire()
@@ -250,19 +245,16 @@ def manageStates():
             currGroupToVms = {}
 
             # first get all vms
-            ##Change for XPCOM
-            for mach in mgr.getArray(vbox,'machines'):
+            for mach in vbox.machines:
                 logging.debug("getting info for machine"+str(mach.name))
                 currvms[str(mach.name)] = getVMInfo(session, mach)
 
             # for each vm get info and place in state list
             logging.debug("placing info into state list")
             for vm in currvms:
-                # print "VMInfo:",vm,currvms[vm]["groups"],"\n\n"
                 # get group name and add this vm to a dictionary of that group:
                 for group in currvms[vm]["groups"]:
                     gname = str(group)
-                    # print "GROUP Name:",gname
                     if gname != "/":
                         if gname not in currGroupToVms:
                             currGroupToVms[gname] = []
@@ -277,8 +269,6 @@ def manageStates():
             ###unlock###
             queueStateSem.release()
 
-            # print "VMS:",vms
-            # print "GROUPS:",groupToVms
             ########Assign each vm into a state list############
 
             # first look at any "not available" to see if they go into the "restore" state
@@ -295,7 +285,7 @@ def manageStates():
             # add any newly available vms into the available buffer
             av = []
             for vmName in vms:
-                if "vrde" in vms[vmName] and vms[vmName]["vrde"] == 1 and vms[vmName]["VMState"] == mgr.constants.MachineState_Running:
+                if "vrde" in vms[vmName] and vms[vmName]["vrde"] == 1 and vms[vmName]["VMState"] == MachineState(5):
                     # make available
                     if vmName not in notAvailableState and vmName not in restoreState and vmName not in availableState:
                         av.append(vmName)
@@ -310,13 +300,10 @@ def manageStates():
                     availableInfo.append((vms[vmName], "Available"))
             for vmName in notAvailableState:
                 if "name" in vms[vmName] and "vrdeproperty[TCP/Ports]" in vms[vmName]:
-                    # availableInfo.append((vms[vmName]["groups"][0], vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
                     availableInfo.append((vms[vmName], "Not available"))
             for vmName in restoreState:
                 if "name" in vms[vmName] and "vrdeproperty[TCP/Ports]" in vms[vmName]:
-                    # availableInfo.append((vms[vmName]["groups"][0], vms[vmName]["name"], vms[vmName]["vrdeproperty[TCP/Ports]"]))
                     availableInfo.append((vms[vmName], "Restoring"))
-            #availableInfo.sort(key=lambda tup: tup[0]["name"])
             availableInfoSem.release()
 
             # Print out status
@@ -328,13 +315,13 @@ def manageStates():
             time.sleep(VBOX_PROBETIME)
 
         except Exception as x:
-            logging.error("STATES: An error occured:" + str(x))
+            logging.error("STATES: An error occurred:" + str(x))
             time.sleep(LOCK_WAIT_TIME)
 
 
 def unitIsAvailable(vm_set):
     for vm in vm_set:
-        if (vm not in availableState and vms[vm]["vrde"]) or (vms[vm]["VMState"] != mgr.constants.MachineState_Running):
+        if (vm not in availableState and vms[vm]["vrde"]) or (vms[vm]["VMState"] != MachineState(5)):
             return False
     return True
 
@@ -349,12 +336,11 @@ def cleanup():
         del session
         logging.info("Removing IVirtualBox Interface...")
         del vbox
-        mgr.deinit()
         logging.info("Removing VirtualBox Manager...")
         del mgr
         logging.info("Collecting Garbage...")
         gc.collect()
-        logging.info("Clean up complete. Exitting...")
+        logging.info("Clean up complete. Exiting...")
 
     except Exception as e:
         logging.error("Error during cleanup"+str(e))
@@ -369,5 +355,5 @@ if __name__ == '__main__':
     try:
         gevent.joinall([stateAssignmentThread, restoreThread])
     except Exception as e:
-        logging.error("An error occured in threads"+str(e))
+        logging.error("An error occurred in threads"+str(e))
         cleanup()

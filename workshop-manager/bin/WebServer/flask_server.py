@@ -73,7 +73,7 @@ def checkout(type, workshopName):
 
         if len(file_paths) is 1:
             logging.info("flask_server: Initiating redirect to download page with remote desktop file.")
-            return render_template('download.html', download_path=file_paths[0], download_type=type)
+            return render_template('download.html', download_path=file_paths[0], download_type=type, zip=False)
 
         zipSem.acquire()
         zip_file_name = "Workshop" + str(i) + ".zip"
@@ -83,7 +83,7 @@ def checkout(type, workshopName):
         threadsToRun.append(threading.Thread(target=clearZip, args=(zip_file_path,)))
         zipSem.release()
         logging.info("flask_server: Initiating redirect to download page with remote desktop files archive.")
-        return render_template('download.html', download_path=zip_file_path, download_type=type)
+        return render_template('download.html', download_path=zip_file_path, download_type=type, zip=True)
     else:
         logging.info("flask_server: Checkout was unsuccessful as no workshops are available.")
         return "Sorry, there are no workshops available."
