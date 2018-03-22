@@ -74,6 +74,7 @@ def aggregateData():
                     if os.path.isdir(materialsPath):
                         logging.info("webdata_aggregator: " + materialsPath + " is a directory.")
                         files = os.listdir(materialsPath)
+                        files.sort()
                         for file in files:
                             if os.path.isfile(os.path.join(materialsPath, file)):
                                 filesPaths.append((os.path.join(materialsPath, file).replace('\\', '/'), file))
