@@ -56,7 +56,7 @@
 
             var socket = io.connect("http://" + window.location.hostname + ":" + {{ socket_io_port }});
             socket.on('connect', function() {
-                socket.emit('run');
+                socket.emit('connect');
             });
 
             socket.on('sizes', function(sizes) {
