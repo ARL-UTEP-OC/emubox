@@ -8,9 +8,8 @@ from socketio.server import SocketIOServer
 
 import DataAggregation.webdata_aggregator
 import VMStateManager.vbox_monitor
-import WebServer
-from RequestHandler.client_updater import RequestHandlerApp
-from WebServer.flask_server import app
+from WebServer.flask_server import app, threadHandler
+from RequestHandler.client_updater import RequestHandlerApp, workshops_monitor
 from manager_constants import FLASK_PORT, SOCKET_IO_PORT
 
 gevent.monkey.patch_all()
@@ -45,11 +44,12 @@ if __name__ == '__main__':
     srvGreenlet = gevent.spawn(httpServer.start)
     ioGreenlet = gevent.spawn(sio_server.serve_forever)
     dataAggregator = gevent.spawn(DataAggregation.webdata_aggregator.aggregateData)
-    threadHandler = gevent.spawn(WebServer.flask_server.threadHandler)
+    threadHandler = gevent.spawn(threadHandler)
+    clientHandlerThread = gevent.spawn(workshops_monitor, sio_server)
 
     try:
         # Let threads run until signal is caught
-        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator, threadHandler, ioGreenlet])
+        gevent.joinall([srvGreenlet, stateAssignmentThread, restoreThread, dataAggregator, threadHandler, ioGreenlet, clientHandlerThread])
     except Exception as e:
         logging.error("An error occurred in threads" + str(e))
         exit()
