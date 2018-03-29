@@ -108,17 +108,17 @@ cd workshop-manager
 NOTE: You must run VirtualBox as a sudo user in order for remote display, and hence, emubox, to work correctly.
 
 ### Live Disc
-A live disc containing preinstalled EmuBox is available [here](https://goo.gl/TkeqrY).
+A live disc containing preinstalled EmuBox is available [here](https://goo.gl/h7tL29).
 The following are the steps for running EmuBox on the live disc.
 #### DHCP Service Configuration (Optional)
-To enable the DHCP server execute the following steps:
+The DHCP service is pre-configured. To enable the DHCP server execute the following steps:
 
-1. Modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
+1. If needed, modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
 ```
 /etc/dhcp/dhcpd.conf
 /etc/default/isc-dhcp-server
 ```
-2. Modify the following file to set a static IP address to the interface serving DHCP:
+2. If needed, modify the following file to set a static IP address to the interface serving DHCP:
 ```
 /etc/network/interfaces
 ```
@@ -128,16 +128,7 @@ sudo service isc-dhcp-server start
 ```
 
 #### Remote Desktop (xrdp) Service Configuration (Optional)
-To enable the Remote Display service execute the following steps:
-
-1. Set xfce4 as the desktop environment for the remote session
-```
-echo "xfce4-session" > ~/.xsession
-```
-2. Start the xrdp service
-```
-sudo service xrdp start
-```
+To enable the Remote Display follow the instructions [here](https://www.howtoforge.com/configure-remote-access-to-your-ubuntu-desktop)
 
 #### SSH Server configuration (Optional)
 To enable the SSH service execute the following steps:
@@ -145,6 +136,26 @@ To enable the SSH service execute the following steps:
 1. Start the ssh server
 ```
 sudo service ssh start
+```
+
+#### VPN Server (Optional)
+The VPN server is pre-configured. To enable the PPTPD VPN server execute the following steps:
+
+1. If needed, change the IP addresses assigned to the server node and connected clients by modifying the following
+```
+/etc/pptpd.conf
+```
+2. If needed, change the DNS entries (lines with *ms-dns*) by modifying IP addresses in the following file
+```
+/etc/ppp/pptpd-options
+```
+3. Specify users, credentials, and IP address mappings in the following file:
+```
+/etc/ppp/chap-secrets
+```
+4. Start the pptpd service:
+```
+sudo service pptpd start
 ```
 
 #### EmuBox Manager
