@@ -35,7 +35,7 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
-    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
 
     httpServer = WSGIServer(('0.0.0.0', FLASK_PORT), app)
     sio_server = SocketIOServer(('0.0.0.0', SOCKET_IO_PORT), RequestHandlerApp(), namespace="socket.io")
