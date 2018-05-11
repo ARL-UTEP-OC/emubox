@@ -3,23 +3,13 @@ import os
 import sys
 import subprocess
 import re
-import threading
 import shutil
-import zipfile
-import datetime
-import shlex
 import logging
-from lxml import etree
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 from workshop_creator_gui_resources.process_window import ProcessWindow
-from workshop_creator_gui_resources.progress_window import ProgressWindow
-
-from workshop_creator_gui_resources.model import Workshop
-from workshop_creator_gui_resources.model import VM
-from workshop_creator_gui_resources.model import Material
 from workshop_creator_gui_resources.model import Session
 
 import workshop_creator_gui_resources.gui_constants as gui_constants
@@ -30,7 +20,6 @@ PADDING = gui_constants.PADDING
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
-GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_CREATOR_FILE_PATH
 WORKSHOP_RDP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_RDP_CREATOR_FILE_PATH
