@@ -381,8 +381,10 @@ class AppWindow(Gtk.ApplicationWindow):
         self.focusedTreeIter = None
 
         # Here we will have all the menu items
-        self.addWorkshop = Gtk.MenuItem("Add Workshop")
+        self.addWorkshop = Gtk.MenuItem("New Workshop")
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
+        self.importWorkshop = Gtk.MenuItem("Import Workshop from Zip")
+        self.importWorkshop.connect("activate", self.importActionEvent)
         self.createWorkshop = Gtk.MenuItem("Create Clones")
         self.createWorkshop.connect("activate", self.runWorkshopActionEvent)
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
@@ -418,6 +420,7 @@ class AppWindow(Gtk.ApplicationWindow):
         #context menu for blank space
         self.blankMenu = Gtk.Menu()
         self.blankMenu.append(self.addWorkshop)
+        self.blankMenu.append(self.importWorkshop)
 
         # VM context menu
         self.itemMenu = Gtk.Menu()
@@ -815,7 +818,7 @@ class AppWindow(Gtk.ApplicationWindow):
             dialog.destroy()
 
     # Event, executes when import is called
-    def importActionEvent(self):
+    def importActionEvent(self, menuItem):
         logging.debug("importVMActionEvent() initiated")
         dialog = Gtk.FileChooserDialog("Please select a zip file to import.", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -826,8 +829,8 @@ class AppWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             zipPath = dialog.get_filename()
             #TODO: fix path reference here
-            tempPath = os.path.join(zipPath,"..","creatorImportTemp",os.path.splitext(os.path.basename(zipPath))[0])
-            baseTempPath = os.path.join(zipPath,"..","creatorImportTemp")
+            tempPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp",os.path.splitext(os.path.basename(zipPath))[0])
+            baseTempPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp")
             dialog.destroy()
 
             # First we need to unzip the import file to a temp folder
@@ -931,9 +934,6 @@ class Application(Gtk.Application):
         action = Gio.SimpleAction.new("import", None)
         action.connect("activate", self.onImport)
         self.add_action(action)
-
-        builder = Gtk.Builder.new_from_file(GUI_MENU_DESCRIPTION_DIRECTORY)
-        self.set_menubar(builder.get_object("menubar"))
 
     def do_activate(self):
         Gtk.Application.do_activate(self)
@@ -1190,7 +1190,8 @@ def WarningDialog(self, message):
     dialog.destroy()
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
     app = Application()
     app.run(sys.argv)

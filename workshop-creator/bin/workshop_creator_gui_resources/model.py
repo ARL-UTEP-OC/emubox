@@ -73,7 +73,7 @@ class Session:
         
         block_size = 1048576
         z = zipfile.ZipFile(zipPath, 'r')
-        outputPath = os.path.join(zipPath, "..","creatorImportTemp")
+        outputPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp")
         members_list = z.namelist()
                
         currmem_num = 0
@@ -207,12 +207,18 @@ class Session:
         for vm in vmsToExport:
             #subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', os.path.join(folderPath,vm.name+'.ova')])
             logging.debug("exportWorkshop(): Exporting VMS loop")
+            logging.debug("Current VM NAME: " + vm.name)
             outputOva = os.path.join(folderPath,vm.name+'.ova')
             logging.debug("exportWorkshop(): adjusting dialog progress value to " + str(currVMNum/(numVMs*1.)))
             spinnerDialog.setProgressVal(currVMNum/(numVMs*1.))
             spinnerDialog.setLabelVal("Exporting VM " + str(currVMNum+1) + "/" + str(numVMs) + ": " + str(vm.name))
             currVMNum = currVMNum+1
-            pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
+            logging.debug("Checking if "+folderPath+ " exists: ")
+            if os.path.exists(folderPath):
+                pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
+            else:
+                logging.error("folderPath" + folderPath + " was not created!")
+
             #TODO: need to specify a "transient parent"
             pw.run()
         logging.debug("Done executing process. \r\nCreating zip")

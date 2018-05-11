@@ -4,6 +4,8 @@ from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 import os
 from subprocess import Popen, PIPE
 import threading
+import logging
+import shlex
 
 class ProcessDialog(Gtk.Dialog):
     def __init__(self, processPath):
@@ -56,7 +58,7 @@ class ProcessDialog(Gtk.Dialog):
         try:
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
-            self.p = Popen(processPath, shell=False, stdout=PIPE, bufsize=1)
+            self.p = Popen(shlex.split(processPath), shell=False, stdout=PIPE, bufsize=1)
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
