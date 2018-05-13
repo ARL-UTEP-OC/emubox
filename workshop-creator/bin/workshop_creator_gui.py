@@ -10,6 +10,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 from workshop_creator_gui_resources.process_window import ProcessWindow
+from workshop_creator_gui_resources.process_dialog import ProcessDialog
 from workshop_creator_gui_resources.model import Session
 
 import workshop_creator_gui_resources.gui_constants as gui_constants
@@ -403,7 +404,8 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(self.exportWorkshop)
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
         self.workshopMenu.append(self.createRDP)
-        self.workshopMenu.append(self.restoreSnapshots)
+        #TODO: breaks the GUI
+        # self.workshopMenu.append(self.restoreSnapshots)
 
 
         #context menu for blank space
@@ -687,9 +689,9 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = ["python", WORKSHOP_CREATOR_FILE_PATH, os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName)+".xml"]
-        pw = ProcessWindow(command)
-
+        command = "python " + WORKSHOP_CREATOR_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName+".xml")
+        pd = ProcessDialog(command)
+        pd.run()
         self.session.runWorkshop()
 
     def addWorkshopActionEvent(self, menuItem):
