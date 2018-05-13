@@ -604,7 +604,10 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def createRDPActionEvent(self, menuItem):
         logging.debug("createRDPActionEvent() initiated: " + str(menuItem))
+        logging.debug("running workshop rdp creation script")
         self.session.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
+        logging.debug("copying rdp files to manager directory")
+        self.session.overwriteRDPToManagerSaveDirectory()
 
     def restoreSnapshotsActionEvent(self, menuItem):
         logging.debug("restoreSnapshotsActionEvent() initiated")
@@ -685,16 +688,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
         workshopName = self.session.currentWorkshop.filename
         command = ["python", WORKSHOP_CREATOR_FILE_PATH, os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName)+".xml"]
-        #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_FILE_PATH+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
-        #t.start()
         pw = ProcessWindow(command)
 
         self.session.runWorkshop()
-        #        self.runLogging("Workshop Creator", command)
-        #        t = threading.Thread(target=self.runLogging, args=["Workshop Creator", command])
-        #            t.start()
-        #        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
-        #        loggingDialog.run()
 
     def addWorkshopActionEvent(self, menuItem):
         logging.debug("addWorkshopActionEvent() initiated: " + str(menuItem))
@@ -881,9 +877,9 @@ class AppWindow(Gtk.ApplicationWindow):
                 if not os.path.exists(holdRDPPath+rdp):
                     shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
             #TODO: need to make sure to save before export!!!!!!! otherwise xml file will not contain materials!
-#            self.session.loadXMLFiles(tempPath)
-#            self.workshopTree.clearTreeStore()
-#            self.workshopTree.populateTreeStore(self.session.workshopList)
+            self.session.loadXMLFiles(tempPath)
+            self.workshopTree.clearTreeStore()
+            self.workshopTree.populateTreeStore(self.session.workshopList)
 
             shutil.rmtree(baseTempPath, ignore_errors=True)
 

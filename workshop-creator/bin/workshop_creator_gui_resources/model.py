@@ -28,29 +28,53 @@ class Session:
         self.currentVM = None
         self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
 
-    def runWorkshop(self):
-        logging.debug("runWorkshop() initiated")
-
+    def overwriteRDPToManagerSaveDirectory(self):
+        logging.debug("overwriteRDPToManagerSaveDirectory() initiated")
+        rdpSourceDir = os.path.join(WORKSHOP_RDP_DIRECTORY, self.currentWorkshop.filename)
         if self.currentWorkshop != None:
-            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY,self.currentWorkshop.filename)
+            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.filename)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
-            materialsPath = os.path.join(self.holdDirectory,"Materials")
-            if not os.path.exists(materialsPath):
-                os.makedirs(materialsPath)
-            rdpPath = os.path.join(self.holdDirectory,"RDP")
-            if not os.path.exists(rdpPath):
-                os.makedirs(rdpPath)
+            rdpPath = os.path.join(self.holdDirectory, "RDP")
+            if os.path.exists(rdpPath):
+                shutil.rmtree(rdpPath, ignore_errors=True)
+            os.makedirs(rdpPath)
 
-            for holdFile in os.listdir(materialsPath):
-                os.remove(os.path.join(materialsPath,holdFile))
             for holdFile in os.listdir(rdpPath):
-                os.remove(os.path.join(rdpPath,holdFile))
-                
-            for material in self.currentWorkshop.materialList:
-                shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,material.name), os.path.join(self.holdDirectory,"Materials"))
-            for rdpfile in os.listdir(os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)):
-                shutil.copy2(os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename,rdpfile), os.path.join(self.holdDirectory,"RDP"))
+                os.remove(os.path.join(rdpPath, holdFile))
+
+            logging.debug("Starting copy, taking files from: " + rdpSourceDir + " -- " + str(os.listdir(rdpSourceDir)))
+
+            for rdpfile in os.listdir(rdpSourceDir):
+                logging.debug("executing copy: " + os.path.join(rdpSourceDir, rdpfile) + " to " + os.path.join(self.holdDirectory, "RDP"))
+                shutil.copy2(os.path.join(rdpSourceDir, rdpfile),
+                             os.path.join(self.holdDirectory, "RDP"))
+
+    def overwriteMaterialsToManagerSaveDirectory(self):
+        logging.debug("overwriteMaterialsToManagerSaveDirectory() initiated")
+
+        if self.currentWorkshop != None:
+            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.filename)
+            if not os.path.exists(self.holdDirectory):
+                os.makedirs(self.holdDirectory)
+            MaterialsPath = os.path.join(self.holdDirectory, "Materials")
+            if os.path.exists(MaterialsPath):
+                shutil.rmtree(MaterialsPath, ignore_errors=True)
+            os.makedirs(MaterialsPath)
+
+            for holdFile in os.listdir(MaterialsPath):
+                os.remove(os.path.join(MaterialsPath, holdFile))
+
+            for Materialsfile in os.listdir(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.filename)):
+                shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.filename, Materialsfile),
+                             os.path.join(self.holdDirectory, "Materials"))
+
+    def runWorkshop(self):
+        #separate the below into 2 functions (materials, rdp); then call both
+        logging.debug("runWorkshop() initiated")
+
+        self.overwriteRDPToManagerSaveDirectory()
+        self.overwriteMaterialsToManagerSaveDirectory()
 
     def runScript(self, script):
         logging.debug("runScript() initiated " + str(script))
@@ -62,7 +86,9 @@ class Session:
     def scriptWorker(self, filePath, script):
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
         #subprocess.call(["python", script, filePath])
-        pw = ProcessWindow(["python", script, filePath])
+        pd = ProcessDialog("python "+ script + " " + filePath)
+        pd.set_title("Processing... please wait")
+        pd.run()
 
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
@@ -106,7 +132,6 @@ class Session:
                 o.write(b)
         i.close()
         o.close()
-        #TODO: This may be causing a crash
         spinnerDialog.destroy()
 
     def importUnzip(self, zipPath, spinnerDialog):
@@ -115,15 +140,14 @@ class Session:
         t.start()
 
     def importToVBox(self, tempPath, spinnerDialog):
-        #TODO: create the spinner here instad
         logging.debug("importToVBox() initiated " + str(tempPath))
         t = threading.Thread(target=self.importWorker, args=[tempPath, spinnerDialog])
         t.start()
 
     def importWorker(self, tempPath, spinnerDialog):
         logging.debug("importWorker() initiated " + str(tempPath))
+        #TODO: need to specify group so that everything matches
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
-        #TODO: Not sure if this is crashing on import
         spinnerDialog.destroy()
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -213,12 +237,13 @@ class Session:
             currVMNum = currVMNum+1
             logging.debug("Checking if "+folderPath+ " exists: ")
             if os.path.exists(folderPath):
-                pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
+                pd.run()
             else:
                 logging.error("folderPath" + folderPath + " was not created!")
 
             #TODO: need to specify a "transient parent"
-            pw.run()
+
         logging.debug("Done executing process. \r\nCreating zip")
         self.exportZipFiles(folderPath, spinnerDialog)
 
@@ -246,9 +271,12 @@ class Session:
         logging.debug("removeMaterial() initiated")
         self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
         materialFile = os.path.join(self.holdDirectory,self.currentMaterial.name)
+        logging.debug("removeMaterial(): removing file: " + materialFile)
         if os.path.exists(materialFile):
-            shutil.rmtree(materialFile, ignore_errors=True)
+            os.remove(materialFile)
         self.currentWorkshop.materialList.remove(self.currentMaterial)
+        #TODO; may optimize by only deleting the single file in the manager directory
+        self.overwriteMaterialsToManagerSaveDirectory()
 
     def removeWorkshop(self):
         logging.debug("removeWorkshop() initiated ")
@@ -283,6 +311,8 @@ class Session:
 
         if not os.path.exists(os.path.join(self.holdDirectory,self.holdName)):
             shutil.copy2(materialAddress, os.path.join(self.holdDirectory,self.holdName))
+        #should copy all materials to manager director in addition to workshop-creator temp directory
+        self.overwriteMaterialsToManagerSaveDirectory()
 
     # This will load xml files
     def loadXMLFiles(self, directory):
@@ -325,11 +355,14 @@ class Session:
 
     def runRDPScript(self):
         logging.debug("runRDPScript() initiated ")
+        #this will generate the rdps and place them in the workshop-creator's folder
         currWorkshopFilename = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
         if os.path.exists(currWorkshopFilename):
             for rdpfile in os.listdir(currWorkshopFilename):
                 os.remove(os.path.join(currWorkshopFilename,rdpfile))
         self.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
+        #this will copy the newly created rdp files to the manager folder
+        self.overwriteRDPToManagerSaveDirectory()
 
     def softSaveVM(self, inVMName, inVRDPEnabled, inInternalnetBasenameList):
         logging.debug("softSaveVM() initiated ")
