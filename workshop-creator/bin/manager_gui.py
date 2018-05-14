@@ -1,5 +1,7 @@
+import threading
 import gi; gi.require_version('Gtk', '3.0')
 import workshop_creator_gui_resources.gui_constants as gui_constants
+from subprocess import Popen, PIPE
 from gi.repository import Gtk
 
 
@@ -49,10 +51,37 @@ class ManagerBox(Gtk.Box):
 
         self.add(list_box)
 
+        self.p = None
+        self.curr_out_buff_pos = 0
+        self.curr_read_buff_pos = 0
+        self.curr_out_buff = []
+
     def startManagerActionEvent(self, button, active):
+        command = ["python", MANAGER_INSTANTIATOR_DIRECTORY]
         if button.get_active():
-            print "on"
+            # Start the thread that executes the process and filters its output
+            t = threading.Thread(target=self.watchProcess, args=(command,))
+            t.start()
         else:
-            print "off"
-        # command = ["python", MANAGER_INSTANTIATOR_DIRECTORY]
-        # ProcessWindow(command)
+            # Destroy the thread
+            self.destroy_process()
+
+    def watchProcess(self, processPath):
+        #Function for starting the process and capturing its stdout
+        try:
+            self.p = Popen(processPath, shell=False, stdout=PIPE, bufsize=1)
+            with self.p.stdout:
+                for line in iter(self.p.stdout.readline, b''):
+                    if line.rstrip().lstrip() != "":
+                        print line
+            # wait for the subprocess to exit
+            self.p.wait()
+        except Exception as x:
+            if self.p is None and self.p.poll() is not None:
+                self.p.terminate()
+
+    def destroy_process(self):
+        #Sharing thread memory, so we have access to the process that it creates and watches
+        #if the process is still running, terminate it
+        if self.p != None and self.p.poll() == None:
+            self.p.terminate()
