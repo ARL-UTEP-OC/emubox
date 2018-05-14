@@ -35,6 +35,7 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     logging.getLogger().setLevel(logging.DEBUG)
 
     httpServer = WSGIServer(('0.0.0.0', FLASK_PORT), app)
