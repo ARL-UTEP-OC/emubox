@@ -145,8 +145,8 @@ for vm in vmset.findall('vm'):
         vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
         if vrdpEnabled and vrdpEnabled == 'true':
             newVRDPname = str(vrdpBaseport)
-            create_rdp_file(WORKSHOP_RDP_LOCATION+inputFileBasename+"/",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
-            create_rdesktop_file(WORKSHOP_RDP_LOCATION+inputFileBasename+"/",newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
+            create_rdp_file(WORKSHOP_RDP_LOCATION+baseGroupname+"/",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)
+            create_rdesktop_file(WORKSHOP_RDP_LOCATION+baseGroupname+"/",newvmName+"_"+str(vrdpBaseport)+".sh", ipAddress, vrdpBaseport)
             vrdpBaseport = str(int(vrdpBaseport) + 1)
 print """
 **************************************************************************************

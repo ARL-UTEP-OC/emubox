@@ -30,9 +30,9 @@ class Session:
 
     def overwriteRDPToManagerSaveDirectory(self):
         logging.debug("overwriteRDPToManagerSaveDirectory() initiated")
-        rdpSourceDir = os.path.join(WORKSHOP_RDP_DIRECTORY, self.currentWorkshop.filename)
+        rdpSourceDir = os.path.join(WORKSHOP_RDP_DIRECTORY, self.currentWorkshop.baseGroupName)
         if self.currentWorkshop != None:
-            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.filename)
+            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
             rdpPath = os.path.join(self.holdDirectory, "RDP")
@@ -54,7 +54,7 @@ class Session:
         logging.debug("overwriteMaterialsToManagerSaveDirectory() initiated")
 
         if self.currentWorkshop != None:
-            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.filename)
+            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
             MaterialsPath = os.path.join(self.holdDirectory, "Materials")
@@ -65,8 +65,8 @@ class Session:
             for holdFile in os.listdir(MaterialsPath):
                 os.remove(os.path.join(MaterialsPath, holdFile))
 
-            for Materialsfile in os.listdir(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.filename)):
-                shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.filename, Materialsfile),
+            for Materialsfile in os.listdir(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName)):
+                shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName, Materialsfile),
                              os.path.join(self.holdDirectory, "Materials"))
 
     def runWorkshop(self):
@@ -210,14 +210,14 @@ class Session:
         os.makedirs(materialsPath)
         
         for material in self.currentWorkshop.materialList:
-            shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,material.name), materialsPath)
+            shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName,material.name), materialsPath)
             
         rdpPath = os.path.join(folderPath,"RDP")
         if os.path.exists(rdpPath):
             logging.error("Folder " + folderPath + " already exists. Cancelling export.")
             return
         os.makedirs(rdpPath)
-        rdpFiles = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        rdpFiles = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(rdpFiles):
             for rdpfile in os.listdir(rdpFiles):
                 shutil.copy2(os.path.join(rdpFiles,rdpfile), rdpPath)
@@ -269,7 +269,7 @@ class Session:
 
     def removeMaterial(self):
         logging.debug("removeMaterial() initiated")
-        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName)
         materialFile = os.path.join(self.holdDirectory,self.currentMaterial.name)
         logging.debug("removeMaterial(): removing file: " + materialFile)
         if os.path.exists(materialFile):
@@ -283,11 +283,11 @@ class Session:
         #remove XML config file
         os.remove(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"))
         #remove materials associated with this workshop
-        materialPath=os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        materialPath=os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(materialPath):
             shutil.rmtree(materialPath, ignore_errors=True)
         #remove rdp files associated with this workshop
-        rdpPath=os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        rdpPath=os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(rdpPath):
             shutil.rmtree(rdpPath, ignore_errors=True)
         self.workshopList.remove(self.currentWorkshop)
@@ -305,7 +305,7 @@ class Session:
         self.holdName = os.path.basename(materialAddress)
         self.currentWorkshop.addMaterial(materialAddress, self.holdName)
 
-        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName)
         if not os.path.exists(self.holdDirectory):
             os.makedirs(self.holdDirectory)
 
@@ -350,13 +350,13 @@ class Session:
     def softSaveMaterial(self, inMaterialName):
         logging.debug("softSaveMaterial() initiated " + str(inMaterialName))
         if self.currentMaterial.name != inMaterialName:
-            os.rename(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,self.currentMaterial.name), os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,inMaterialName))
+            os.rename(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName,self.currentMaterial.name), os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,inMaterialName))
             self.currentMaterial.name = inMaterialName
 
     def runRDPScript(self):
         logging.debug("runRDPScript() initiated ")
         #this will generate the rdps and place them in the workshop-creator's folder
-        currWorkshopFilename = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        currWorkshopFilename = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(currWorkshopFilename):
             for rdpfile in os.listdir(currWorkshopFilename):
                 os.remove(os.path.join(currWorkshopFilename,rdpfile))
@@ -411,7 +411,7 @@ class Session:
                 for internalnet in vm.internalnetBasenameList:
                     etree.SubElement(vm_element, "internalnet-basename").text = internalnet
 
-            self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,workshop.filename)
+            self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,workshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
                 
@@ -419,7 +419,7 @@ class Session:
                 material_element = etree.SubElement(vm_set_element, "material")
                 etree.SubElement(material_element, "name").text = material.name
 
-            self.holdDirectory = os.path.join(WORKSHOP_RDP_DIRECTORY,workshop.filename)
+            self.holdDirectory = os.path.join(WORKSHOP_RDP_DIRECTORY,workshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
 
