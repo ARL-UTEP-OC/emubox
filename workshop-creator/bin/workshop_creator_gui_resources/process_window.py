@@ -1,14 +1,16 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
-import os
+import logging
 from subprocess import Popen, PIPE
 import threading
+import shlex
 
 class ProcessWindow(Gtk.Window):
     def __init__(self, processPath):
         Gtk.Window.__init__(self, title="Process Output Console")
         #Variables needed for obtaining and displaying process output
+        self.set_modal(True)
         self.p = None
         self.proc_complete = False
         self.curr_out_buff_pos = 0
@@ -53,7 +55,7 @@ class ProcessWindow(Gtk.Window):
         try:
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
-            self.p = Popen(processPath, shell=False, stdout=PIPE, bufsize=1)
+            self.p = Popen(shlex.split(processPath), shell=False, stdout=PIPE, bufsize=1)
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
@@ -65,7 +67,7 @@ class ProcessWindow(Gtk.Window):
             #and then subsequently, this will stop the GObject timer
             self.proc_complete = True
         except Exception as x:
-            logging.error("watchProcess(): Something went wrong while running process: " + str(processPath) + "\r\n" + str(x))
+            logging.error("watchProcess(): Something went wrong while running process: " + str(shlex.split(processPath)) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:
                 self.p.terminate()
             self.destroy()

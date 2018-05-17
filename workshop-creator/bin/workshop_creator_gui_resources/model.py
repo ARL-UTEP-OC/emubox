@@ -9,13 +9,11 @@ import logging
 import workshop_creator_gui_resources.gui_constants as gui_constants
 from workshop_creator_gui_resources.process_window import ProcessWindow
 from workshop_creator_gui_resources.process_dialog import ProcessDialog
-from workshop_creator_gui_resources.progress_window import ProgressWindow
 from lxml import etree
 
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
-GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_CREATOR_FILE_PATH
 WORKSHOP_RDP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_RDP_CREATOR_FILE_PATH
@@ -30,29 +28,53 @@ class Session:
         self.currentVM = None
         self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
 
-    def runWorkshop(self):
-        logging.debug("runWorkshop() initiated")
-
+    def overwriteRDPToManagerSaveDirectory(self):
+        logging.debug("overwriteRDPToManagerSaveDirectory() initiated")
+        rdpSourceDir = os.path.join(WORKSHOP_RDP_DIRECTORY, self.currentWorkshop.baseGroupName)
         if self.currentWorkshop != None:
-            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY,self.currentWorkshop.filename)
+            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
-            materialsPath = os.path.join(self.holdDirectory,"Materials")
-            if not os.path.exists(materialsPath):
-                os.makedirs(materialsPath)
-            rdpPath = os.path.join(self.holdDirectory,"RDP")
-            if not os.path.exists(rdpPath):
-                os.makedirs(rdpPath)
+            rdpPath = os.path.join(self.holdDirectory, "RDP")
+            if os.path.exists(rdpPath):
+                shutil.rmtree(rdpPath, ignore_errors=True)
+            os.makedirs(rdpPath)
 
-            for holdFile in os.listdir(materialsPath):
-                os.remove(os.path.join(materialsPath,holdFile))
             for holdFile in os.listdir(rdpPath):
-                os.remove(os.path.join(rdpPath,holdFile))
-                
-            for material in self.currentWorkshop.materialList:
-                shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,material.name), os.path.join(self.holdDirectory,"Materials"))
-            for rdpfile in os.listdir(os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)):
-                shutil.copy2(os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename,rdpfile), os.path.join(self.holdDirectory,"RDP"))
+                os.remove(os.path.join(rdpPath, holdFile))
+
+            logging.debug("Starting copy, taking files from: " + rdpSourceDir + " -- " + str(os.listdir(rdpSourceDir)))
+
+            for rdpfile in os.listdir(rdpSourceDir):
+                logging.debug("executing copy: " + os.path.join(rdpSourceDir, rdpfile) + " to " + os.path.join(self.holdDirectory, "RDP"))
+                shutil.copy2(os.path.join(rdpSourceDir, rdpfile),
+                             os.path.join(self.holdDirectory, "RDP"))
+
+    def overwriteMaterialsToManagerSaveDirectory(self):
+        logging.debug("overwriteMaterialsToManagerSaveDirectory() initiated")
+
+        if self.currentWorkshop != None:
+            self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.baseGroupName)
+            if not os.path.exists(self.holdDirectory):
+                os.makedirs(self.holdDirectory)
+            MaterialsPath = os.path.join(self.holdDirectory, "Materials")
+            if os.path.exists(MaterialsPath):
+                shutil.rmtree(MaterialsPath, ignore_errors=True)
+            os.makedirs(MaterialsPath)
+
+            for holdFile in os.listdir(MaterialsPath):
+                os.remove(os.path.join(MaterialsPath, holdFile))
+
+            for Materialsfile in os.listdir(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName)):
+                shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName, Materialsfile),
+                             os.path.join(self.holdDirectory, "Materials"))
+
+    def runWorkshop(self):
+        #separate the below into 2 functions (materials, rdp); then call both
+        logging.debug("runWorkshop() initiated")
+
+        self.overwriteRDPToManagerSaveDirectory()
+        self.overwriteMaterialsToManagerSaveDirectory()
 
     def runScript(self, script):
         logging.debug("runScript() initiated " + str(script))
@@ -64,7 +86,9 @@ class Session:
     def scriptWorker(self, filePath, script):
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
         #subprocess.call(["python", script, filePath])
-        pw = ProcessWindow(["python", script, filePath])
+        pd = ProcessDialog("python "+ script + " " + filePath)
+        pd.set_title("Processing... please wait")
+        pd.run()
 
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
@@ -73,7 +97,7 @@ class Session:
         
         block_size = 1048576
         z = zipfile.ZipFile(zipPath, 'r')
-        outputPath = os.path.join(zipPath, "..","creatorImportTemp")
+        outputPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp")
         members_list = z.namelist()
                
         currmem_num = 0
@@ -108,7 +132,6 @@ class Session:
                 o.write(b)
         i.close()
         o.close()
-        #TODO: This may be causing a crash
         spinnerDialog.destroy()
 
     def importUnzip(self, zipPath, spinnerDialog):
@@ -117,15 +140,14 @@ class Session:
         t.start()
 
     def importToVBox(self, tempPath, spinnerDialog):
-        #TODO: create the spinner here instad
         logging.debug("importToVBox() initiated " + str(tempPath))
         t = threading.Thread(target=self.importWorker, args=[tempPath, spinnerDialog])
         t.start()
 
     def importWorker(self, tempPath, spinnerDialog):
         logging.debug("importWorker() initiated " + str(tempPath))
+        #TODO: need to specify group so that everything matches
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
-        #TODO: Not sure if this is crashing on import
         spinnerDialog.destroy()
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -188,14 +210,14 @@ class Session:
         os.makedirs(materialsPath)
         
         for material in self.currentWorkshop.materialList:
-            shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,material.name), materialsPath)
+            shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName,material.name), materialsPath)
             
         rdpPath = os.path.join(folderPath,"RDP")
         if os.path.exists(rdpPath):
             logging.error("Folder " + folderPath + " already exists. Cancelling export.")
             return
         os.makedirs(rdpPath)
-        rdpFiles = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        rdpFiles = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(rdpFiles):
             for rdpfile in os.listdir(rdpFiles):
                 shutil.copy2(os.path.join(rdpFiles,rdpfile), rdpPath)
@@ -207,14 +229,21 @@ class Session:
         for vm in vmsToExport:
             #subprocess.call([VBOXMANAGE_DIRECTORY, 'export', vm.name, '-o', os.path.join(folderPath,vm.name+'.ova')])
             logging.debug("exportWorkshop(): Exporting VMS loop")
+            logging.debug("Current VM NAME: " + vm.name)
             outputOva = os.path.join(folderPath,vm.name+'.ova')
             logging.debug("exportWorkshop(): adjusting dialog progress value to " + str(currVMNum/(numVMs*1.)))
             spinnerDialog.setProgressVal(currVMNum/(numVMs*1.))
             spinnerDialog.setLabelVal("Exporting VM " + str(currVMNum+1) + "/" + str(numVMs) + ": " + str(vm.name))
             currVMNum = currVMNum+1
-            pw = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
+            logging.debug("Checking if "+folderPath+ " exists: ")
+            if os.path.exists(folderPath):
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
+                pd.run()
+            else:
+                logging.error("folderPath" + folderPath + " was not created!")
+
             #TODO: need to specify a "transient parent"
-            pw.run()
+
         logging.debug("Done executing process. \r\nCreating zip")
         self.exportZipFiles(folderPath, spinnerDialog)
 
@@ -240,22 +269,25 @@ class Session:
 
     def removeMaterial(self):
         logging.debug("removeMaterial() initiated")
-        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName)
         materialFile = os.path.join(self.holdDirectory,self.currentMaterial.name)
+        logging.debug("removeMaterial(): removing file: " + materialFile)
         if os.path.exists(materialFile):
-            shutil.rmtree(materialFile, ignore_errors=True)
+            os.remove(materialFile)
         self.currentWorkshop.materialList.remove(self.currentMaterial)
+        #TODO; may optimize by only deleting the single file in the manager directory
+        self.overwriteMaterialsToManagerSaveDirectory()
 
     def removeWorkshop(self):
         logging.debug("removeWorkshop() initiated ")
         #remove XML config file
         os.remove(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"))
         #remove materials associated with this workshop
-        materialPath=os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        materialPath=os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(materialPath):
             shutil.rmtree(materialPath, ignore_errors=True)
         #remove rdp files associated with this workshop
-        rdpPath=os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        rdpPath=os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(rdpPath):
             shutil.rmtree(rdpPath, ignore_errors=True)
         self.workshopList.remove(self.currentWorkshop)
@@ -273,12 +305,14 @@ class Session:
         self.holdName = os.path.basename(materialAddress)
         self.currentWorkshop.addMaterial(materialAddress, self.holdName)
 
-        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename)
+        self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName)
         if not os.path.exists(self.holdDirectory):
             os.makedirs(self.holdDirectory)
 
         if not os.path.exists(os.path.join(self.holdDirectory,self.holdName)):
             shutil.copy2(materialAddress, os.path.join(self.holdDirectory,self.holdName))
+        #should copy all materials to manager director in addition to workshop-creator temp directory
+        self.overwriteMaterialsToManagerSaveDirectory()
 
     # This will load xml files
     def loadXMLFiles(self, directory):
@@ -316,16 +350,19 @@ class Session:
     def softSaveMaterial(self, inMaterialName):
         logging.debug("softSaveMaterial() initiated " + str(inMaterialName))
         if self.currentMaterial.name != inMaterialName:
-            os.rename(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,self.currentMaterial.name), os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,inMaterialName))
+            os.rename(os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.baseGroupName,self.currentMaterial.name), os.path.join(WORKSHOP_MATERIAL_DIRECTORY,self.currentWorkshop.filename,inMaterialName))
             self.currentMaterial.name = inMaterialName
 
     def runRDPScript(self):
         logging.debug("runRDPScript() initiated ")
-        currWorkshopFilename = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.filename)
+        #this will generate the rdps and place them in the workshop-creator's folder
+        currWorkshopFilename = os.path.join(WORKSHOP_RDP_DIRECTORY,self.currentWorkshop.baseGroupName)
         if os.path.exists(currWorkshopFilename):
             for rdpfile in os.listdir(currWorkshopFilename):
                 os.remove(os.path.join(currWorkshopFilename,rdpfile))
         self.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
+        #this will copy the newly created rdp files to the manager folder
+        self.overwriteRDPToManagerSaveDirectory()
 
     def softSaveVM(self, inVMName, inVRDPEnabled, inInternalnetBasenameList):
         logging.debug("softSaveVM() initiated ")
@@ -374,7 +411,7 @@ class Session:
                 for internalnet in vm.internalnetBasenameList:
                     etree.SubElement(vm_element, "internalnet-basename").text = internalnet
 
-            self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,workshop.filename)
+            self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,workshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
                 
@@ -382,7 +419,7 @@ class Session:
                 material_element = etree.SubElement(vm_set_element, "material")
                 etree.SubElement(material_element, "name").text = material.name
 
-            self.holdDirectory = os.path.join(WORKSHOP_RDP_DIRECTORY,workshop.filename)
+            self.holdDirectory = os.path.join(WORKSHOP_RDP_DIRECTORY,workshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
 

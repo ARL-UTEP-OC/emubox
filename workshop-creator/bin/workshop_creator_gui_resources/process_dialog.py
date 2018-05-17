@@ -1,15 +1,15 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
-import os
 from subprocess import Popen, PIPE
 import threading
+import logging
+import shlex
 
 class ProcessDialog(Gtk.Dialog):
     def __init__(self, processPath):
         
-        Gtk.Window.__init__(self, title="Process Output Console")
-        #self.set_modal(True)
+        Gtk.Dialog.__init__(self, title="Process Output Console Dialog")
         #Variables needed for obtaining and displaying process output
         self.p = None
         self.proc_complete = False
@@ -31,6 +31,8 @@ class ProcessDialog(Gtk.Dialog):
         self.dialogBox.add(self.mvbox)
         #create the scrolled window
         self.scrolled_window =Gtk.ScrolledWindow()
+        self.scrolled_window.set_hexpand(True)
+        self.scrolled_window.set_vexpand(True)
         #self.scrolled_window.set_usize(460, 100)
         self.mvbox.add(self.scrolled_window)
         self.text_view = Gtk.TextView()
@@ -56,7 +58,7 @@ class ProcessDialog(Gtk.Dialog):
         try:
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
-            self.p = Popen(processPath, shell=False, stdout=PIPE, bufsize=1)
+            self.p = Popen(shlex.split(processPath), shell=False, stdout=PIPE, bufsize=1)
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
@@ -88,8 +90,10 @@ class ProcessDialog(Gtk.Dialog):
         #If the process has stopped, then an additional check is conducted
         #to ensure the final output is displayed
         if self.curr_out_buff_pos > self.curr_read_buff_pos:
+            logging.debug("process_dialog: appendText(): text is being added to buffer")
             i = self.text_buffer.get_end_iter()
             for x in xrange(self.curr_read_buff_pos, self.curr_out_buff_pos):
+                logging.debug("process_dialog: appendText(): " + str(self.curr_out_buff[x]))
                 self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
             self.curr_read_buff_pos = self.curr_out_buff_pos
         if self.proc_complete != True:

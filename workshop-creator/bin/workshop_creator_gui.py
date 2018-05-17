@@ -3,23 +3,14 @@ import os
 import sys
 import subprocess
 import re
-import threading
 import shutil
-import zipfile
-import datetime
-import shlex
 import logging
-from lxml import etree
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 from workshop_creator_gui_resources.process_window import ProcessWindow
-from workshop_creator_gui_resources.progress_window import ProgressWindow
-
-from workshop_creator_gui_resources.model import Workshop
-from workshop_creator_gui_resources.model import VM
-from workshop_creator_gui_resources.model import Material
+from workshop_creator_gui_resources.process_dialog import ProcessDialog
 from workshop_creator_gui_resources.model import Session
 
 import workshop_creator_gui_resources.gui_constants as gui_constants
@@ -32,7 +23,6 @@ PADDING = gui_constants.PADDING
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
-GUI_MENU_DESCRIPTION_DIRECTORY = gui_constants.GUI_MENU_DESCRIPTION_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_CREATOR_FILE_PATH
 WORKSHOP_RDP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_RDP_CREATOR_FILE_PATH
@@ -388,8 +378,10 @@ class AppWindow(Gtk.ApplicationWindow):
         self.focusedTreeIter = None
 
         # Here we will have all the menu items
-        self.addWorkshop = Gtk.MenuItem("Add Workshop")
+        self.addWorkshop = Gtk.MenuItem("New Workshop")
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
+        self.importWorkshop = Gtk.MenuItem("Import Workshop from Zip")
+        self.importWorkshop.connect("activate", self.importActionEvent)
         self.createWorkshop = Gtk.MenuItem("Create Clones")
         self.createWorkshop.connect("activate", self.runWorkshopActionEvent)
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
@@ -419,12 +411,14 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(self.exportWorkshop)
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
         self.workshopMenu.append(self.createRDP)
-        self.workshopMenu.append(self.restoreSnapshots)
+        #TODO: breaks the GUI
+        # self.workshopMenu.append(self.restoreSnapshots)
 
 
         #context menu for blank space
         self.blankMenu = Gtk.Menu()
         self.blankMenu.append(self.addWorkshop)
+        self.blankMenu.append(self.importWorkshop)
 
         # VM context menu
         self.itemMenu = Gtk.Menu()
@@ -619,7 +613,10 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def createRDPActionEvent(self, menuItem):
         logging.debug("createRDPActionEvent() initiated: " + str(menuItem))
+        logging.debug("running workshop rdp creation script")
         self.session.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
+        logging.debug("copying rdp files to manager directory")
+        self.session.overwriteRDPToManagerSaveDirectory()
 
     def restoreSnapshotsActionEvent(self, menuItem):
         logging.debug("restoreSnapshotsActionEvent() initiated")
@@ -699,17 +696,10 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = ["python", WORKSHOP_CREATOR_FILE_PATH, os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName)+".xml"]
-        #t = threading.Thread(target=os.system, args=['python "'+WORKSHOP_CREATOR_FILE_PATH+'" "'+WORKSHOP_CONFIG_DIRECTORY+workshopName+'.xml"'])
-        #t.start()
-        pw = ProcessWindow(command)
-
+        command = "python " + WORKSHOP_CREATOR_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName+".xml")
+        pd = ProcessDialog(command)
+        pd.run()
         self.session.runWorkshop()
-        #        self.runLogging("Workshop Creator", command)
-        #        t = threading.Thread(target=self.runLogging, args=["Workshop Creator", command])
-        #            t.start()
-        #        loggingDialog = LoggingDialog(self.window, "Workshop Creator", command)
-        #        loggingDialog.run()
 
     def addWorkshopActionEvent(self, menuItem):
         logging.debug("addWorkshopActionEvent() initiated: " + str(menuItem))
@@ -822,7 +812,7 @@ class AppWindow(Gtk.ApplicationWindow):
             dialog.destroy()
 
     # Event, executes when import is called
-    def importActionEvent(self):
+    def importActionEvent(self, menuItem):
         logging.debug("importVMActionEvent() initiated")
         dialog = Gtk.FileChooserDialog("Please select a zip file to import.", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -833,8 +823,8 @@ class AppWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             zipPath = dialog.get_filename()
             #TODO: fix path reference here
-            tempPath = os.path.join(zipPath,"..","creatorImportTemp",os.path.splitext(os.path.basename(zipPath))[0])
-            baseTempPath = os.path.join(zipPath,"..","creatorImportTemp")
+            tempPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp",os.path.splitext(os.path.basename(zipPath))[0])
+            baseTempPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp")
             dialog.destroy()
 
             # First we need to unzip the import file to a temp folder
@@ -896,9 +886,9 @@ class AppWindow(Gtk.ApplicationWindow):
                 if not os.path.exists(holdRDPPath+rdp):
                     shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
             #TODO: need to make sure to save before export!!!!!!! otherwise xml file will not contain materials!
-#            self.session.loadXMLFiles(tempPath)
-#            self.workshopTree.clearTreeStore()
-#            self.workshopTree.populateTreeStore(self.session.workshopList)
+            self.session.loadXMLFiles(tempPath)
+            self.workshopTree.clearTreeStore()
+            self.workshopTree.populateTreeStore(self.session.workshopList)
 
             shutil.rmtree(baseTempPath, ignore_errors=True)
 
@@ -938,9 +928,6 @@ class Application(Gtk.Application):
         action = Gio.SimpleAction.new("import", None)
         action.connect("activate", self.onImport)
         self.add_action(action)
-
-        builder = Gtk.Builder.new_from_file(GUI_MENU_DESCRIPTION_DIRECTORY)
-        self.set_menubar(builder.get_object("menubar"))
 
     def do_activate(self):
         Gtk.Application.do_activate(self)
@@ -1197,6 +1184,7 @@ def WarningDialog(self, message):
     dialog.destroy()
 
 if __name__ == "__main__":
+    #logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
     app = Application()
