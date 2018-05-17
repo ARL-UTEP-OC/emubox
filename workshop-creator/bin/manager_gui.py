@@ -13,8 +13,9 @@ PADDING = gui_constants.PADDING
 class WorkshopListBoxRow(Gtk.ListBoxRow):
     def __init__(self, workshop):
         super(Gtk.ListBoxRow, self).__init__()
-        self.data = workshop
-        self.add(Gtk.Label(str(workshop[0]) + "\t\t\t\t\t\t\t\tUnits Available: " + str(workshop[1])))
+        self.workshopName = workshop[0]
+        self.num_available = workshop[1]
+        self.add(Gtk.Label(str(self.workshopName) + "\t\t\t\t\t\t\t\tUnits Available: " + str(self.num_available)))
 
 
 class ManagerBox(Gtk.Box):
@@ -64,10 +65,12 @@ class ManagerBox(Gtk.Box):
         self.workshops_running_label.set_halign(Gtk.Align.CENTER)
         workshops_running.pack_start(self.workshops_running_label, True, True, 0)
         workshops_row.add(workshops_running)
-        # list_box.add(workshops_row)
         self.bottom_box.pack_start(workshops_row, True, True, 0)
         self.bottom_box.show_all()
 
+        self.workshops_list_box = Gtk.ListBox()
+        self.workshops_list_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.bottom_box.pack_start(self.workshops_list_box, True, True, 0)
         self.add(self.outer_box)
 
     def startManagerActionEvent(self, button, active):
@@ -87,15 +90,16 @@ class ManagerBox(Gtk.Box):
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
-                        #print "line:", line
                         line = line.split(':')
-                        if (line[0] == "Number of clients connected"):
+                        if line[0] == "Number of clients connected":
                             self.num_clients = line[1]
                             self.num_clients_label_footer.set_label(str(self.num_clients))
 
-                        elif (line[0] == "Workshops available") and (self.workshops_running != line[1]):
-                            self.workshops_running = line[1]
-                            self.setup_workshops_list(ast.literal_eval(line[1]))
+                        elif line[0] == "Workshops available":
+                            curr_workshops = ast.literal_eval(line[1])
+                            if self.workshops_running != curr_workshops:
+                                self.workshops_running = curr_workshops
+                                self.manage_workshops_list(self.workshops_running)
 
             # wait for the subprocess to exit
             self.p.wait()
@@ -110,11 +114,24 @@ class ManagerBox(Gtk.Box):
             self.p.terminate()
         self.num_clients_label_footer.set_label("")
         self.workshops_running = None
-        self.bottom_box.remove(self.workshops_list_box)
+        for child in self.workshops_list_box.get_children():
+            self.workshops_list_box.remove(child)
 
-    def setup_workshops_list(self, workshops):
-        self.workshops_list_box = Gtk.ListBox()
+    def manage_workshops_list(self, workshops):
         for workshop in workshops:
-            self.workshops_list_box.add(WorkshopListBoxRow(workshop))
-        self.bottom_box.pack_start(self.workshops_list_box, True, True, 0)
+            if not self.workshop_is_displayed(workshop):
+                self.workshops_list_box.add(WorkshopListBoxRow(workshop))
+            else:
+                for child in self.workshops_list_box.get_children():
+                    if (child.workshopName == workshop[0]) and (child.num_available != workshop[1]):
+                        child.num_available = workshop[1]
+                        for label in child.get_children():
+                            child.remove(label)
+                        child.add(Gtk.Label(str(child.workshopName) + "\t\t\t\t\t\t\t\tUnits Available: " + str(child.num_available)))
         self.workshops_list_box.show_all()
+
+    def workshop_is_displayed(self, workshop):
+        for child in self.workshops_list_box.get_children():
+            if child.workshopName == workshop[0]:
+                return True
+        return False
