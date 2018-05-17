@@ -108,6 +108,7 @@ class ManagerBox(Gtk.Box):
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
             self.p.terminate()
+        self.num_clients_label_footer.set_label("")
         self.workshops_running = None
         self.bottom_box.remove(self.workshops_list_box)
 
