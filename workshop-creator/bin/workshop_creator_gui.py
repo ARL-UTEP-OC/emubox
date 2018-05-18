@@ -405,7 +405,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
         self.workshopMenu.append(self.createRDP)
         #TODO: breaks the GUI
-        # self.workshopMenu.append(self.restoreSnapshots)
+        self.workshopMenu.append(self.restoreSnapshots)
 
 
         #context menu for blank space
@@ -434,6 +434,7 @@ class AppWindow(Gtk.ApplicationWindow):
     def onItemSelected(self, selection):
         logging.debug("Item was selected: " + str(selection))
         self.softSave()
+        self.hardSave()
         model, treeiter = selection.get_selected()
         self.currentModel = model
         self.currentIter = treeiter
