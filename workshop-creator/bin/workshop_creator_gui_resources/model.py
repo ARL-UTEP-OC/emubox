@@ -86,9 +86,10 @@ class Session:
     def scriptWorker(self, filePath, script):
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
         #subprocess.call(["python", script, filePath])
-        pd = ProcessDialog("python "+ script + " " + filePath)
+        pd = ProcessDialog("python -u "+ script + " " + filePath)
         pd.set_title("Processing... please wait")
         pd.run()
+        pd.destroy()
 
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
@@ -146,7 +147,6 @@ class Session:
 
     def importWorker(self, tempPath, spinnerDialog):
         logging.debug("importWorker() initiated " + str(tempPath))
-        #TODO: need to specify group so that everything matches
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
         spinnerDialog.destroy()
 
@@ -239,6 +239,7 @@ class Session:
             if os.path.exists(folderPath):
                 pd = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
                 pd.run()
+                pd.destroy()
             else:
                 logging.error("folderPath" + folderPath + " was not created!")
 

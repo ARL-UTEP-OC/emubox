@@ -10,6 +10,7 @@ class ProcessDialog(Gtk.Dialog):
     def __init__(self, processPath):
         
         Gtk.Dialog.__init__(self, title="Process Output Console Dialog")
+        #self.set_transient_for(parent.get_toplevel())
         #Variables needed for obtaining and displaying process output
         self.p = None
         self.proc_complete = False
@@ -46,7 +47,7 @@ class ProcessDialog(Gtk.Dialog):
         t = threading.Thread(target=self.watchProcess, args=(processPath,))
         t.start()
         #Start a timer that will retrieve the process output and show it on the TextView
-        GObject.timeout_add(100, self.appendText)
+        GObject.timeout_add(10, self.appendText)
 
     def autoscroll(self, *args):
         #The actual scrolling method
@@ -59,8 +60,10 @@ class ProcessDialog(Gtk.Dialog):
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
             self.p = Popen(shlex.split(processPath), shell=False, stdout=PIPE, bufsize=1)
+            logging.debug("watchProcess(): finished call to popen, observing stdout...")
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
+                    logging.debug("watchProcess(): new line identified: " + line)
                     if line.rstrip().lstrip() != "":
                         self.curr_out_buff.append(line)
                         self.curr_out_buff_pos = self.curr_out_buff_pos + 1
@@ -69,14 +72,13 @@ class ProcessDialog(Gtk.Dialog):
             #Need to set proc_complete so that the appendText method can return False
             #and then subsequently, this will stop the GObject timer
             self.proc_complete = True
-            self.destroy()
         except Exception as x:
             logging.error("watchProcess(): Something went wrong while running process: " + str(processPath) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:
                 self.p.terminate()
-            self.destroy()
 
     def destroy_progress(self, widget, data=None):
+        logging.debug("watchProcess(): destroy_progress(): initiated")
         #Sharing thread memory, so we have access to the process that it creates and watches
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
@@ -90,22 +92,30 @@ class ProcessDialog(Gtk.Dialog):
         #If the process has stopped, then an additional check is conducted
         #to ensure the final output is displayed
         if self.curr_out_buff_pos > self.curr_read_buff_pos:
-            logging.debug("process_dialog: appendText(): text is being added to buffer")
+            logging.debug("appendText(): text is being added to buffer")
             i = self.text_buffer.get_end_iter()
             for x in xrange(self.curr_read_buff_pos, self.curr_out_buff_pos):
-                logging.debug("process_dialog: appendText(): " + str(self.curr_out_buff[x]))
+                logging.debug("appendText(): " + str(self.curr_out_buff[x]))
                 self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
             self.curr_read_buff_pos = self.curr_out_buff_pos
         if self.proc_complete != True:
+            logging.debug("appendText(): process executing...")
             return True
         else:
+            logging.debug("appendText(): process completed execution, finishing processing")
             while self.curr_out_buff_pos > self.curr_read_buff_pos:
+                logging.debug("appendText(): getting current position")
                 i = self.text_buffer.get_end_iter()
                 for x in xrange(self.curr_read_buff_pos, self.curr_out_buff_pos):
+                    logging.debug("appendText(): adding character: " + str(self.curr_out_buff[x]))
                     self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
+                logging.debug("appendText(): updating cursor position: " + self.curr_out_buff_pos)
                 self.curr_read_buff_pos = self.curr_out_buff_pos
+            logging.debug("appendText(): wrote all bytes, closing up")
             i = self.text_buffer.get_end_iter()
+            logging.debug("appendText(): Process execution complete")
             self.text_buffer.insert(i, str("Process execution complete"), -1)
+            logging.debug("appendText(): wrote last line in text buffer... returning false")
             return False
 
 # if __name__ == "__main__":
