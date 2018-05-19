@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 
@@ -6,6 +7,11 @@ from socketio.mixins import BroadcastMixin
 from socketio.namespace import BaseNamespace
 
 from DataAggregation.webdata_aggregator import getAvailableWorkshops
+
+
+logger = logging.getLogger(__name__)
+std_out_logger = logging.StreamHandler(sys.stdout)
+logger.addHandler(std_out_logger)
 
 
 def broadcast_msg(server, ns_name, event, *args):
@@ -24,16 +30,20 @@ def workshops_monitor(server):
     for w in workshops:
         tmp = [w.workshopName, w.q.qsize()]
         sizes.append(tmp)
-        broadcast_msg(server, '', 'sizes', tmp)
+        broadcast_msg(server, '', "sizes", tmp)
 
     while True:
+        logger.info("Number of clients connected:" + str(len(server.sockets)))
+        workshops_available = []
         curr_workshops = getAvailableWorkshops()
         for w in curr_workshops:
+            workshops_available.append([w.workshopName, w.q.qsize()])
             wq = filter(lambda x: x[0] == w.workshopName, sizes)[0]
             if wq[1] != w.q.qsize():
                 wq[1] = w.q.qsize()
                 logging.info("client_updater: New update being pushed to clients: " + str(wq))
                 broadcast_msg(server, '', 'sizes', wq)
+        logger.info("Workshops available:" + str(workshops_available))
         time.sleep(1)
 
 

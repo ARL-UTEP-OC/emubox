@@ -15,6 +15,8 @@ from workshop_creator_gui_resources.model import Session
 
 import workshop_creator_gui_resources.gui_constants as gui_constants
 
+from manager_gui import ManagerBox
+
 # Constants
 BOX_SPACING = gui_constants.BOX_SPACING
 PADDING = gui_constants.PADDING
@@ -322,6 +324,11 @@ class AppWindow(Gtk.ApplicationWindow):
         self.actionEventBox = Gtk.EventBox()
         self.scrolledActionBox = Gtk.ScrolledWindow()
         self.scrolledInnerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        self.managerBox = ManagerBox()
+
+        self.notebook = Gtk.Notebook()
+        self.notebook.append_page(self.windowBox, Gtk.Label("Creator"))
+        self.notebook.append_page(self.managerBox, Gtk.Label("Manager"))
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
@@ -419,7 +426,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
 
     def initializeContainers(self):
-        self.add(self.windowBox)
+        self.add(self.notebook)
 
         self.windowBox.pack_start(self.workshopTree, False, False, PADDING)
         self.windowBox.pack_start(self.actionEventBox, False, False, PADDING)
@@ -1178,7 +1185,7 @@ def WarningDialog(self, message):
     dialog.destroy()
 
 if __name__ == "__main__":
-    #logging.basicConfig(level=logging.DEBUG)
+    #logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
     app = Application()
