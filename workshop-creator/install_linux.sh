@@ -1,5 +1,23 @@
 #!/usr/bin/env bash
-VENV_NAME=creator-container
+
+#environment variables have default values, but should be set before calling the installer
+if [ -z "$VENV_NAME" ]; then
+    echo "Warning: VENV_NAME was not set, using: creator-container" 
+    VENV_NAME=creator-container
+fi
+#For now, assume the user must specify these before the install is executed
+if [ -z "$VBOX_INSTALL_PATH" ]; then
+    echo "Warning: VBOX_INSTALL_PATH was not set, using: $(which virtualbox)" 
+    export VBOX_INSTALL_PATH=$(which virtualbox)
+fi  
+if [ -z "$VBOX_SDK_PATH" ]; then
+    echo "Warning: VBOX_SDK_PATH was not set, using: ../workshop-manager/bin/VirtualBoxSDK-5.1.20-114628/sdk/" 
+    export VBOX_SDK_PATH=../workshop-manager/bin/VirtualBoxSDK-5.1.20-114628/sdk/
+fi  
+if [ -z "$VBOX_PROGRAM_PATH" ]; then
+    echo "Warning: VBOX_PROGRAM_PATH was not set, using: /usr/lib/virtualbox/" 
+    export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
+fi 
 
 apt-get install python-gi
 apt-get install python-pip
@@ -20,8 +38,6 @@ pip install flask
 pip install pyvbox
 pip install gevent
 pip install gevent-socketio
-VBOX_INSTALL_PATH=$(which virtualbox)
-VBOX_SDK_PATH=`pwd`/../workshop-manager/bin/VirtualBoxSDK-5.1.20-114628/sdk/
 cd ../workshop-manager/bin/VirtualBoxSDK-5.1.20-114628/sdk/installer/
 python vboxapisetup.py install
 cd ../../../../../workshop-creator/
@@ -29,7 +45,7 @@ cd ../../../../../workshop-creator/
 #Generate the script 
 echo "#!/usr/bin/env bash" > start_creator.sh
 echo "#The name of the container used during installation" >> start_creator.sh
-echo VENV_NAME=creator-container >> start_creator.sh
+echo VENV_NAME=$VENV_NAME >> start_creator.sh
 echo >> start_creator.sh
 echo "#Activate the container and invoke the gui" >> start_creator.sh
 echo source ./$VENV_NAME/bin/activate >> start_creator.sh
