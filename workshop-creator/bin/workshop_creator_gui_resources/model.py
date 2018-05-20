@@ -89,6 +89,7 @@ class Session:
         pd = ProcessDialog("python "+ script + " " + filePath)
         pd.set_title("Processing... please wait")
         pd.run()
+        pd.destroy()
 
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
@@ -239,6 +240,7 @@ class Session:
             if os.path.exists(folderPath):
                 pd = ProcessDialog(VBOXMANAGE_DIRECTORY+" export " + vm.name + " -o \"" + outputOva+"\"")
                 pd.run()
+                pd.destroy()
             else:
                 logging.error("folderPath" + folderPath + " was not created!")
 
