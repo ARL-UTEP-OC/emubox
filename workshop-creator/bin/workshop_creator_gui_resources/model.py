@@ -94,7 +94,7 @@ class Session:
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         logging.debug("unzipWorker() initiated " + str(zipPath))
-        spinnerDialog.setTitleVal("Unzipping archive")
+        spinnerDialog.setTitleVal("Decompressing EBX archive")
         
         block_size = 1048576
         z = zipfile.ZipFile(zipPath, 'r')
@@ -162,7 +162,7 @@ class Session:
         numFiles = sum([len(files) for r, dirs, files in contentToZip])
         currFile = 0
         logging.debug("zipWorker(): Number files:"+str(numFiles))
-        with zipfile.ZipFile(d + '.zip',
+        with zipfile.ZipFile(d + '.ebx',
                              "w",
                              zipfile.ZIP_DEFLATED,
                              allowZip64=True) as zf:
@@ -175,7 +175,7 @@ class Session:
                     name = os.path.normpath(name)
                     status = float(currFile/(numFiles*1.))
                     logging.debug("adjusting dialog progress: " + str(status))
-                    spinnerDialog.setLabelVal("Zipping file "+str(currFile)+"/"+str(numFiles)+": "+name)
+                    spinnerDialog.setLabelVal("Compressing to EBX archive "+str(currFile)+"/"+str(numFiles)+": "+name)
                     spinnerDialog.setProgressVal(status)
                     zf.write(name, name)
         spinnerDialog.setLabelVal("--------Almost finished, cleaning temporary directories--------")

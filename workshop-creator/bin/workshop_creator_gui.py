@@ -379,7 +379,7 @@ class AppWindow(Gtk.ApplicationWindow):
         # Here we will have all the menu items
         self.addWorkshop = Gtk.MenuItem("New Workshop")
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
-        self.importWorkshop = Gtk.MenuItem("Import Workshop from Zip")
+        self.importWorkshop = Gtk.MenuItem("Import Workshop from EBX archive")
         self.importWorkshop.connect("activate", self.importActionEvent)
         self.createWorkshop = Gtk.MenuItem("Create Clones")
         self.createWorkshop.connect("activate", self.runWorkshopActionEvent)
@@ -818,7 +818,7 @@ class AppWindow(Gtk.ApplicationWindow):
     # Event, executes when import is called
     def importActionEvent(self, menuItem):
         logging.debug("importVMActionEvent() initiated")
-        dialog = Gtk.FileChooserDialog("Please select a zip file to import.", self,
+        dialog = Gtk.FileChooserDialog("Please select a EBX archive to import.", self,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 
@@ -832,7 +832,7 @@ class AppWindow(Gtk.ApplicationWindow):
             dialog.destroy()
 
             # First we need to unzip the import file to a temp folder
-            spinnerDialog = SpinnerDialog(self, "Preparing to unzip files")
+            spinnerDialog = SpinnerDialog(self, "Preparing to decompress EBX archive")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
             #spinnerDialog.destroy()
