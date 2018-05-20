@@ -804,7 +804,7 @@ class AppWindow(Gtk.ApplicationWindow):
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
             #TODO: Transform the spinner into the ProcessOutput Window
-            spinnerDialog=SpinnerDialog(self, "Exporting to zip, this may take a few minutes...")
+            spinnerDialog=SpinnerDialog(self, "Exporting to EBX archive, this may take a few minutes...")
             spinnerDialog.set_title("Exporting...")
             self.session.exportWorkshop(folderPath, spinnerDialog)
             spinnerDialog.run()
