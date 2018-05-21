@@ -63,7 +63,10 @@ class ProcessDialog(Gtk.Dialog):
         try:
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
-            self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, bufsize=1)
+            if POSIX:
+                self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, bufsize=1)
+            else:
+                self.p = Popen(processPath, shell=False, stdout=PIPE, bufsize=1)
             logging.debug("watchProcess(): finished call to popen, observing stdout...")
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):

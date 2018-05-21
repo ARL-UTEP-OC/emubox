@@ -3,10 +3,10 @@ import os
 #OS-specific constants
 if os.name == 'nt':
     VBOXMANAGE_DIRECTORY = "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
-    POSIX = 0
+    POSIX = False
 else:
     VBOXMANAGE_DIRECTORY = "VBoxManage"
-    POSIX = 1
+    POSIX = True
 # GUI constants
 BOX_SPACING = 5
 PADDING = 5
