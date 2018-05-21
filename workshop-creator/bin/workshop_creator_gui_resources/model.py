@@ -7,10 +7,10 @@ import shutil
 import zipfile
 import logging
 import workshop_creator_gui_resources.gui_constants as gui_constants
-from workshop_creator_gui_resources.process_window import ProcessWindow
 from workshop_creator_gui_resources.process_dialog import ProcessDialog
 from lxml import etree
 
+POSIX = gui_constants.POSIX
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
 WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
@@ -79,13 +79,10 @@ class Session:
     def runScript(self, script):
         logging.debug("runScript() initiated " + str(script))
         if self.currentWorkshop != None:
-            #t = threading.Thread(target=self.scriptWorker, args=[WORKSHOP_CONFIG_DIRECTORY+self.currentWorkshop.filename+".xml", script])
-            #t.start()
             self.scriptWorker(os.path.join(WORKSHOP_CONFIG_DIRECTORY,self.currentWorkshop.filename+".xml"), script)
 
     def scriptWorker(self, filePath, script):
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
-        #subprocess.call(["python", script, filePath])
         pd = ProcessDialog("python -u "+ script + " " + filePath)
         pd.set_title("Processing... please wait")
         pd.run()

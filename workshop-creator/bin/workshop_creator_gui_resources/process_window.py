@@ -55,7 +55,7 @@ class ProcessWindow(Gtk.Window):
         try:
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
-            self.p = Popen(shlex.split(processPath), shell=False, stdout=PIPE, bufsize=1)
+            self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, bufsize=1)
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
@@ -67,7 +67,7 @@ class ProcessWindow(Gtk.Window):
             #and then subsequently, this will stop the GObject timer
             self.proc_complete = True
         except Exception as x:
-            logging.error("watchProcess(): Something went wrong while running process: " + str(shlex.split(processPath)) + "\r\n" + str(x))
+            logging.error("watchProcess(): Something went wrong while running process: " + str(shlex.split(processPath, posix=POSIX)) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:
                 self.p.terminate()
             self.destroy()

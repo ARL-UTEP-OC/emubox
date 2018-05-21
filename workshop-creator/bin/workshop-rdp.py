@@ -94,7 +94,7 @@ rdesktop -g 1280x768 -a 16 -T "EmuBox" """+ip+"""
 if len(sys.argv) < 2:
     print "Usage: python workshop-rdp.py <input filename>"
     exit()
-
+print "workshop-rdp.py: Creating RDP Files"
 inputFilename = sys.argv[1]
 inputFileBasename = os.path.splitext(os.path.basename(inputFilename))[0]
 

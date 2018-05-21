@@ -6,6 +6,10 @@ import threading
 import logging
 import shlex
 
+import workshop_creator_gui_resources.gui_constants as gui_constants
+
+POSIX = gui_constants.POSIX
+
 class ProcessDialog(Gtk.Dialog):
     def __init__(self, processPath):
         
@@ -59,7 +63,7 @@ class ProcessDialog(Gtk.Dialog):
         try:
             self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
             self.curr_out_buff_pos = self.curr_out_buff_pos + 1
-            self.p = Popen(shlex.split(processPath), shell=False, stdout=PIPE, bufsize=1)
+            self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, bufsize=1)
             logging.debug("watchProcess(): finished call to popen, observing stdout...")
             with self.p.stdout:
                 for line in iter(self.p.stdout.readline, b''):
@@ -76,6 +80,7 @@ class ProcessDialog(Gtk.Dialog):
             logging.error("watchProcess(): Something went wrong while running process: " + str(processPath) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:
                 self.p.terminate()
+            self.destroy()
 
     def destroy_progress(self, widget, data=None):
         logging.debug("watchProcess(): destroy_progress(): initiated")

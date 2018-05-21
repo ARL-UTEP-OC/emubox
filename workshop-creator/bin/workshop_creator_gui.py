@@ -17,6 +17,7 @@ import workshop_creator_gui_resources.gui_constants as gui_constants
 from manager_gui import ManagerBox
 
 # Constants
+POSIX = gui_constants.POSIX
 BOX_SPACING = gui_constants.BOX_SPACING
 PADDING = gui_constants.PADDING
 WORKSHOP_CONFIG_DIRECTORY = gui_constants.WORKSHOP_CONFIG_DIRECTORY
