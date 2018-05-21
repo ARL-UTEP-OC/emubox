@@ -26,7 +26,7 @@ echo REM the name of the container used during installation > start_creator.bat
 echo set VENV_NAME=creator-container >> start_creator.bat
 echo. >> start_creator.bat
 echo REM activate the container and invoke the gui >> start_creator.bat
-echo %VENV_NAME%\Scripts\activate ^& cd bin ^& python workshop_creator_gui.py >> start_creator.bat
+echo %VENV_NAME%\Scripts\activate ^& cd bin ^& python workshop_creator_gui.py & deactivate & cd .. >> start_creator.bat
 echo Type: start_creator.bat to start the workshop-creator-gui
 )
 
