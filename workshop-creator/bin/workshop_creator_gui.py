@@ -13,6 +13,7 @@ from workshop_creator_gui_resources.process_dialog import ProcessDialog
 from workshop_creator_gui_resources.model import Session
 
 import workshop_creator_gui_resources.gui_constants as gui_constants
+import xml.etree.ElementTree as ET
 
 from manager_gui import ManagerBox
 
@@ -801,7 +802,10 @@ class AppWindow(Gtk.ApplicationWindow):
         folderPath = None
 
         if response == Gtk.ResponseType.OK:
-			#self.fullSave()
+            # Save before export otherwise xml file will not contain materials!
+            self.session.softSaveWorkshop()
+            self.session.hardSave()
+
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
             #TODO: Transform the spinner into the ProcessOutput Window
@@ -827,7 +831,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if response == Gtk.ResponseType.OK:
             zipPath = dialog.get_filename()
-            #TODO: fix path reference here
+            #get path for temporary directory to hold uncompressed files
             tempPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp",os.path.splitext(os.path.basename(zipPath))[0])
             baseTempPath = os.path.join(os.path.dirname(zipPath),"creatorImportTemp")
             dialog.destroy()
@@ -836,7 +840,7 @@ class AppWindow(Gtk.ApplicationWindow):
             spinnerDialog = SpinnerDialog(self, "Preparing to decompress EBX archive")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
-            #spinnerDialog.destroy()
+            spinnerDialog.destroy()
 
             ovaList = []
             xmlList = []
@@ -871,12 +875,21 @@ class AppWindow(Gtk.ApplicationWindow):
                 #spinnerDialog.destroy()
 
             for xml in xmlList:
+            #here we need to parse the file in order to obtain the groupBaseName
+                logging.debug("importActionEvent(): Found XML file: " + xml)
                 shutil.copy2(os.path.join(tempPath,xml), WORKSHOP_CONFIG_DIRECTORY)
-			
-            holdMatPath = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,(os.path.splitext(xmlList[0])[0]))
+            self.filename = os.path.join(tempPath, xmlList[0])
+            logging.debug("importActionEvent(): Loading config file XML data: " + self.filename)
+            tree = ET.parse(self.filename)
+            root = tree.getroot()
+            vmset = root.find('testbed-setup').find('vm-set')
+            currXMLWorkshopGroupName = vmset.find('base-groupname').text.rstrip().lstrip()
+            logging.debug("importActionEvent(): using workshop group name for directory creation: " + currXMLWorkshopGroupName)
+
+            holdMatPath = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,currXMLWorkshopGroupName)
             if not os.path.exists(holdMatPath):
                 os.makedirs(holdMatPath)
-                
+
             for material in materialList:
                 logging.debug("importActionEvent(): Processing file " + str(material))
                 logging.debug("importActionEvent(): Checking for " + os.path.join(holdMatPath,material))
@@ -884,13 +897,13 @@ class AppWindow(Gtk.ApplicationWindow):
                     logging.debug("importActionEvent(): copying file " + str(os.path.join(tempPath,"Materials",material)) + " to " + str(material))
                     shutil.copy2(os.path.join(tempPath,"Materials",material), holdMatPath)
 
-            holdRDPPath = os.path.join(WORKSHOP_RDP_DIRECTORY,(os.path.splitext(xmlList[0])[0]))
+            holdRDPPath = os.path.join(WORKSHOP_RDP_DIRECTORY,currXMLWorkshopGroupName)
             if not os.path.exists(holdRDPPath):
                 os.makedirs(holdRDPPath)
             for rdp in rdpList:
                 if not os.path.exists(holdRDPPath+rdp):
                     shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
-            #TODO: need to make sure to save before export!!!!!!! otherwise xml file will not contain materials!
+            #TODO: move the loading up so that we can grab the baseGroupName as the directory for file copies
             self.session.loadXMLFiles(tempPath)
             self.workshopTree.clearTreeStore()
             self.workshopTree.populateTreeStore(self.session.workshopList)

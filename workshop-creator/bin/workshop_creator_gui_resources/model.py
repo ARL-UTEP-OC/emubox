@@ -139,13 +139,24 @@ class Session:
 
     def importToVBox(self, tempPath, spinnerDialog):
         logging.debug("importToVBox() initiated " + str(tempPath))
-        t = threading.Thread(target=self.importWorker, args=[tempPath, spinnerDialog])
+        t = threading.Thread(target=self.importVBoxWorker, args=[tempPath, spinnerDialog])
         t.start()
 
-    def importWorker(self, tempPath, spinnerDialog):
-        logging.debug("importWorker() initiated " + str(tempPath))
+    def importVBoxWorker(self, tempPath, spinnerDialog):
+        logging.debug("importVBoxWorker() initiated " + str(tempPath))
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
         spinnerDialog.destroy()
+
+    def exportFromVBox(self, tempPath, vmname, spinnerDialog):
+        logging.debug("exportFromVBox() initiated " + str(tempPath))
+        t = threading.Thread(target=self.exportVBoxWorker, args=[tempPath, vmname, spinnerDialog])
+        t.start()
+
+    def exportVBoxWorker(self, tempPath, vmname, spinnerDialog):
+        logging.debug("exportVBoxWorker() initiated " + str(tempPath))
+        subprocess.call([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath])
+        spinnerDialog.destroy()
+
 
     def zipWorker(self, folderPath, spinnerDialog):
         #Consider a better design where it is not destroyed here... e.g., a window that is appended instead
