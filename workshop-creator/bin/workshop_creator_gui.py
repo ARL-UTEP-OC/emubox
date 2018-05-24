@@ -803,7 +803,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if response == Gtk.ResponseType.OK:
             # Save before export otherwise xml file will not contain materials!
-            self.session.softSaveWorkshop()
+
             self.session.hardSave()
 
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
@@ -813,7 +813,7 @@ class AppWindow(Gtk.ApplicationWindow):
             spinnerDialog.set_title("Exporting...")
             self.session.exportWorkshop(folderPath, spinnerDialog)
             spinnerDialog.run()
-            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK,
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
                                        self.session.currentWorkshop.filename + " export complete\r\nFile created in: " + str(folderPath))
             dialog.run()
             dialog.destroy()
@@ -1177,14 +1177,14 @@ class SpinnerDialog(Gtk.Dialog):
         self.set_default_size(500, 80)
         self.outerVerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.label = Gtk.Label(message)
-        #self.spinner = Gtk.Spinner()
+        self.spinner = Gtk.Spinner()
         self.dialogBox.add(self.outerVerBox)
         self.progress_bar = Gtk.ProgressBar()
         self.outerVerBox.pack_start(self.label, False, False, PADDING)
         self.outerVerBox.pack_start(self.progress_bar, False, False, PADDING)
 
         self.show_all()
-        #self.spinner.start()
+        self.spinner.start()
         
     def setProgressVal(self,val):
         self.progress_bar.set_fraction(val)
