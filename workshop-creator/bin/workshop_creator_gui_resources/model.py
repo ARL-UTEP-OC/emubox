@@ -1,3 +1,6 @@
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 import os
 import subprocess
 import xml.etree.ElementTree as ET
@@ -130,7 +133,7 @@ class Session:
                 o.write(b)
         i.close()
         o.close()
-        spinnerDialog.destroy()
+        spinnerDialog.hide()
 
     def importUnzip(self, zipPath, spinnerDialog):
         logging.debug("importUnzip() initiated " + str(zipPath))
@@ -144,8 +147,9 @@ class Session:
 
     def importVBoxWorker(self, tempPath, spinnerDialog):
         logging.debug("importVBoxWorker() initiated " + str(tempPath))
+        spinnerDialog.setTitleVal("Importing into VirtualBox")
         subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
-        spinnerDialog.destroy()
+        spinnerDialog.hide()
 
     def exportFromVBox(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportFromVBox() initiated " + str(tempPath))
@@ -155,7 +159,7 @@ class Session:
     def exportVBoxWorker(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportVBoxWorker() initiated " + str(tempPath))
         subprocess.call([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath])
-        spinnerDialog.destroy()
+        #spinnerDialog.destroy()
 
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -189,8 +193,8 @@ class Session:
         spinnerDialog.setLabelVal("--------Almost finished, cleaning temporary directories--------")
         spinnerDialog.setProgressVal(1)
         shutil.rmtree(folderPath, ignore_errors=True)
-        spinnerDialog.setLabelVal("--------Complete--------")
-        spinnerDialog.destroy()
+        #spinnerDialog.setLabelVal("--------Complete--------")
+        spinnerDialog.hide()
 
     def exportZipFiles(self, folderPath, spinnerDialog):
         logging.debug("exportZipFiles() initiated " + str(folderPath))
@@ -205,11 +209,10 @@ class Session:
 
     def exportWorkshop(self, folderPath, spinnerDialog):
         logging.debug("exportWorkshop() initiated " + str(folderPath))
-        
+        #Ensure that the folder does not exist
+        #TODO: need to show a dialog warning users; but need to workout the spinnerDialog race condition first (hide before run)
         if os.path.exists(folderPath):
-            message = "Folder " + folderPath + " already exists. Cancelling export."
-            logging.error("Folder " + folderPath + " already exists. Cancelling export.")
-            return
+            shutil.rmtree(folderPath)
         os.makedirs(folderPath)
         materialsPath = os.path.join(folderPath,"Materials")
         if os.path.exists(materialsPath):

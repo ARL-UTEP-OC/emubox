@@ -22,7 +22,7 @@ class ProcessDialog(Gtk.Dialog):
         self.curr_read_buff_pos = 0
         self.curr_out_buff = []
         #Configuraiton for this Gtk.Window
-        self.set_default_size(250, 180)
+        self.set_default_size(400, 180)
         self.set_resizable(True)
         self.connect("destroy", self.destroy_progress)
         self.set_title("Process Output Console")
@@ -83,7 +83,7 @@ class ProcessDialog(Gtk.Dialog):
             logging.error("watchProcess(): Something went wrong while running process: " + str(processPath) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:
                 self.p.terminate()
-            self.destroy()
+            self.hide()
 
     def destroy_progress(self, widget, data=None):
         logging.debug("watchProcess(): destroy_progress(): initiated")
@@ -91,7 +91,7 @@ class ProcessDialog(Gtk.Dialog):
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
             self.p.terminate()
-        self.destroy()
+        #self.destroy()
 
     def appendText(self):
         #This function is called by a GObject timer. It will check if there is
@@ -124,6 +124,8 @@ class ProcessDialog(Gtk.Dialog):
             logging.debug("appendText(): Process execution complete")
             self.text_buffer.insert(i, str("Process execution complete"), -1)
             logging.debug("appendText(): wrote last line in text buffer... returning false")
+            logging.debug("appendText(): hiding dialog")
+            self.hide()
             return False
 
 # if __name__ == "__main__":

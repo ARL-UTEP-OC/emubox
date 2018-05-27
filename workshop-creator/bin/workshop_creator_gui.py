@@ -800,24 +800,28 @@ class AppWindow(Gtk.ApplicationWindow):
 
         response = dialog.run()
         folderPath = None
-
-        if response == Gtk.ResponseType.OK:
+        if response != Gtk.ResponseType.OK:
+            dialog.destroy()
+            return
+        else: #response == Gtk.ResponseType.OK
             # Save before export otherwise xml file will not contain materials!
-
             self.session.hardSave()
 
             folderPath = os.path.join(dialog.get_filename(),self.session.currentWorkshop.filename)
             dialog.destroy()
             #TODO: Transform the spinner into the ProcessOutput Window
+            #Following this protocol: any functions to which this spinner dialog can call run, but must call hide (not destroy!)
+            #when finished. These will likely be functions that start threads.
+            #TODO: need to make the spinnerDialog take a thread and start it after the dialog is shown, otherwise, this could lead to an undestroyable dialog
             spinnerDialog=SpinnerDialog(self, "Exporting to EBX archive, this may take a few minutes...")
             spinnerDialog.set_title("Exporting...")
             self.session.exportWorkshop(folderPath, spinnerDialog)
             spinnerDialog.run()
+            #this destroy will happen only after any hides; hides be called after the destroy
+            spinnerDialog.destroy()
             dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
                                        self.session.currentWorkshop.filename + " export complete\r\nFile created in: " + str(folderPath))
             dialog.run()
-            dialog.destroy()
-        elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
     # Event, executes when import is called
@@ -837,10 +841,12 @@ class AppWindow(Gtk.ApplicationWindow):
             dialog.destroy()
 
             # First we need to unzip the import file to a temp folder
+            #Following this protocol: any functions to which this spinner dialog can call run, but must call hide (not destroy!)
+            #when finished. These will likely be functions that start threads.
+            #TODO: need to make the spinnerDialog take a thread and start it after the dialog is shown, otherwise, this could lead to an undestroyable dialog
             spinnerDialog = SpinnerDialog(self, "Preparing to decompress EBX archive")
             self.session.importUnzip(zipPath, spinnerDialog)
             spinnerDialog.run()
-            spinnerDialog.destroy()
 
             ovaList = []
             xmlList = []
@@ -869,10 +875,11 @@ class AppWindow(Gtk.ApplicationWindow):
                     rdpList.append(filename)
             
             for ova in ovaList:
-                spinnerDialog = SpinnerDialog(self, "Importing " + str(ova) + " into VirtualBox...")
+                logging.debug("importActionEvent(): Importing " + str(ova) + " into VirtualBox...")
+                spinnerDialog.set_title("Importing " + str(ova) + " into VirtualBox...")
                 self.session.importToVBox(os.path.join(tempPath,ova), spinnerDialog)
                 spinnerDialog.run()
-                #spinnerDialog.destroy()
+            spinnerDialog.destroy()
 
             for xml in xmlList:
             #here we need to parse the file in order to obtain the groupBaseName
@@ -903,7 +910,12 @@ class AppWindow(Gtk.ApplicationWindow):
             for rdp in rdpList:
                 if not os.path.exists(holdRDPPath+rdp):
                     shutil.copy2(os.path.join(tempPath,"RDP",rdp), holdRDPPath)
-            #TODO: move the loading up so that we can grab the baseGroupName as the directory for file copies
+
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
+                                       "Workshop import complete.")
+            dialog.run()
+            dialog.destroy()
+            #reload all xml files and create a new display
             self.session.loadXMLFiles(tempPath)
             self.workshopTree.clearTreeStore()
             self.workshopTree.populateTreeStore(self.session.workshopList)
@@ -1171,10 +1183,9 @@ class SpinnerDialog(Gtk.Dialog):
         Gtk.Dialog.__init__(self, "", parent, 0)
 
         self.set_deletable(False)
-
         self.dialogBox = self.get_content_area()
         self.set_resizable(False)
-        self.set_default_size(500, 80)
+        self.set_default_size(400, 180)
         self.outerVerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.label = Gtk.Label(message)
         self.spinner = Gtk.Spinner()
@@ -1202,7 +1213,6 @@ def WarningDialog(self, message):
     dialog.destroy()
 
 if __name__ == "__main__":
-    #logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
     app = Application()
