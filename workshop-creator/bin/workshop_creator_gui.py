@@ -26,6 +26,9 @@ WORKSHOP_MATERIAL_DIRECTORY = gui_constants.WORKSHOP_MATERIAL_DIRECTORY
 WORKSHOP_RDP_DIRECTORY = gui_constants.WORKSHOP_RDP_DIRECTORY
 VBOXMANAGE_DIRECTORY = gui_constants.VBOXMANAGE_DIRECTORY
 WORKSHOP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_CREATOR_FILE_PATH
+VM_STARTER_FILE_PATH = gui_constants.VM_STARTER_FILE_PATH
+VM_POWEROFF_FILE_PATH = gui_constants.VM_POWEROFF_FILE_PATH
+
 WORKSHOP_RDP_CREATOR_FILE_PATH = gui_constants.WORKSHOP_RDP_CREATOR_FILE_PATH
 WORKSHOP_RESTORE_FILE_PATH = gui_constants.WORKSHOP_RESTORE_FILE_PATH
 
@@ -386,8 +389,19 @@ class AppWindow(Gtk.ApplicationWindow):
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
         self.importWorkshop = Gtk.MenuItem("Import Workshop from EBX archive")
         self.importWorkshop.connect("activate", self.importActionEvent)
-        self.cloneWorkshop = Gtk.MenuItem("Create Clones")
-        self.cloneWorkshop.connect("activate", self.cloneWorkshopActionEvent)
+
+        self.createRDP = Gtk.MenuItem("Create RDP Files")
+        self.createRDP.connect("activate", self.createRDPActionEvent)
+        
+        self.cloneWorkshop = Gtk.MenuItem("Signal - Create Clones")
+        self.cloneWorkshop.connect("activate", self.cloneWorkshopActionEvent)    
+        self.startVMs = Gtk.MenuItem("Signal - Start VMs (headless)")
+        self.startVMs.connect("activate", self.startVMsActionEvent)
+        self.poweroffVMs = Gtk.MenuItem("Signal - Power Off VMs")
+        self.poweroffVMs.connect("activate", self.poweroffVMsActionEvent)
+        self.restoreSnapshots = Gtk.MenuItem("Signal - Restore Snapshots")
+        self.restoreSnapshots.connect("activate", self.restoreSnapshotsActionEvent)
+        
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
         self.removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
         self.exportWorkshop = Gtk.MenuItem("Export Workshop")
@@ -396,11 +410,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.addVM.connect("activate", self.addVMActionEvent)
         self.addMaterial = Gtk.MenuItem("Add Material File")
         self.addMaterial.connect("activate", self.addMaterialActionEvent)
-        self.createRDP = Gtk.MenuItem("Create RDP Files")
-        self.createRDP.connect("activate", self.createRDPActionEvent)
-        self.restoreSnapshots = Gtk.MenuItem("Restore Snapshots")
-        self.restoreSnapshots.connect("activate", self.restoreSnapshotsActionEvent)
-
+        
         self.removeItem = Gtk.MenuItem("Remove Workshop Item")
         self.removeItem.connect("activate", self.removeVMActionEvent)
 
@@ -410,14 +420,18 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(self.addVM)
         self.workshopMenu.append(self.addMaterial)
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
+
+        self.workshopMenu.append(self.createRDP)
+        self.workshopMenu.append(Gtk.SeparatorMenuItem())
+        
         self.workshopMenu.append(self.cloneWorkshop)
+        self.workshopMenu.append(self.startVMs)
+        self.workshopMenu.append(self.poweroffVMs)
+        self.workshopMenu.append(self.restoreSnapshots)
+        self.workshopMenu.append(Gtk.SeparatorMenuItem())
+        
         self.workshopMenu.append(self.removeWorkshop)
         self.workshopMenu.append(self.exportWorkshop)
-        self.workshopMenu.append(Gtk.SeparatorMenuItem())
-        self.workshopMenu.append(self.createRDP)
-        #TODO: breaks the GUI
-        self.workshopMenu.append(self.restoreSnapshots)
-
 
         #context menu for blank space
         self.blankMenu = Gtk.Menu()
@@ -452,7 +466,6 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if treeiter == None:
             return
-
 
         if model.iter_has_child(treeiter):
             self.isParent = True
@@ -708,7 +721,37 @@ class AppWindow(Gtk.ApplicationWindow):
         pd.run()
         pd.destroy()
         logging.debug("cloneWorkshopActionEvent(): returned from ProcessDialog")
-        self.session.cloneWorkshop()
+        self.session.overwriteAllToSaveDirectory()
+    
+    def startVMsActionEvent(self, menuItem):
+        logging.debug("startVMsActionEventActionEvent() initiated: " + str(menuItem))
+        if self.session.currentWorkshop is None:
+            WarningDialog(self.window, "You must select a workshop before you can run the workshop.")
+            return
+
+        workshopName = self.session.currentWorkshop.filename
+        command = "python -u " + VM_STARTER_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName+".xml")
+        logging.debug("startVMsActionEvent(): instantiating ProcessDialog")
+        pd = ProcessDialog(command)
+        logging.debug("startVMsActionEvent(): running ProcessDialog")
+        pd.run()
+        pd.destroy()
+        logging.debug("startVMsActionEvent(): returned from ProcessDialog")
+
+    def poweroffVMsActionEvent(self, menuItem):
+        logging.debug("poweroffVMsActionEvent() initiated: " + str(menuItem))
+        if self.session.currentWorkshop is None:
+            WarningDialog(self.window, "You must select a workshop before you can run the workshop.")
+            return
+
+        workshopName = self.session.currentWorkshop.filename
+        command = "python -u " + VM_POWEROFF_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName+".xml")
+        logging.debug("poweroffVMsActionEvent(): instantiating ProcessDialog")
+        pd = ProcessDialog(command)
+        logging.debug("poweroffVMsActionEvent(): running ProcessDialog")
+        pd.run()
+        pd.destroy()
+        logging.debug("poweroffVMsActionEvent(): returned from ProcessDialog")
 
     def addWorkshopActionEvent(self, menuItem):
         logging.debug("addWorkshopActionEvent() initiated: " + str(menuItem))
