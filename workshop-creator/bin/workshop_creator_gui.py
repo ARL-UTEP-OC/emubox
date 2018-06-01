@@ -387,7 +387,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.importWorkshop = Gtk.MenuItem("Import Workshop from EBX archive")
         self.importWorkshop.connect("activate", self.importActionEvent)
         self.createWorkshop = Gtk.MenuItem("Create Clones")
-        self.createWorkshop.connect("activate", self.runWorkshopActionEvent)
+        self.createWorkshop.connect("activate", self.cloneWorkshopActionEvent)
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
         self.removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
         self.exportWorkshop = Gtk.MenuItem("Export Workshop")
@@ -694,21 +694,21 @@ class AppWindow(Gtk.ApplicationWindow):
         logging.debug("adding a child node: " + str(self.focusedTreeIter)+ " " + str(MATERIAL_TREE_LABEL+holdName))
         self.workshopTree.addChildNode(self.focusedTreeIter, MATERIAL_TREE_LABEL+holdName)
 
-    def runWorkshopActionEvent(self, menuItem):
-        logging.debug("runWorkshopActionEvent() initiated: " + str(menuItem))
+    def cloneWorkshopActionEvent(self, menuItem):
+        logging.debug("cloneWorkshopActionEvent() initiated: " + str(menuItem))
         if self.session.currentWorkshop is None:
             WarningDialog(self.window, "You must select a workshop before you can run the workshop.")
             return
 
         workshopName = self.session.currentWorkshop.filename
         command = "python -u " + WORKSHOP_CREATOR_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,workshopName+".xml")
-        logging.debug("runWorkshopActionEvent(): instantiating ProcessDialog")
+        logging.debug("cloneWorkshopActionEvent(): instantiating ProcessDialog")
         pd = ProcessDialog(command)
-        logging.debug("runWorkshopActionEvent(): running ProcessDialog")
+        logging.debug("cloneWorkshopActionEvent(): running ProcessDialog")
         pd.run()
         pd.destroy()
-        logging.debug("runWorkshopActionEvent(): returned from ProcessDialog")
-        self.session.runWorkshop()
+        logging.debug("cloneWorkshopActionEvent(): returned from ProcessDialog")
+        self.session.cloneWorkshop()
 
     def addWorkshopActionEvent(self, menuItem):
         logging.debug("addWorkshopActionEvent() initiated: " + str(menuItem))
@@ -976,7 +976,7 @@ class Application(Gtk.Application):
         self.window.fullSave()
 
     def onRun(self, action, param):
-        self.window.runWorkshopActionEvent(None)
+        self.window.cloneWorkshopActionEvent(None)
 
     def onImport(self, action, param):
         self.window.importActionEvent()

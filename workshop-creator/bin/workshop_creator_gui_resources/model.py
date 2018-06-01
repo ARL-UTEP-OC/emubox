@@ -72,9 +72,9 @@ class Session:
                 shutil.copy2(os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName, Materialsfile),
                              os.path.join(self.holdDirectory, "Materials"))
 
-    def runWorkshop(self):
+    def cloneWorkshop(self):
         #separate the below into 2 functions (materials, rdp); then call both
-        logging.debug("runWorkshop() initiated")
+        logging.debug("cloneWorkshop() initiated")
 
         self.overwriteRDPToManagerSaveDirectory()
         self.overwriteMaterialsToManagerSaveDirectory()
