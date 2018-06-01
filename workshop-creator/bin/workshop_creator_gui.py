@@ -54,14 +54,14 @@ class BaseWidget(Gtk.Box):
         self.vrdpBaseportHorBox = Gtk.Box(spacing=BOX_SPACING)
 
         # Declaration of labels
-        self.vBoxManageLabel = Gtk.Label("Path To VBoxManager:")
-        self.ipAddressLabel = Gtk.Label("IP Address:")
-        self.baseGroupNameLabel = Gtk.Label("Base Group Name:")
-        self.numClonesLabel = Gtk.Label("Number of Clones:")
-        self.cloneSnapshotsLabel = Gtk.Label("Clone Snapshots:")
-        self.linkedClonesLabel = Gtk.Label("Linked Clones:")
-        self.baseOutnameLabel = Gtk.Label("Base Outname:")
-        self.vrdpBaseportLabel = Gtk.Label("VRDP Baseport:")
+        self.vBoxManageLabel =      Gtk.Label("Path To VBoxManager:")
+        self.ipAddressLabel =       Gtk.Label("IP Address:             ")
+        self.baseGroupNameLabel =   Gtk.Label("Base Group Name:   ")
+        self.numClonesLabel =       Gtk.Label("Number of Clones:   ")
+        self.cloneSnapshotsLabel =  Gtk.Label("Clone Snapshots:    ")
+        self.linkedClonesLabel =    Gtk.Label("Linked Clones:        ")
+        self.baseOutnameLabel =     Gtk.Label("Base Outname:       ")
+        self.vrdpBaseportLabel =    Gtk.Label("VRDP Baseport:       ")
 
         # Declaration of entrys
         self.vBoxManageEntry = Gtk.Entry()
@@ -89,7 +89,10 @@ class BaseWidget(Gtk.Box):
 
 
     def initializeContainers(self):
-        self.add(self.outerVertBox)
+		#TODO: HERE: need to add to the "right" side
+        #Need to make this into 2 boxes (maybe three) and then left 
+        #justify left, right justify right and grow all equally
+        self.pack_start(self.outerVertBox, True, True, PADDING)
         self.outerVertBox.add(self.buttonsHorBox)
         self.outerVertBox.add(self.vBoxManageHorBox)
         self.outerVertBox.add(self.ipAddressHorBox)
@@ -111,14 +114,14 @@ class BaseWidget(Gtk.Box):
         self.vrdpBaseportHorBox.pack_start(self.vrdpBaseportLabel, False, False, PADDING)
 
     def initializeEntrys(self):
-        self.vBoxManageHorBox.pack_end(self.vBoxManageEntry, False, False, PADDING)
-        self.ipAddressHorBox.pack_end(self.ipAddressEntry, False, False, PADDING)
-        self.baseGroupNameHorBox.pack_end(self.baseGroupNameEntry, False, False, PADDING)
-        self.numClonesHorBox.pack_end(self.numClonesEntry, False, False, PADDING)
-        self.cloneSnapshotsHorBox.pack_end(self.cloneSnapshotsEntry, False, False, PADDING)
-        self.linkedClonesHorBox.pack_end(self.linkedClonesEntry, False, False, PADDING)
-        self.baseOutnameHorBox.pack_end(self.baseOutnameEntry, False, False, PADDING)
-        self.vrdpBaseportHorBox.pack_end(self.vrdpBaseportEntry, False, False, PADDING)
+        self.vBoxManageHorBox.pack_end(self.vBoxManageEntry, True, True, PADDING)
+        self.ipAddressHorBox.pack_end(self.ipAddressEntry, True, True, PADDING)
+        self.baseGroupNameHorBox.pack_end(self.baseGroupNameEntry, True, True, PADDING)
+        self.numClonesHorBox.pack_end(self.numClonesEntry, True, True, PADDING)
+        self.cloneSnapshotsHorBox.pack_end(self.cloneSnapshotsEntry, True, True, PADDING)
+        self.linkedClonesHorBox.pack_end(self.linkedClonesEntry, True, True, PADDING)
+        self.baseOutnameHorBox.pack_end(self.baseOutnameEntry, True, True, PADDING)
+        self.vrdpBaseportHorBox.pack_end(self.vrdpBaseportEntry, True, True, PADDING)
 
 # This class is the widget inside of vmWidget
 class InternalnetBasenameWidget(Gtk.EventBox):
@@ -140,7 +143,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
 
         self.outerHorBox.pack_start(self.label, False, False, PADDING)
         self.outerHorBox.pack_end(self.removeInetButton, False, False, PADDING)
-        self.outerHorBox.pack_end(self.entry, False, False, PADDING)
+        self.outerHorBox.pack_end(self.entry, True, True, PADDING)
 
 # This class is a container that will hold the material information
 class MaterialWidget(Gtk.Box):
@@ -158,12 +161,12 @@ class MaterialWidget(Gtk.Box):
 
         # Declaration of labels
         self.nameLabel = Gtk.Label("Name:")
-
         # Declaration of entrys
         self.nameEntry = Gtk.Entry()
 
         #initialize containers
-        self.add(self.outerVertBox)
+        #self.add(self.outerVertBox)
+        self.pack_start(self.outerVertBox, True, True, PADDING)
         self.outerVertBox.add(self.addressHorBox)
         self.outerVertBox.add(self.nameHorBox)
 
@@ -171,8 +174,7 @@ class MaterialWidget(Gtk.Box):
         self.nameHorBox.pack_start(self.nameLabel, False, False, PADDING)
 
         #initialize entries
-        self.nameHorBox.pack_end(self.nameEntry, False, False, PADDING)
-
+        self.nameHorBox.pack_end(self.nameEntry, True, True, PADDING)
 
 # This class is a container that will hold the vm information
 class VMWidget(Gtk.Box):
@@ -206,7 +208,7 @@ class VMWidget(Gtk.Box):
         self.initializeEntrys()
 
     def initializeContainers(self):
-        self.add(self.outerVertBox)
+        self.pack_start(self.outerVertBox, True, True, PADDING)
         self.outerVertBox.add(self.nameHorBox)
         self.outerVertBox.add(self.vrdpEnabledHorBox)
         self.outerVertBox.add(self.iNetVerBox)
@@ -217,8 +219,8 @@ class VMWidget(Gtk.Box):
         self.vrdpEnabledHorBox.pack_start(self.vrdpEnabledLabel, False, False, PADDING)
 
     def initializeEntrys(self):
-        self.nameHorBox.pack_end(self.nameEntry, False, False, PADDING)
-        self.vrdpEnabledHorBox.pack_end(self.vrdpEnabledEntry, False, False, PADDING)
+        self.nameHorBox.pack_end(self.nameEntry, True, True, PADDING)
+        self.vrdpEnabledHorBox.pack_end(self.vrdpEnabledEntry, True, True, PADDING)
 
     def loadInets(self, internalNetList):
 
@@ -325,6 +327,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.actionEventBox = Gtk.EventBox()
         self.scrolledActionBox = Gtk.ScrolledWindow()
         self.scrolledInnerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
+        
         self.managerBox = ManagerBox()
 
         self.notebook = Gtk.Notebook()
@@ -429,11 +432,11 @@ class AppWindow(Gtk.ApplicationWindow):
     def initializeContainers(self):
         self.add(self.notebook)
 
-        self.windowBox.pack_start(self.workshopTree, False, False, PADDING)
-        self.windowBox.pack_start(self.actionEventBox, False, False, PADDING)
+        self.windowBox.pack_start(self.workshopTree, True, True, PADDING)
+        self.windowBox.pack_end(self.actionEventBox, True, True, PADDING)
 
         self.actionEventBox.add(self.actionBox)
-        self.actionBox.pack_start(self.scrolledActionBox, False, False, PADDING)
+        self.actionBox.pack_start(self.scrolledActionBox, True, True, PADDING)
 
         self.scrolledActionBox.add(self.scrolledInnerBox)
         self.scrolledActionBox.set_min_content_width(400)
@@ -471,7 +474,7 @@ class AppWindow(Gtk.ApplicationWindow):
             for widget in self.scrolledInnerBox.get_children():
                 self.scrolledInnerBox.remove(widget)
 
-            self.scrolledInnerBox.pack_start(self.baseWidget, False, False, PADDING)
+            self.scrolledInnerBox.pack_start(self.baseWidget, True, True, PADDING)
 
             self.baseWidget.vBoxManageEntry.set_text(self.session.currentWorkshop.pathToVBoxManage)
             self.baseWidget.ipAddressEntry.set_text(self.session.currentWorkshop.ipAddress)
@@ -534,7 +537,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 self.scrolledInnerBox.remove(widget)
 
             if self.session.currentVM != None:
-                self.scrolledInnerBox.pack_start(self.vmWidget, False, False, PADDING)
+                self.scrolledInnerBox.pack_start(self.vmWidget, True, True, PADDING)
 
                 self.vmWidget.nameEntry.set_text(self.session.currentVM.name)
                 self.holdVRDP=0
@@ -549,7 +552,7 @@ class AppWindow(Gtk.ApplicationWindow):
                         rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
 
             elif self.session.currentMaterial != None:
-                self.scrolledInnerBox.pack_start(self.materialWidget, False, False, PADDING)
+                self.scrolledInnerBox.pack_start(self.materialWidget, True, True, PADDING)
 
                 self.materialWidget.nameEntry.set_text(self.session.currentMaterial.name)
 
@@ -1006,8 +1009,8 @@ class EntryDialog(Gtk.Dialog):
         self.entry = Gtk.Entry()
         self.entryText = None
 
-        self.outerVertBox.pack_start(self.label, False, False, PADDING)
-        self.outerVertBox.pack_start(self.entry, False, False, PADDING)
+        self.outerVertBox.pack_start(self.label, True, True, PADDING)
+        self.outerVertBox.pack_start(self.entry, True, True, PADDING)
         self.set_modal(True)
 
         self.connect("response", self.dialogResponseActionEvent)
@@ -1092,9 +1095,9 @@ class ListEntryDialog(Gtk.Dialog):
         self.entry = Gtk.Entry()
         self.entryText = None
 
-        self.outerVertBox.pack_start(self.label, False, False, PADDING)
+        self.outerVertBox.pack_start(self.label, True, True, PADDING)
         self.outerVertBox.pack_start(self.treeWidget, True, True, PADDING)
-        self.outerVertBox.pack_start(self.entry, False, False, PADDING)
+        self.outerVertBox.pack_start(self.entry, True, True, PADDING)
 
         self.connect("response", self.dialogResponseActionEvent)
         self.show_all()
@@ -1154,7 +1157,7 @@ class ExportImportProgressDialog(Gtk.Dialog):
 
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_show_text(True)
-        self.outerVerBox.pack_start(self.progressbar, False, False, PADDING)
+        self.outerVerBox.pack_start(self.progressbar, True, True, PADDING)
 
         self.progressbar.set_text(message)
 
@@ -1191,8 +1194,8 @@ class SpinnerDialog(Gtk.Dialog):
         self.spinner = Gtk.Spinner()
         self.dialogBox.add(self.outerVerBox)
         self.progress_bar = Gtk.ProgressBar()
-        self.outerVerBox.pack_start(self.label, False, False, PADDING)
-        self.outerVerBox.pack_start(self.progress_bar, False, False, PADDING)
+        self.outerVerBox.pack_start(self.label, True, True, PADDING)
+        self.outerVerBox.pack_start(self.progress_bar, True, True, PADDING)
 
         self.show_all()
         self.spinner.start()
