@@ -1,10 +1,23 @@
+@echo off
 REM Edit the following variables according to python installation
+set PYTHONARCH=64
+
+REM ask user for version of python
+set /P version64="Is your python installation 64-bit? (Y/N): "
+IF NOT "%version64%"=="Y" IF NOT "%version64%"=="y" (
 set PYTHONARCH=32
+echo *************************************************************************************************
+echo Switching to 32-bit Gtk packages -- If you encounter issues, specify a 64-bit python installation.
+echo *************************************************************************************************
+)
+
+REM set directory to place Gtk files
 set PYTHONPACKAGES_PATH=Lib\site-packages\
 
 REM name the container that will be created
 set VENV_NAME=creator-container
 
+REM install and start the venv container
 pip install virtualenv
 virtualenv "%VENV_NAME%"
 
