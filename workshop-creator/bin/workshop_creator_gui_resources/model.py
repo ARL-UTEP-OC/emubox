@@ -54,6 +54,7 @@ class Session:
                              os.path.join(self.holdDirectory, "RDP"))
 
     def overwriteMaterialsToManagerSaveDirectory(self):
+        #TODO; may optimize by only deleting the single file in the manager directory
         logging.debug("overwriteMaterialsToManagerSaveDirectory() initiated")
 
         if self.currentWorkshop != None:
@@ -163,8 +164,6 @@ class Session:
 
 
     def zipWorker(self, folderPath, spinnerDialog):
-        #Consider a better design where it is not destroyed here... e.g., a window that is appended instead
-        #TODO: This crashed once.. need to fix, how to destroy when done, better design (should the process window spawn the thread?)
         logging.debug("zipWorker() initiated " + str(folderPath))
         
         d = folderPath
@@ -209,8 +208,8 @@ class Session:
 
     def exportWorkshop(self, folderPath, spinnerDialog):
         logging.debug("exportWorkshop() initiated " + str(folderPath))
-        #Ensure that the folder does not exist
         #TODO: need to show a dialog warning users; but need to workout the spinnerDialog race condition first (hide before run)
+        #Remove the folder if it exists
         if os.path.exists(folderPath):
             shutil.rmtree(folderPath)
         os.makedirs(folderPath)
@@ -254,8 +253,6 @@ class Session:
             else:
                 logging.error("folderPath" + folderPath + " was not created!")
 
-            #TODO: need to specify a "transient parent"
-
         logging.debug("Done executing process. \r\nCreating zip")
         self.exportZipFiles(folderPath, spinnerDialog)
 
@@ -287,7 +284,6 @@ class Session:
         if os.path.exists(materialFile):
             os.remove(materialFile)
         self.currentWorkshop.materialList.remove(self.currentMaterial)
-        #TODO; may optimize by only deleting the single file in the manager directory
         self.overwriteMaterialsToManagerSaveDirectory()
 
     def removeWorkshop(self):
@@ -385,7 +381,6 @@ class Session:
         if self.somethingChanged:
             self.currentVM.name = inVMName
             self.currentVM.vrdpEnabled = inVRDPEnabled
-            #TODO: test this because it was disabled before
             self.currentVM.internalnetBasenameList = inInternalnetBasenameList
             self.hardSave()
             self.runRDPScript()
