@@ -145,7 +145,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
         self.add(self.outerHorBox)
 
         self.outerHorBox.pack_start(self.label, False, False, PADDING)
-        self.outerHorBox.pack_end(self.removeInetButton, False, False, PADDING)
+        #self.outerHorBox.pack_end(self.removeInetButton, False, False, PADDING)
         self.outerHorBox.pack_end(self.entry, True, True, PADDING)
 
 # This class is a container that will hold the material information

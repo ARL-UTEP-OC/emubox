@@ -385,7 +385,8 @@ class Session:
         if self.somethingChanged:
             self.currentVM.name = inVMName
             self.currentVM.vrdpEnabled = inVRDPEnabled
-            #self.currentVM.internalnetBasenameList = inInternalnetBasenameList
+            #TODO: test this because it was disabled before
+            self.currentVM.internalnetBasenameList = inInternalnetBasenameList
             self.hardSave()
             self.runRDPScript()
 
@@ -417,10 +418,12 @@ class Session:
 
             # Iterate through list of VMs and whether vrdp is enabled for that vm
             for vm in workshop.vmList:
+                logging.debug("hardSave(): iterating through VMs: "+vm.name)
                 vm_element = etree.SubElement(vm_set_element, "vm")
                 etree.SubElement(vm_element, "name").text = vm.name
                 etree.SubElement(vm_element, "vrdp-enabled").text = vm.vrdpEnabled
                 for internalnet in vm.internalnetBasenameList:
+                    logging.debug("hardSave(): adding internalnet-basename: "+internalnet)
                     etree.SubElement(vm_element, "internalnet-basename").text = internalnet
 
             self.holdDirectory = os.path.join(WORKSHOP_MATERIAL_DIRECTORY,workshop.baseGroupName)
@@ -460,6 +463,10 @@ class VM:
         # This will contain a list of basenames
         self.internalnetBasenameList = [] # String
         self.internalnetBasenameList.append("intnet")
+    
+    def addInet(self, inetName):
+        logging.debug("addInet(): appending inetName to VM: " + self.name)
+        self.internalBasenameList.append(inetName) 
 
 class Workshop:
 
