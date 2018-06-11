@@ -1,13 +1,9 @@
-import threading
 import ast
+import threading
 import gi; gi.require_version('Gtk', '3.0')
-import workshop_creator_gui_resources.gui_constants as gui_constants
+from src.gui_constants import MANAGER_BIN_DIRECTORY, PADDING
 from subprocess import Popen, PIPE
 from gi.repository import Gtk
-
-
-MANAGER_BIN_DIRECTORY = gui_constants.MANAGER_BIN_DIRECTORY
-PADDING = gui_constants.PADDING
 
 
 class WorkshopListBoxRow(Gtk.ListBoxRow):

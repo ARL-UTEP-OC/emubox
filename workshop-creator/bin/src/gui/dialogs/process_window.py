@@ -1,12 +1,14 @@
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import GLib, Gio, Gtk, GObject, Gdk
 import logging
-from subprocess import Popen, PIPE
 import threading
 import shlex
+import gi; gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject
+from subprocess import Popen, PIPE
+from src.gui_constants import POSIX
+
 
 class ProcessWindow(Gtk.Window):
+
     def __init__(self, processPath):
         Gtk.Window.__init__(self, title="Process Output Console")
         #Variables needed for obtaining and displaying process output

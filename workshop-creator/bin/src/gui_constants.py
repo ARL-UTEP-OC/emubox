@@ -21,3 +21,6 @@ WORKSHOP_RDP_CREATOR_FILE_PATH = os.path.join(os.getcwd(),"workshop-rdp.py")
 WORKSHOP_RESTORE_FILE_PATH = os.path.join(os.getcwd(),"workshop-restore.py")
 MANAGER_SAVE_DIRECTORY = os.path.join(os.getcwd(),"..","..","workshop-manager","bin","WorkshopData")
 MANAGER_BIN_DIRECTORY = os.path.join(os.getcwd(), "..", "..", "workshop-manager", "bin")
+#Labels
+VM_TREE_LABEL = "V: "
+MATERIAL_TREE_LABEL = "M: "

@@ -1,16 +1,14 @@
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import GLib, Gio, Gtk, GObject, Gdk
-from subprocess import Popen, PIPE, STDOUT
 import threading
 import logging
 import shlex
+import gi; gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject
+from subprocess import Popen, PIPE, STDOUT
+from src.gui_constants import POSIX
 
-import workshop_creator_gui_resources.gui_constants as gui_constants
-
-POSIX = gui_constants.POSIX
 
 class ProcessDialog(Gtk.Dialog):
+
     def __init__(self, processPath):
         
         Gtk.Dialog.__init__(self, title="Process Output Console Dialog")
