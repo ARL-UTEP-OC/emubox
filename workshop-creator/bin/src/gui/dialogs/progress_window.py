@@ -1,11 +1,9 @@
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import GLib, Gio, Gtk, GObject, Gdk
-import os
-from subprocess import Popen, PIPE
-import threading
+import gi; gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
 
 class ProgressWindow(Gtk.Window):
+
     def __init__(self, title_text):
         Gtk.Window.__init__(self, title=title_text)
         #Configuraiton for this Gtk.Window
