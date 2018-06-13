@@ -38,6 +38,9 @@ class BaseWidget(Gtk.Box):
         self.vBoxManageEntry = Gtk.Entry()
         self.ipAddressEntry = Gtk.Entry()
         self.baseGroupNameEntry = Gtk.Entry()
+        self.baseGroupNameEntry.set_sensitive(False)
+        self.set_can_focus(False)
+
         self.numClonesEntry = Gtk.SpinButton()
         self.numClonesEntry.set_range(1, 50)
         self.numClonesEntry.set_increments(1, 5)

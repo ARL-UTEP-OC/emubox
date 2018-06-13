@@ -27,6 +27,7 @@ class VMWidget(Gtk.Box):
 
         # Declaration of entrys
         self.nameEntry = Gtk.Entry()
+        self.nameEntry.set_sensitive(False)
         self.vrdpEnabledEntry = Gtk.ComboBoxText()
         self.vrdpEnabledEntry.insert_text(0, "true")
         self.vrdpEnabledEntry.insert_text(1, "false")
