@@ -25,7 +25,7 @@ class Session:
     def overwriteRDPToManagerSaveDirectory(self):
         logging.debug("overwriteRDPToManagerSaveDirectory() initiated")
         rdpSourceDir = os.path.join(WORKSHOP_RDP_DIRECTORY, self.currentWorkshop.baseGroupName)
-        if self.currentWorkshop != None:
+        if self.currentWorkshop is not None:
             self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
@@ -49,24 +49,25 @@ class Session:
     def overwriteMaterialsToManagerSaveDirectory(self):
         # TODO; may optimize by only deleting the single file in the manager directory
         logging.debug("overwriteMaterialsToManagerSaveDirectory() initiated")
-
-        if self.currentWorkshop != None:
+        materialsSourceDir = os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName)
+        if self.currentWorkshop is not None:
             self.holdDirectory = os.path.join(MANAGER_SAVE_DIRECTORY, self.currentWorkshop.baseGroupName)
             if not os.path.exists(self.holdDirectory):
                 os.makedirs(self.holdDirectory)
-            MaterialsPath = os.path.join(self.holdDirectory, "Materials")
-            if os.path.exists(MaterialsPath):
-                shutil.rmtree(MaterialsPath, ignore_errors=True)
-            os.makedirs(MaterialsPath)
+            materialsPath = os.path.join(self.holdDirectory, "Materials")
+            if os.path.exists(materialsPath):
+                shutil.rmtree(materialsPath, ignore_errors=True)
+            os.makedirs(materialsPath)
 
-            for holdFile in os.listdir(MaterialsPath):
-                os.remove(os.path.join(MaterialsPath, holdFile))
+            for holdFile in os.listdir(materialsPath):
+                os.remove(os.path.join(materialsPath, holdFile))
 
-            for Materialsfile in os.listdir(
-                    os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName)):
-                shutil.copy2(
-                    os.path.join(WORKSHOP_MATERIAL_DIRECTORY, self.currentWorkshop.baseGroupName, Materialsfile),
-                    os.path.join(self.holdDirectory, "Materials"))
+            logging.debug("Starting copy, taking files from: " + materialsSourceDir + " -- " + str(os.listdir(materialsSourceDir)))
+
+            for materialsFile in os.listdir(materialsSourceDir):
+                logging.debug("executing copy: " + os.path.join(materialsSourceDir, materialsFile) + " to " + os.path.join(self.holdDirectory,"Materials"))
+                shutil.copy2(os.path.join(materialsSourceDir, materialsFile),
+                os.path.join(self.holdDirectory, "Materials"))
 
     def overwriteAllToSaveDirectory(self):
         # separate the below into 2 functions (materials, rdp); then call both
