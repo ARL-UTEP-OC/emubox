@@ -22,6 +22,7 @@ class MaterialWidget(Gtk.Box):
         self.nameLabel = Gtk.Label("Name:")
         # Declaration of entrys
         self.nameEntry = Gtk.Entry()
+        self.nameEntry.set_sensitive(False)
 
         #initialize containers
         #self.add(self.outerVertBox)
