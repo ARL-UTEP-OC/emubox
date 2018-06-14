@@ -430,8 +430,8 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = "python -u " + WORKSHOP_CREATOR_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
-                                                                                 workshopName + ".xml")
+        command = "python -u " + WORKSHOP_CREATOR_FILE_PATH + " \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
+                                                                                 workshopName + ".xml\"")
         logging.debug("cloneWorkshopActionEvent(): instantiating ProcessDialog with command: " + command)
         pd = ProcessDialog(command)
         logging.debug("cloneWorkshopActionEvent(): running ProcessDialog")
@@ -660,7 +660,7 @@ class AppWindow(Gtk.ApplicationWindow):
             tree = ET.parse(self.filename)
             root = tree.getroot()
             vmset = root.find('testbed-setup').find('vm-set')
-            currXMLWorkshopGroupName = vmset.find('base-groupname').text.rstrip().lstrip()
+            currXMLWorkshopGroupName = vmset.find('base-groupname')
             logging.debug(
                 "importActionEvent(): using workshop group name for directory creation: " + currXMLWorkshopGroupName)
 

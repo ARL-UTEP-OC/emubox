@@ -420,7 +420,7 @@ class Session:
 
             # Iterate through list of VMs and whether vrdp is enabled for that vm
             for vm in workshop.vmList:
-                logging.debug("hardSave(): iterating through VMs: " + vm.name)
+                logging.debug("hardSave(): iterating through VMs: |" + vm.name+"|")
                 vm_element = etree.SubElement(vm_set_element, "vm")
                 etree.SubElement(vm_element, "name").text = vm.name
                 etree.SubElement(vm_element, "vrdp-enabled").text = vm.vrdpEnabled

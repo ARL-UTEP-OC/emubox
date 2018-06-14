@@ -45,28 +45,28 @@ class Workshop:
         tree = ET.parse(os.path.join(WORKSHOP_CONFIG_DIRECTORY, inputFile))
         root = tree.getroot()
 
-        self.pathToVBoxManage = root.find('vbox-setup').find('path-to-vboxmanage').text.rstrip().lstrip()
+        self.pathToVBoxManage = root.find('vbox-setup').find('path-to-vboxmanage').text
 
         vmset = root.find('testbed-setup').find('network-config')
-        self.ipAddress = vmset.find('ip-address').text.rstrip().lstrip()
+        self.ipAddress = vmset.find('ip-address').text
 
         vmset = root.find('testbed-setup').find('vm-set')
-        self.baseGroupName = vmset.find('base-groupname').text.rstrip().lstrip()
-        self.numOfClones = vmset.find('num-clones').text.rstrip().lstrip()
-        self.cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
-        self.linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
-        self.baseOutName = vmset.find('base-outname').text.rstrip().lstrip()
-        self.vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
+        self.baseGroupName = vmset.find('base-groupname').text
+        self.numOfClones = vmset.find('num-clones').text
+        self.cloneSnapshots = vmset.find('clone-snapshots').text
+        self.linkedClones = vmset.find('linked-clones').text
+        self.baseOutName = vmset.find('base-outname').text
+        self.vrdpBaseport = vmset.find('vrdp-baseport').text
 
         for vm in vmset.findall('vm'):
-            currentVM = VM(vm.find('name').text.rstrip().lstrip())
-            currentVM.vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
+            currentVM = VM(vm.find('name').text)
+            currentVM.vrdpEnabled = vm.find('vrdp-enabled').text
             internalnetList = vm.findall('internalnet-basename')
             currentVM.internalnetBasenameList=[]
             for internalnet in internalnetList:
-                currentVM.internalnetBasenameList.append(internalnet.text.rstrip().lstrip())
+                currentVM.internalnetBasenameList.append(internalnet.text)
             self.vmList.append(currentVM)
 
         for material in vmset.findall('material'):
-            currentMaterial = Material('', material.find('name').text.rstrip().lstrip())
+            currentMaterial = Material('', material.find('name').text)
             self.materialList.append(currentMaterial)
