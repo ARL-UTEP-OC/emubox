@@ -169,15 +169,14 @@ The Workshop Creator GUI provides a graphical interface to design workshop units
 
 To run the Workshop Creator GUI, first install it by following instruction below. 
 Afterwards, open a terminal and type the following command:
-
+    
+   Windows:
 ```
-Windows cmd line:
 cd workshop-creator
 start_creator.bat
 ```
-or 
+   Linux:
 ```
-Linux terminal:
 cd workshop-creator
 ./start_creator.sh
 ```
@@ -209,6 +208,13 @@ unit, the system will automatically restore the associated VMs from snapshot
 and make it available once again.
 
 The Workshop Manager is integrated into the workshop creator GUI, but it can also be instantiated without the graphical interface by executing the following commands: 
+
+   Windows:
+```
+cd workshop-manager
+start_manager.bat
+```
+   Linux:
 ```
 sudo -s
 cd workshop-manager
