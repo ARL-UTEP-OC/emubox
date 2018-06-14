@@ -90,7 +90,7 @@ This will start a flask webserver and a backend monitor for virtualbox VMs.
 ```
 http://localhost:8080
 ```
-If accessing the EmuBox server from the network (e.g., when hosting workshops for participants), from the remote machine's browser, substitute <localhost> for the IP address of the machine running the server.
+If accessing the EmuBox server from the network (e.g., when hosting workshops for participants), from the remote machine's browser, substitute `localhost` for the IP address of the machine running the server.
 
 ### Linux Live Disc
 A live disc pre-installed with EmuBox is available [here](https://goo.gl/KK769a).
