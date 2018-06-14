@@ -18,23 +18,23 @@ inputFilename = sys.argv[1]
 tree = ET.parse(inputFilename)
 root = tree.getroot()
 
-pathToVirtualBox = root.find('vbox-setup').find('path-to-vboxmanage').text.rstrip().lstrip()
+pathToVirtualBox = root.find('vbox-setup').find('path-to-vboxmanage').text
 vmset = root.find('testbed-setup').find('vm-set')
 
 # ---here we look at each vmset
-numClones = int(vmset.find('num-clones').text.rstrip().lstrip())
-cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
-linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
-baseGroupname = vmset.find('base-groupname').text.rstrip().lstrip()
+numClones = int(vmset.find('num-clones').text)
+cloneSnapshots = vmset.find('clone-snapshots').text
+linkedClones = vmset.find('linked-clones').text
+baseGroupname = vmset.find('base-groupname').text
 
-baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
+baseOutname = vmset.find('base-outname').text
 
-vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
+vrdpBaseport = vmset.find('vrdp-baseport').text
 
 for vm in vmset.findall('vm'):
     myBaseOutname = baseOutname
     for i in range(1, numClones + 1):
-        vmname = vm.find('name').text.rstrip().lstrip()
+        vmname = vm.find('name').text
         newvmName = vmname + myBaseOutname + str(i)
 
         # check to make sure the vm exists:

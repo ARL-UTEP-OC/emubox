@@ -104,28 +104,28 @@ if not os.path.exists(WORKSHOP_RDP_LOCATION):
 tree = ET.parse(inputFilename)
 root = tree.getroot()
 
-pathToVirtualBox = root.find('vbox-setup').find('path-to-vboxmanage').text.rstrip().lstrip()
+pathToVirtualBox = root.find('vbox-setup').find('path-to-vboxmanage').text
 netConfig = root.find('testbed-setup').find('network-config')
 vmset = root.find('testbed-setup').find('vm-set')
 
 # ---get ip address information
-ipAddress = netConfig.find('ip-address').text.rstrip().lstrip()
+ipAddress = netConfig.find('ip-address').text
 
 # ---here we look at each vmset
-numClones = int(vmset.find('num-clones').text.rstrip().lstrip())
-cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
-linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
-baseGroupname = vmset.find('base-groupname').text.rstrip().lstrip()
+numClones = int(vmset.find('num-clones').text)
+cloneSnapshots = vmset.find('clone-snapshots').text
+linkedClones = vmset.find('linked-clones').text
+baseGroupname = vmset.find('base-groupname').text
 
-baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
+baseOutname = vmset.find('base-outname').text
 
-vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
+vrdpBaseport = vmset.find('vrdp-baseport').text
 
 
 for vm in vmset.findall('vm'):
     myBaseOutname = baseOutname
     for i in range(1, numClones + 1):
-        vmname = vm.find('name').text.rstrip().lstrip()
+        vmname = vm.find('name').text
 
         # check to make sure the vm exists:
         getVMsCmd = [pathToVirtualBox, "list", "vms"]
@@ -142,7 +142,7 @@ for vm in vmset.findall('vm'):
         newGroupname = baseGroupname + "/Unit" + str(i)
 
         # vrdp setup
-        vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
+        vrdpEnabled = vm.find('vrdp-enabled').text
         if vrdpEnabled and vrdpEnabled == 'true':
             newVRDPname = str(vrdpBaseport)
             create_rdp_file(WORKSHOP_RDP_LOCATION+baseGroupname+"/",newvmName+"_"+str(vrdpBaseport)+".rdp", ipAddress, vrdpBaseport)

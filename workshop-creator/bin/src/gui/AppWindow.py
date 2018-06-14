@@ -432,7 +432,7 @@ class AppWindow(Gtk.ApplicationWindow):
         workshopName = self.session.currentWorkshop.filename
         command = "python -u " + WORKSHOP_CREATOR_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
                                                                                  workshopName + ".xml")
-        logging.debug("cloneWorkshopActionEvent(): instantiating ProcessDialog")
+        logging.debug("cloneWorkshopActionEvent(): instantiating ProcessDialog with command: " + command)
         pd = ProcessDialog(command)
         logging.debug("cloneWorkshopActionEvent(): running ProcessDialog")
         pd.run()

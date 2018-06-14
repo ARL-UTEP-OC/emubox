@@ -17,23 +17,23 @@ inputFilename = sys.argv[1]
 tree = ET.parse(inputFilename)
 root = tree.getroot()
 
-pathToVirtualBox = root.find('vbox-setup').find('path-to-vboxmanage').text.rstrip().lstrip()
+pathToVirtualBox = root.find('vbox-setup').find('path-to-vboxmanage').text
 vmset = root.find('testbed-setup').find('vm-set')
 
 # ---here we look at each vmset
-numClones = int(vmset.find('num-clones').text.rstrip().lstrip())
-cloneSnapshots = vmset.find('clone-snapshots').text.rstrip().lstrip()
-linkedClones = vmset.find('linked-clones').text.rstrip().lstrip()
-baseGroupname = vmset.find('base-groupname').text.rstrip().lstrip()
+numClones = int(vmset.find('num-clones').text)
+cloneSnapshots = vmset.find('clone-snapshots').text
+linkedClones = vmset.find('linked-clones').text
+baseGroupname = vmset.find('base-groupname').text
 
-baseOutname = vmset.find('base-outname').text.rstrip().lstrip()
+baseOutname = vmset.find('base-outname').text
 
-vrdpBaseport = vmset.find('vrdp-baseport').text.rstrip().lstrip()
+vrdpBaseport = vmset.find('vrdp-baseport').text
 
 for vm in vmset.findall('vm'):
     myBaseOutname = baseOutname
     for i in range(1, numClones + 1):
-        vmname = vm.find('name').text.rstrip().lstrip()
+        vmname = vm.find('name').text
 
         # check to make sure the vm exists:
         getVMsCmd = [pathToVirtualBox, "list", "vms"]
@@ -45,7 +45,7 @@ for vm in vmset.findall('vm'):
         internalnets = vm.findall('internalnet-basename')
         internalnetNames = []
         for internalnet in internalnets:
-            internalnetNames.append(internalnet.text.rstrip().lstrip()+ myBaseOutname + str(i))
+            internalnetNames.append(internalnet.text+ myBaseOutname + str(i))
         print "Internal net names: ", internalnetNames
 
         # clone the vm and give it a name ending with myBaseOutname
@@ -107,7 +107,7 @@ for vm in vmset.findall('vm'):
             print "Could not move VM", newvmName, "to group:", netAdapterName
 
         # vrdp setup
-        vrdpEnabled = vm.find('vrdp-enabled').text.rstrip().lstrip()
+        vrdpEnabled = vm.find('vrdp-enabled').text
         if vrdpEnabled and vrdpEnabled == 'true':
             vrdpCmd = [pathToVirtualBox, "modifyvm", newvmName, "--vrde", "on", "--vrdeport", str(vrdpBaseport)]
             print("\nsetting up vrdp for " + newvmName)

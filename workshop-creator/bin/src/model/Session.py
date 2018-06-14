@@ -146,7 +146,7 @@ class Session:
     def importVBoxWorker(self, tempPath, spinnerDialog):
         logging.debug("importVBoxWorker() initiated " + str(tempPath))
         spinnerDialog.setTitleVal("Importing into VirtualBox")
-        subprocess.call([VBOXMANAGE_DIRECTORY, "import", tempPath])
+        subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath]).communicate()
         spinnerDialog.hide()
 
     def exportFromVBox(self, tempPath, vmname, spinnerDialog):
@@ -156,7 +156,8 @@ class Session:
 
     def exportVBoxWorker(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportVBoxWorker() initiated " + str(tempPath))
-        subprocess.call([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath])
+        spinnerDialog.setTitleVal("Exporting from VirtualBox")
+        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath]).communicate()
         # spinnerDialog.destroy()
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -245,7 +246,7 @@ class Session:
             currVMNum = currVMNum + 1
             logging.debug("Checking if " + folderPath + " exists: ")
             if os.path.exists(folderPath):
-                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " export " + vm.name + " -o \"" + outputOva + "\"")
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " export \"" + vm.name + "\" -o \"" + outputOva + "\"")
                 pd.run()
                 pd.destroy()
             else:
@@ -263,6 +264,7 @@ class Session:
         for vm in self.currentWorkshop.vmList:
             thisMatchFound = False
             for registeredVM in vmList:
+                logging.debug("getAvailableVMs(): checking if |" + vm.name + "| == |"  + registeredVM + "|")
                 if vm.name == registeredVM:
                     thisMatchFound = True
                     break
