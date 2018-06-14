@@ -10,38 +10,7 @@ greenlet to provide high-level synchronous API on top of libev event loop.
 
 EmuBox is composed of two main components: The Workshop Creator and the Workshop Manager.
 
-#### Workshop Creator
-The Workshop Creator automates the creation of workshop units (sets of VMs that compose a cybersecurity scenario). This includes the cloning process.
-During the cloning process, this component adjusts VRDP ports and internal
-network adapter names so that each group is isolated and uniquely accessible by
-participants.
-
-#### Workshop Creator GUI
-The Workshop Creator GUI provides a graphical interface to design workshop units and modify their parameters.  The user can then run the Workshop Creator script via the interface, eliminating the need to set command line parameters manually.
-
-To run the Workshop Creator GUI, navigate to the container directory in a command line and enter the command "python workshop_creator_gui.py".
-
-#### Workshop Manager
-
-The Workshop Manager component of EmuBox is a multi-threaded process that
-monitors VRDP connections for each workshop unit. It also contains a web service
-with a simple front-end that is implemented using the Flask micro web development
-framework. When participants navigate to the front-end they are shown the
-VRDP-enabled workshop units (those that are available and not currently in use).
-The front-end also provides participants with a unique connection string (IP
-address and VRDP port pair) to use in a remote desktop client, such as MS-RDP on
-Windows, Mac OS, iOS, and rdesktop on Linux.
-
-When a participant connects to a a unit, it becomes unavailable and will no
-longer be shown in the web interface. After a participant disconnects from the
-unit, the system will automatically restore the associated VMs from snapshot
-and make it available once again.
-
-#### Workshop Units
-
-The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that compose a workshop unit). Users may connect to these units using remote desktop. When a user disconnects, EmuBox will restore all VMs in a unit from the most recent snapshot.
-
-## Installation
+### Installation
 #### EmuBox has been tested on:
 * Windows 7+ (32 and 64-bit), Windows Server 2012 (64-bit)
 * Ubuntu 16.04 LTE (64-bit)
@@ -60,15 +29,16 @@ The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that com
 #### Windows
 In the directory where you extracted EmuBox:
 ```
-cd workshop-manager
+cd workshop-creator
 ./install_win.bat
 ```
+To create and run a workshop, proceed to [Create and Run a Workshop](#Create-and-Run-a-Workshop).
 
 #### Linux
 In the directory where you extracted EmuBox:
 ```
 sudo -s
-cd workshop-manager
+cd workshop-creator
 ```
 Set the following environment variables
 
@@ -82,35 +52,50 @@ export VBOX_INSTALL_PATH=$(which virtualbox)
 export VBOX_SDK_PATH=`pwd`/bin/VirtualBoxSDK-5.1.20-114628/sdk/
 export VBOX_PROGRAM_PATH=/usr/lib/virtualbox/
 ```
-Now run the installer and start emubox
+Now run the installer
 ```
 source ./install_linux.sh
-./start_manager.sh
 ```
+To create and run a workshop, proceed to [Create and Run a Workshop](#Create-and-Run-a-Workshop).
 
-## Execution
+### Create and Run a Workshop
 
 This will start a flask webserver and a backend monitor for virtualbox VMs.
-#### Windows
-In the directory where you installed EmuBox, type:
-```
-cd workshop-manager
-./start_manager.sh
-```
+1. Ensure that you have one or more virtual machines installed and that they have at least one snapshot (only the latest is used).
+    
+    **Note:** On Linux, you must install VMs with administrator priviledges (i.e., instantiate VirtualBox as root or using sudo), otherwise remote display and other features will not work. 
+2. Start the GUI by executing the following commands in terminal:
 
-#### Linux
-In the directory where you installed EmuBox, type:
+    Windows:
+    ```
+    cd emubox\workshop-creator
+    start_creator.bat
+    ```
+    Linux:
+    ```
+    sudo -s
+    cd emubox\workshop-creator
+    ./start_creator.sh
+    ```
+3. Right-click in the Workshops pane and select "New Workshop" and then enter a workshop name
+4. Select a virtual machine from the list and click the OK button. This will add a new entry in the Workshops pane.
+5. Add any additional VMs and Materials by selecting your workshop and using the context menu. 
+6. Configure workshop related settings on the right Panel including number of clones, linked clones (true value is recommended), and the IP address where users will connect to access the workshop.
+7. Expand the Workshop entry and select a specific VM or Material to configure settings such as VRDP, internal network names, display ports.
+8. Ensure that at least one VM in your workshop has VRDP enabled
+9. Right click on your workshop and select the Create Clones option.
+10.Right click on your workshop and select the Start VMs option.
+11. Click on the Manager tab and toggle the Manager switch to ON.
+12. Open a browser and navigate to the following URL:
 ```
-sudo -s
-cd workshop-manager
-./start_manager.sh
+http://localhost:8080
 ```
-NOTE: You must run VirtualBox as a sudo user in order for remote display, and hence, emubox, to work correctly.
+If accessing from a remote connection, substitute <localhost> for the IP address of the machine running the server (this is what participants will enter to access the EmuBox frontend).
 
 ### Live Disc
 A live disc containing preinstalled EmuBox is available [here](https://goo.gl/KK769a).
 The following are the steps for running EmuBox on the live disc.
-#### DHCP Service Configuration (Optional)
+####DHCP Service Configuration (Optional)
 The DHCP service is pre-configured. To enable the DHCP server execute the following steps:
 
 1. If needed, modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
@@ -127,8 +112,8 @@ The DHCP service is pre-configured. To enable the DHCP server execute the follow
 sudo service isc-dhcp-server start
 ```
 
-#### Remote Desktop (xrdp) Service Configuration (Optional)
-To enable the Remote Display follow the instructions [here](https://www.howtoforge.com/configure-remote-access-to-your-ubuntu-desktop)
+#### VNC Server Configuration (Optional)
+To enable the pre-installed Ubuntu VNC server follow instructions [here](https://www.howtoforge.com/configure-remote-access-to-your-ubuntu-desktop)
 
 #### SSH Server configuration (Optional)
 To enable the SSH service execute the following steps:
@@ -158,11 +143,72 @@ The VPN server is pre-configured. To enable the PPTPD VPN server execute the fol
 sudo service pptpd start
 ```
 
-#### EmuBox Manager
 To Start EmuBox:
 1. Open a terminal window and execute the following commands:
 ```
 sudo -s
-cd /root/emubox/workshop-manager
+cd /root/emubox/workshop-creator
+./start_creator.sh
+```
+  
+### Additional Details
+#### Workshop Creator
+The Workshop Creator automates the creation of workshop units (sets of VMs that compose a cybersecurity scenario). This includes the cloning process.
+During the cloning process, this component adjusts VRDP ports and internal
+network adapter names so that each group is isolated and uniquely accessible by
+participants.
+
+The Workshop Creator GUI provides a graphical interface to design workshop units and modify their parameters.  The user can then run the Workshop Creator script via the interface, eliminating the need to set command line parameters manually.
+
+To run the Workshop Creator GUI, first install it by following instruction below. 
+Afterwards, open a terminal and type the following command:
+
+```
+Windows cmd line:
+cd workshop-creator
+start_creator.bat
+```
+or 
+```
+Linux terminal:
+cd workshop-creator
+./start_creator.sh
+```
+
+The Workshop Creator can also be used without the graphical interface by running the various scripts in the following scripts:
+```
+workshop-creator/bin/workshop-creator.py (clones VMs and groups them into Workshop Units)
+workshop-creator/bin/workshop-start.py (starts (headless mode) VMs in Workshop Units)
+workshop-creator/bin/workshop-rdp.py (creates Remote Desktop files for VRDP-enabled VMs in Workshop Units)
+workshop-creator/bin/workshop-poweroff.py (turns off VMs in Workshop Units)
+workshop-creator/bin/workshop-restore.py (restores most recent snapshot of VMs in Workshop Units - only those not in a run state)
+
+Note: All of these scripts read a standard XML file as input (samples are provided in the workshop-creator/sample_configs folder 
+``` 
+
+#### Workshop Manager
+
+The Workshop Manager component of EmuBox is a multi-threaded process that
+monitors VRDP connections for each workshop unit. It also contains a web service
+with a simple front-end that is implemented using the Flask micro web development
+framework. When participants navigate to the front-end they are shown the
+VRDP-enabled workshop units (those that are available and not currently in use).
+The front-end also provides participants with a unique connection string (IP
+address and VRDP port pair) to use in a remote desktop client, such as MS-RDP on
+Windows, Mac OS, iOS, and rdesktop on Linux.
+
+When a participant connects to a a unit, it becomes unavailable and will no
+longer be shown in the web interface. After a participant disconnects from the
+unit, the system will automatically restore the associated VMs from snapshot
+and make it available once again.
+
+The Workshop Manager is integrated into the workshop creator GUI, but it can also be instantiated without the graphical interface by executing the following commands: 
+```
+sudo -s
+cd workshop-manager
 ./start_manager.sh
 ```
+
+#### Workshop Units
+
+The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that compose a workshop unit). Users may connect to these units using remote desktop. When a user disconnects, EmuBox will restore all VMs in a unit from the most recent snapshot.
