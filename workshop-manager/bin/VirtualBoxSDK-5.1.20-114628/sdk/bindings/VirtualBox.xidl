@@ -5765,7 +5765,7 @@ and "VAR" for unsetting. -->
         </result>
 
       </desc>
-      <param name="name" type="wstring" dir="in">
+      <param name="name" type="wstring" dir="in">``
         <desc>Name of the storage controller.</desc>
       </param>
       <param name="controllerPort" type="long" dir="in">
