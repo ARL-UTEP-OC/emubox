@@ -32,7 +32,7 @@ In the directory where you extracted EmuBox:
 cd workshop-creator
 ./install_win.bat
 ```
-To create and run a workshop, proceed to [Create and Run a Workshop](#Create-and-Run-a-Workshop).
+To create and run a workshop, proceed to [Create and Run a Workshop](#create-and-run-a-workshop).
 
 #### Linux
 In the directory where you extracted EmuBox:
@@ -56,7 +56,7 @@ Now run the installer
 ```
 source ./install_linux.sh
 ```
-To create and run a workshop, proceed to [Create and Run a Workshop](#Create-and-Run-a-Workshop).
+To create and run a workshop, proceed to [Create and Run a Workshop](#create-and-run-a-workshop).
 
 ### Create and Run a Workshop
 
