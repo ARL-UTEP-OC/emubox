@@ -430,7 +430,7 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = "python -u " + WORKSHOP_CREATOR_FILE_PATH + " \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
+        command = "python -u \"" + WORKSHOP_CREATOR_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
                                                                                  workshopName + ".xml\"")
         logging.debug("cloneWorkshopActionEvent(): instantiating ProcessDialog with command: " + command)
         pd = ProcessDialog(command)
@@ -447,8 +447,8 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = "python -u " + VM_STARTER_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
-                                                                           workshopName + ".xml")
+        command = "python -u \"" + VM_STARTER_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
+                                                                           workshopName + ".xml\"")
         logging.debug("startVMsActionEvent(): instantiating ProcessDialog")
         pd = ProcessDialog(command)
         logging.debug("startVMsActionEvent(): running ProcessDialog")
@@ -463,8 +463,8 @@ class AppWindow(Gtk.ApplicationWindow):
             return
 
         workshopName = self.session.currentWorkshop.filename
-        command = "python -u " + VM_POWEROFF_FILE_PATH + " " + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
-                                                                            workshopName + ".xml")
+        command = "python -u \"" + VM_POWEROFF_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
+                                                                            workshopName + ".xml\"")
         logging.debug("poweroffVMsActionEvent(): instantiating ProcessDialog")
         pd = ProcessDialog(command)
         logging.debug("poweroffVMsActionEvent(): running ProcessDialog")

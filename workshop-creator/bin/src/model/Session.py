@@ -83,7 +83,7 @@ class Session:
 
     def scriptWorker(self, filePath, script):
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
-        pd = ProcessDialog("python -u " + script + " " + filePath)
+        pd = ProcessDialog("python -u \"" + script + "\" \"" + filePath + "\"")
         pd.set_title("Processing... please wait")
         pd.run()
         pd.destroy()
