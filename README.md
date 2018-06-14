@@ -11,22 +11,22 @@ greenlet to provide high-level synchronous API on top of libev event loop.
 EmuBox is composed of two main components: The Workshop Creator and the Workshop Manager.
 
 ### Installation
-#### EmuBox has been tested on:
+EmuBox has been tested on:
 * Windows 7+ (32 and 64-bit), Windows Server 2012 (64-bit)
 * Ubuntu 16.04 LTE (64-bit)
 
-#### Requirements
-##### You must install these manually:
+##### Requirements
+You must install the following manually:
 * Python 2.x (tested with [v2.7](https://www.python.org/download/releases/2.7/))
 * VirtualBox > 5.0 and matching VirtualBox API and Extensions Pack (tested with [v5.1.10](https://www.virtualbox.org/wiki/Downloads))
 
-##### These are automatically installed with the included install script
+These are automatically installed with the included install script
 * VirtualEnv [v15.1.0](https://virtualenv.pypa.io/en/stable/)
 * LXML [v4.0.0](http://lxml.de/changes-4.0.0.html)
 * Flask [v0.12](http://pypi.python.org/pypi/Flask/0.12)
 * PyGI based on [this Windows Installer](https://sourceforge.net/projects/pygobjectwin32/files/pygi-aio-3.10.2-win32_rev18-setup.exe/download)
 
-#### Windows
+##### Windows Instructions
 In the directory where you extracted EmuBox:
 ```
 cd workshop-creator
@@ -34,7 +34,7 @@ cd workshop-creator
 ```
 To create and run a workshop, proceed to [Create and Run a Workshop](#create-and-run-a-workshop).
 
-#### Linux
+##### Linux
 In the directory where you extracted EmuBox:
 ```
 sudo -s
@@ -95,7 +95,7 @@ If accessing from a remote connection, substitute <localhost> for the IP address
 ### Live Disc
 A live disc containing preinstalled EmuBox is available [here](https://goo.gl/KK769a).
 The following are the steps for running EmuBox on the live disc.
-####DHCP Service Configuration (Optional)
+#####DHCP Service Configuration (Optional)
 The DHCP service is pre-configured. To enable the DHCP server execute the following steps:
 
 1. If needed, modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
@@ -112,10 +112,10 @@ The DHCP service is pre-configured. To enable the DHCP server execute the follow
 sudo service isc-dhcp-server start
 ```
 
-#### VNC Server Configuration (Optional)
+##### VNC Server Configuration (Optional)
 To enable the pre-installed Ubuntu VNC server follow instructions [here](https://www.howtoforge.com/configure-remote-access-to-your-ubuntu-desktop)
 
-#### SSH Server configuration (Optional)
+##### SSH Server configuration (Optional)
 To enable the SSH service execute the following steps:
 
 1. Start the ssh server
@@ -123,7 +123,7 @@ To enable the SSH service execute the following steps:
 sudo service ssh start
 ```
 
-#### VPN Server (Optional)
+##### VPN Server (Optional)
 The VPN server is pre-configured. To enable the PPTPD VPN server execute the following steps:
 
 1. If needed, change the IP addresses assigned to the server node and connected clients by modifying the following
@@ -152,7 +152,7 @@ cd /root/emubox/workshop-creator
 ```
   
 ### Additional Details
-#### Workshop Creator
+##### Workshop Creator
 The Workshop Creator automates the creation of workshop units (sets of VMs that compose a cybersecurity scenario). This includes the cloning process.
 During the cloning process, this component adjusts VRDP ports and internal
 network adapter names so that each group is isolated and uniquely accessible by
@@ -182,11 +182,10 @@ workshop-creator/bin/workshop-start.py (starts (headless mode) VMs in Workshop U
 workshop-creator/bin/workshop-rdp.py (creates Remote Desktop files for VRDP-enabled VMs in Workshop Units)
 workshop-creator/bin/workshop-poweroff.py (turns off VMs in Workshop Units)
 workshop-creator/bin/workshop-restore.py (restores most recent snapshot of VMs in Workshop Units - only those not in a run state)
-
-Note: All of these scripts read a standard XML file as input (samples are provided in the workshop-creator/sample_configs folder 
 ``` 
+**Note**: All of these scripts read a standard XML file as input (samples are provided in the `workshop-creator/sample_configs` folder. 
 
-#### Workshop Manager
+##### Workshop Manager
 
 The Workshop Manager component of EmuBox is a multi-threaded process that
 monitors VRDP connections for each workshop unit. It also contains a web service
@@ -209,6 +208,6 @@ cd workshop-manager
 ./start_manager.sh
 ```
 
-#### Workshop Units
+##### Workshop Units
 
 The EmuBox uses the VirtualBox API to monitor and update groups of VMs (that compose a workshop unit). Users may connect to these units using remote desktop. When a user disconnects, EmuBox will restore all VMs in a unit from the most recent snapshot.
