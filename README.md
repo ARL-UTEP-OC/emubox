@@ -1,4 +1,10 @@
 # The Emulation SandBox (EmuBox)
+## Table of Contents
+* [Description](#description)
+* [Installation](#installation)
+* [Create and Run a Workshop](#create-and-run-a-workshop)
+* [Linux Live Disc](#linux-live-disc)
+* [EmuBox Construct Details](#emubox-construct-details)
 
 ### Description
 EmuBox uses the Flask python microframework as the web server gateway interface (WSGI) application.
@@ -59,8 +65,9 @@ source ./install_linux.sh
 To create and run a workshop, proceed to [Create and Run a Workshop](#create-and-run-a-workshop).
 
 ### Create and Run a Workshop
+EmuBox runs on a flask webserver and a backend monitor for virtualbox VMs.
+Before starting, install Emubox as described [here](#installation).
 
-This will start a flask webserver and a backend monitor for virtualbox VMs.
 1. Ensure that you have one or more virtual machines installed and that they have at least one snapshot (only the latest is used).
     
     **Note:** On Linux, you must install VMs with administrator priviledges (i.e., instantiate VirtualBox as root or using sudo), otherwise remote display and other features will not work. 
@@ -151,7 +158,7 @@ cd /root/emubox/workshop-creator
 ./start_creator.sh
 ```
   
-### Additional Details
+### EmuBox Construct Details
 ##### Workshop Creator
 The Workshop Creator automates the creation of workshop units (sets of VMs that compose a cybersecurity scenario). This includes the cloning process.
 During the cloning process, this component adjusts VRDP ports and internal
