@@ -87,7 +87,7 @@ Before starting, install Emubox as described [here](#installation).
 3. Right-click in the Workshops pane and select "New Workshop" and then enter a workshop name.
 4. Select a virtual machine from the list and click the OK button. This will add a new entry in the Workshops pane.
 5. Add any additional VMs and Materials by selecting your workshop and using the context (right-click) menu. 
-6. Configure workshop related settings on the right Panel including number of clones, linked clones (true value is recommended), and the IP address where users will connect to access the workshop.
+6. Configure workshop settings on the right Panel to include the number of clones, usage of linked clones (true value is recommended), and the IP address where users will connect to access the workshop.
 7. Expand the Workshop entry and select a specific VM or Material to configure settings such as VRDP, internal network names, display ports.
 8. Ensure that at least one VM in your workshop has VRDP enabled.
 9. Right click on your workshop and select the Create Clones option.
