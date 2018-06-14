@@ -64,7 +64,7 @@ This will start a flask webserver and a backend monitor for virtualbox VMs.
 1. Ensure that you have one or more virtual machines installed and that they have at least one snapshot (only the latest is used).
     
     **Note:** On Linux, you must install VMs with administrator priviledges (i.e., instantiate VirtualBox as root or using sudo), otherwise remote display and other features will not work. 
-2. Start the GUI by executing the following commands in terminal:
+2. Start the GUI by executing the following commands in a terminal:
 
     Windows:
     ```
@@ -77,23 +77,23 @@ This will start a flask webserver and a backend monitor for virtualbox VMs.
     cd emubox\workshop-creator
     ./start_creator.sh
     ```
-3. Right-click in the Workshops pane and select "New Workshop" and then enter a workshop name
+3. Right-click in the Workshops pane and select "New Workshop" and then enter a workshop name.
 4. Select a virtual machine from the list and click the OK button. This will add a new entry in the Workshops pane.
-5. Add any additional VMs and Materials by selecting your workshop and using the context menu. 
+5. Add any additional VMs and Materials by selecting your workshop and using the context (right-click) menu. 
 6. Configure workshop related settings on the right Panel including number of clones, linked clones (true value is recommended), and the IP address where users will connect to access the workshop.
 7. Expand the Workshop entry and select a specific VM or Material to configure settings such as VRDP, internal network names, display ports.
-8. Ensure that at least one VM in your workshop has VRDP enabled
+8. Ensure that at least one VM in your workshop has VRDP enabled.
 9. Right click on your workshop and select the Create Clones option.
-10.Right click on your workshop and select the Start VMs option.
+10. Right click on your workshop and select the Start VMs option.
 11. Click on the Manager tab and toggle the Manager switch to ON.
 12. Open a browser and navigate to the following URL:
 ```
 http://localhost:8080
 ```
-If accessing from a remote connection, substitute <localhost> for the IP address of the machine running the server (this is what participants will enter to access the EmuBox frontend).
+If accessing the EmuBox server from the network (e.g., when hosting workshops for participants), from the remote machine's browser, substitute <localhost> for the IP address of the machine running the server.
 
-### Live Disc
-A live disc containing preinstalled EmuBox is available [here](https://goo.gl/KK769a).
+### Linux Live Disc
+A live disc pre-installed with EmuBox is available [here](https://goo.gl/KK769a).
 The following are the steps for running EmuBox on the live disc.
 #####DHCP Service Configuration (Optional)
 The DHCP service is pre-configured. To enable the DHCP server execute the following steps:
