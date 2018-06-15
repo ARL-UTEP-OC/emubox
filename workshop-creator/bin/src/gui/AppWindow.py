@@ -660,7 +660,7 @@ class AppWindow(Gtk.ApplicationWindow):
             tree = ET.parse(self.filename)
             root = tree.getroot()
             vmset = root.find('testbed-setup').find('vm-set')
-            currXMLWorkshopGroupName = vmset.find('base-groupname')
+            currXMLWorkshopGroupName = vmset.find('base-groupname').text
             logging.debug(
                 "importActionEvent(): using workshop group name for directory creation: " + currXMLWorkshopGroupName)
 

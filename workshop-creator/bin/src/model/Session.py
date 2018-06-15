@@ -146,6 +146,7 @@ class Session:
     def importVBoxWorker(self, tempPath, spinnerDialog):
         logging.debug("importVBoxWorker() initiated " + str(tempPath))
         spinnerDialog.setTitleVal("Importing into VirtualBox")
+        spinnerDialog.setText("VM is importing, please wait...")
         subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath]).communicate()
         spinnerDialog.hide()
 
