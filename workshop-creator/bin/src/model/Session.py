@@ -6,7 +6,7 @@ import shutil
 import zipfile
 import logging
 from lxml import etree
-from src.gui.dialogs.process_dialog import ProcessDialog
+from src.gui.dialogs.ProcessDialog import ProcessDialog
 from src.model.Workshop import Workshop
 from src.gui_constants import (MANAGER_SAVE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY,
                                WORKSHOP_MATERIAL_DIRECTORY, WORKSHOP_RDP_CREATOR_FILE_PATH,
@@ -159,7 +159,7 @@ class Session:
         logging.debug("exportVBoxWorker() initiated " + str(tempPath))
         spinnerDialog.setTitleVal("Exporting VM")
         spinnerDialog.setLabelVal("Creating OVA file for VM: " + vmname + ". Please wait...")
-        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath]).communicate()
+        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath,"--iso"]).communicate()
         # spinnerDialog.destroy()
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -248,7 +248,7 @@ class Session:
             currVMNum = currVMNum + 1
             logging.debug("Checking if " + folderPath + " exists: ")
             if os.path.exists(folderPath):
-                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " export \"" + vm.name + "\" -o \"" + outputOva + "\"")
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " export \"" + vm.name + "\" -o \"" + outputOva + "\" --iso")
                 pd.run()
                 pd.destroy()
             else:
