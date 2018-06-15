@@ -91,7 +91,7 @@ class Session:
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         logging.debug("unzipWorker() initiated " + str(zipPath))
-        spinnerDialog.setTitleVal("Decompressing EBX archive")
+        spinnerDialog.setTitleVal("Unpacking EBX")
 
         block_size = 1048576
         z = zipfile.ZipFile(zipPath, 'r')
@@ -145,8 +145,8 @@ class Session:
 
     def importVBoxWorker(self, tempPath, spinnerDialog):
         logging.debug("importVBoxWorker() initiated " + str(tempPath))
-        spinnerDialog.setTitleVal("Importing into VirtualBox")
-        spinnerDialog.setText("VM is importing, please wait...")
+        spinnerDialog.setTitleVal("Importing VM")
+        spinnerDialog.setLabelVal("Importing OVA file. Please wait...")
         subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath]).communicate()
         spinnerDialog.hide()
 
@@ -157,7 +157,8 @@ class Session:
 
     def exportVBoxWorker(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportVBoxWorker() initiated " + str(tempPath))
-        spinnerDialog.setTitleVal("Exporting from VirtualBox")
+        spinnerDialog.setTitleVal("Exporting VM")
+        spinnerDialog.setLabelVal("Creating OVA file for VM: " + vmname + ". Please wait...")
         subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath]).communicate()
         # spinnerDialog.destroy()
 
