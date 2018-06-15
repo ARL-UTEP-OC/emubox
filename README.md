@@ -102,7 +102,7 @@ If accessing the EmuBox server from the network (e.g., when hosting workshops fo
 ### Linux Live Disc
 A live disc pre-installed with EmuBox is available [here](https://goo.gl/KK769a).
 The following are the steps for running EmuBox on the live disc.
-#####DHCP Service Configuration (Optional)
+##### DHCP Service Configuration (Optional)
 The DHCP service is pre-configured. To enable the DHCP server execute the following steps:
 
 1. If needed, modify the following files to assign the dhcp server interface and network range (enp0s3 is the default interface):
