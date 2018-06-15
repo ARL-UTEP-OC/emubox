@@ -327,6 +327,8 @@ class Session:
         logging.debug("loadXMLFiles() initiated " + str(directory))
         # Here we will iterate through all the files that end with .xml
         # in the workshop_configs directory
+        if not os.path.exists(directory):
+            os.makedirs(directory)
         for filename in os.listdir(directory):
             if filename.endswith(".xml"):
                 workshop = Workshop(filename, None)
