@@ -8,8 +8,8 @@ else:
     VBOXMANAGE_DIRECTORY = "VBoxManage"
     POSIX = True
 # GUI constants
-BOX_SPACING = 5
-PADDING = 5
+BOX_SPACING = 0
+PADDING = 1
 WORKSHOP_CONFIG_DIRECTORY = os.path.join(os.getcwd(),"workshop_creator_gui_resources","workshop_configs")
 WORKSHOP_MATERIAL_DIRECTORY = os.path.join(os.getcwd(),"workshop_creator_gui_resources","workshop_materials")
 WORKSHOP_RDP_DIRECTORY = os.path.join(os.getcwd(), "workshop_creator_gui_resources","workshop_rdp")

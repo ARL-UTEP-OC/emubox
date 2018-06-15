@@ -31,7 +31,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.set_default_size(250, 180)
         # self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_border_width(8)
+        self.set_border_width(5)
 
         # TODO: fix error when soft saving
         self.isRemoveVM = False
