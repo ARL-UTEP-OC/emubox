@@ -105,7 +105,7 @@ class ProcessDialog(Gtk.Dialog):
                 self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
             self.curr_read_buff_pos = self.curr_out_buff_pos
         if self.proc_complete != True:
-            logging.debug("appendText(): process executing...")
+            #logging.debug("appendText(): process executing...")
             return True
         else:
             logging.debug("appendText(): process completed execution, finishing processing")

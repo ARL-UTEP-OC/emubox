@@ -7,7 +7,7 @@ from gi.repository import Gtk
 from src.gui.manager_gui import ManagerBox
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
-from src.gui.dialogs.process_dialog import ProcessDialog
+from src.gui.dialogs.ProcessDialog  import ProcessDialog
 from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.widgets.BaseWidget import BaseWidget
