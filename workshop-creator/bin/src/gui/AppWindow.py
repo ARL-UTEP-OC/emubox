@@ -700,4 +700,5 @@ class AppWindow(Gtk.ApplicationWindow):
     # Executes when the window is closed
     def on_delete(self, event, widget):
         logging.debug("on_delete() initiated: " + str(event) + " " + str(widget))
+        self.managerBox.destroy_process()
         self.fullSave()
