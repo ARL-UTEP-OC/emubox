@@ -268,7 +268,6 @@ class AppWindow(Gtk.ApplicationWindow):
                     self.holdVRDP = 1
                 self.vmWidget.vrdpEnabledEntry.set_active(self.holdVRDP)
                 self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
-                self.vmWidget.initializeSignals(self.inetActionEvent)
 
                 if len(self.vmWidget.inetBasenameWidgetList) > 1:
                     for k, rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
@@ -356,17 +355,9 @@ class AppWindow(Gtk.ApplicationWindow):
         logging.debug("restoreSnapshotsActionEvent() initiated")
         self.session.runScript(WORKSHOP_RESTORE_FILE_PATH)
 
-    def inetActionEvent(self, widget, event):
-        logging.debug("inetActionEvent() initiated: " + str(event) + " event.button: " + str(event.button))
-        if event.button == 3:
-            logging.debug("event.button == 3 ")
-            self.focusedInetWidget = widget
-            self.inetMenu.show_all()
-            self.inetMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
-
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
-        self.vmWidget.addInet(self.inetActionEvent)
+        self.vmWidget.addInet()
         self.actionBox.show_all()
 
     def removeInetEventHandler(self, menuItem, *data):
