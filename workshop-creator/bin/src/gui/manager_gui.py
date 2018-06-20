@@ -48,7 +48,7 @@ class ManagerBox(Gtk.Box):
 
         clients_row = Gtk.ListBoxRow()
         client_info = Gtk.Box()
-        self.num_clients_label_header = Gtk.Label("Number of clients connected: ", xalign=0)
+        self.num_clients_label_header = Gtk.Label("Participants viewing frontend: ", xalign=0)
         self.num_clients_label_footer = Gtk.Label()
         client_info.pack_start(self.num_clients_label_header, True, True, 0)
         client_info.pack_start(self.num_clients_label_footer, True, True, 0)
@@ -87,7 +87,7 @@ class ManagerBox(Gtk.Box):
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
                         line = line.split(':')
-                        if line[0] == "Number of clients connected":
+                        if line[0] == "Participants viewing frontend: ":
                             self.num_clients = line[1]
                             self.num_clients_label_footer.set_label(str(self.num_clients))
 
