@@ -100,7 +100,7 @@ class ManagerBox(Gtk.Box):
             # wait for the subprocess to exit
             self.p.wait()
         except Exception as x:
-            if self.p is None and self.p.poll() is not None:
+            if self.p != None and self.p.poll() == None:
                 self.p.terminate()
 
     def destroy_process(self):
