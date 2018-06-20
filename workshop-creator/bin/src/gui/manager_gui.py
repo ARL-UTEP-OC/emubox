@@ -1,3 +1,4 @@
+import time
 import ast
 import threading
 import gi; gi.require_version('Gtk', '3.0')
@@ -76,8 +77,16 @@ class ManagerBox(Gtk.Box):
             t = threading.Thread(target=self.watchProcess, args=(command,))
             t.start()
         else:
-            # Destroy the thread
+            # Destroy the process and disable switch until process is terminated
+            button.set_sensitive(False)
             self.destroy_process()
+
+            # Check if process is still running and wait till finished to re-enable the switch
+            while self.p.poll() is None:
+                time.sleep(0.1)
+            button.set_sensitive(True)
+
+
 
     def watchProcess(self, processPath):
         #Function for starting the process and capturing its stdout
@@ -108,6 +117,8 @@ class ManagerBox(Gtk.Box):
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
             self.p.terminate()
+
+        # Restore labels and internal list of running workshops
         self.num_clients_label_footer.set_label("")
         self.workshops_running = None
         for child in self.workshops_list_box.get_children():
