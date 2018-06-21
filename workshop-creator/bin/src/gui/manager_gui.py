@@ -24,7 +24,7 @@ class ManagerBox(Gtk.Box):
         self.p = None
 
         self.set_border_width(PADDING)
-        self.outer_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.outer_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=50)
 
         self.top_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.bottom_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -33,10 +33,10 @@ class ManagerBox(Gtk.Box):
 
         list_box = Gtk.ListBox()
         list_box.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.top_box.pack_start(list_box, False, False, 0)
+        self.top_box.pack_start(list_box, True, True, 0)
 
         manager_row = Gtk.ListBoxRow()
-        manager_selection = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=475)
+        manager_selection = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         manager_label = Gtk.Label("Manager", xalign=0)
         manager_selection.pack_start(manager_label, True, True, 0)
         switch = Gtk.Switch()
@@ -68,7 +68,7 @@ class ManagerBox(Gtk.Box):
         self.workshops_list_box = Gtk.ListBox()
         self.workshops_list_box.set_selection_mode(Gtk.SelectionMode.NONE)
         self.bottom_box.pack_start(self.workshops_list_box, True, True, 0)
-        self.add(self.outer_box)
+        self.pack_start(self.outer_box, True, True, 0)
 
     def startManagerActionEvent(self, button, active):
         command = ["python", MANAGER_BIN_DIRECTORY+"/instantiator.py"]
@@ -85,8 +85,6 @@ class ManagerBox(Gtk.Box):
             while self.p.poll() is None:
                 time.sleep(0.1)
             button.set_sensitive(True)
-
-
 
     def watchProcess(self, processPath):
         #Function for starting the process and capturing its stdout
