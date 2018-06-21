@@ -1,3 +1,4 @@
+import time
 import ast
 import threading
 import gi; gi.require_version('Gtk', '3.0')
@@ -23,7 +24,7 @@ class ManagerBox(Gtk.Box):
         self.p = None
 
         self.set_border_width(PADDING)
-        self.outer_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.outer_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=50)
 
         self.top_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.bottom_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -32,10 +33,10 @@ class ManagerBox(Gtk.Box):
 
         list_box = Gtk.ListBox()
         list_box.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.top_box.pack_start(list_box, False, False, 0)
+        self.top_box.pack_start(list_box, True, True, 0)
 
         manager_row = Gtk.ListBoxRow()
-        manager_selection = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=475)
+        manager_selection = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         manager_label = Gtk.Label("Manager", xalign=0)
         manager_selection.pack_start(manager_label, True, True, 0)
         switch = Gtk.Switch()
@@ -48,7 +49,7 @@ class ManagerBox(Gtk.Box):
 
         clients_row = Gtk.ListBoxRow()
         client_info = Gtk.Box()
-        self.num_clients_label_header = Gtk.Label("Number of clients connected: ", xalign=0)
+        self.num_clients_label_header = Gtk.Label("Participants viewing frontend: ", xalign=0)
         self.num_clients_label_footer = Gtk.Label()
         client_info.pack_start(self.num_clients_label_header, True, True, 0)
         client_info.pack_start(self.num_clients_label_footer, True, True, 0)
@@ -67,7 +68,7 @@ class ManagerBox(Gtk.Box):
         self.workshops_list_box = Gtk.ListBox()
         self.workshops_list_box.set_selection_mode(Gtk.SelectionMode.NONE)
         self.bottom_box.pack_start(self.workshops_list_box, True, True, 0)
-        self.add(self.outer_box)
+        self.pack_start(self.outer_box, True, True, 0)
 
     def startManagerActionEvent(self, button, active):
         command = ["python", MANAGER_BIN_DIRECTORY+"/instantiator.py"]
@@ -76,8 +77,14 @@ class ManagerBox(Gtk.Box):
             t = threading.Thread(target=self.watchProcess, args=(command,))
             t.start()
         else:
-            # Destroy the thread
+            # Destroy the process and disable switch until process is terminated
+            button.set_sensitive(False)
             self.destroy_process()
+
+            # Check if process is still running and wait till finished to re-enable the switch
+            while self.p.poll() is None:
+                time.sleep(0.1)
+            button.set_sensitive(True)
 
     def watchProcess(self, processPath):
         #Function for starting the process and capturing its stdout
@@ -87,7 +94,7 @@ class ManagerBox(Gtk.Box):
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
                         line = line.split(':')
-                        if line[0] == "Number of clients connected":
+                        if line[0] == "Participants viewing frontend: ":
                             self.num_clients = line[1]
                             self.num_clients_label_footer.set_label(str(self.num_clients))
 
@@ -100,7 +107,7 @@ class ManagerBox(Gtk.Box):
             # wait for the subprocess to exit
             self.p.wait()
         except Exception as x:
-            if self.p is None and self.p.poll() is not None:
+            if self.p != None and self.p.poll() == None:
                 self.p.terminate()
 
     def destroy_process(self):
@@ -108,6 +115,8 @@ class ManagerBox(Gtk.Box):
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
             self.p.terminate()
+
+        # Restore labels and internal list of running workshops
         self.num_clients_label_footer.set_label("")
         self.workshops_running = None
         for child in self.workshops_list_box.get_children():

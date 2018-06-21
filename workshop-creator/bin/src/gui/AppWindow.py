@@ -3,7 +3,7 @@ import shutil
 import logging
 import xml.etree.ElementTree as ET
 import gi; gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from src.gui.manager_gui import ManagerBox
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
@@ -153,6 +153,15 @@ class AppWindow(Gtk.ApplicationWindow):
         self.itemMenu = Gtk.Menu()
         self.itemMenu.append(self.removeItem)
 
+        # Capture Ctrl-S for saving
+        self.connect("key-press-event", self.keyHandler)
+
+    def keyHandler(self, widget, event):
+        # Check if Ctrl is held down while pressing the 's' or 'S' key. 'S' will occur if caps-lock is on
+        if event.state == Gdk.ModifierType.CONTROL_MASK and event.keyval == Gdk.KEY_s or \
+                event.state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.LOCK_MASK and event.keyval == Gdk.KEY_S:
+            self.fullSave()
+
     def initializeContainers(self):
         self.add(self.notebook)
 
@@ -268,7 +277,6 @@ class AppWindow(Gtk.ApplicationWindow):
                     self.holdVRDP = 1
                 self.vmWidget.vrdpEnabledEntry.set_active(self.holdVRDP)
                 self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
-                self.vmWidget.initializeSignals(self.inetActionEvent)
 
                 if len(self.vmWidget.inetBasenameWidgetList) > 1:
                     for k, rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
@@ -356,17 +364,9 @@ class AppWindow(Gtk.ApplicationWindow):
         logging.debug("restoreSnapshotsActionEvent() initiated")
         self.session.runScript(WORKSHOP_RESTORE_FILE_PATH)
 
-    def inetActionEvent(self, widget, event):
-        logging.debug("inetActionEvent() initiated: " + str(event) + " event.button: " + str(event.button))
-        if event.button == 3:
-            logging.debug("event.button == 3 ")
-            self.focusedInetWidget = widget
-            self.inetMenu.show_all()
-            self.inetMenu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
-
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
-        self.vmWidget.addInet(self.inetActionEvent)
+        self.vmWidget.addInet()
         self.actionBox.show_all()
 
     def removeInetEventHandler(self, menuItem, *data):
@@ -700,4 +700,5 @@ class AppWindow(Gtk.ApplicationWindow):
     # Executes when the window is closed
     def on_delete(self, event, widget):
         logging.debug("on_delete() initiated: " + str(event) + " " + str(widget))
+        self.managerBox.destroy_process()
         self.fullSave()

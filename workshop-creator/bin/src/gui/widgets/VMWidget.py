@@ -73,10 +73,9 @@ class VMWidget(Gtk.Box):
         for widget in self.inetBasenameWidgetList:
             widget.connect("button-press-event", eventHandler)
 
-    def addInet(self, eventHandler):
+    def addInet(self):
         inet = InternalnetBasenameWidget()
         inet.entry.set_text("default_inet")
-        inet.connect("button-press-event", eventHandler)
         self.inetBasenameWidgetList.append(inet)
         self.iNetVerBox.pack_start(inet, False, False, 0)
 
