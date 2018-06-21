@@ -172,7 +172,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.actionBox.pack_start(self.scrolledActionBox, True, True, PADDING)
 
         self.scrolledActionBox.add(self.scrolledInnerBox)
-        self.scrolledActionBox.set_min_content_width(400)
+        self.scrolledActionBox.set_min_content_width(450)
         self.scrolledActionBox.set_min_content_height(600)
 
     def onItemSelected(self, selection):
