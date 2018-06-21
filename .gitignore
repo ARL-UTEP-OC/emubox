@@ -49,8 +49,6 @@ workshop-creator/bin/workshop_creator_gui_resources/workshop_configs
 workshop-creator/bin/workshop_creator_gui_resources/workshop_materials
 workshop-creator/bin/workshop_creator_gui_resources/workshop_rdp
 workshop-creator/creator-container
-workshop-creator/python27-32bit-gtk3
-workshop-creator/python27-64bit-gtk3
 workshop-creator/start_creator.bat
 
 workshop-manager/bin/WorkshopData
