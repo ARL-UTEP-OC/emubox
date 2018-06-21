@@ -1,7 +1,7 @@
 import logging
 import gi; gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from src.gui_constants import BOX_SPACING, PADDING
+from src.gui_constants import BOX_SPACING, PADDING, STATIC_DIRECTORY
 
 
 # This class is the widget inside of vmWidget
@@ -15,9 +15,11 @@ class InternalnetBasenameWidget(Gtk.EventBox):
 
         self.label = Gtk.Label("Internalnet Basename:")
         self.entry = Gtk.Entry()
-        self.removeInetButton = Gtk.Button.new_with_label("-")
+        self.removeInetButton = Gtk.Button()
+        self.removeInetButton.set_image(Gtk.Image.new_from_file(STATIC_DIRECTORY + "/delete-icon.png"))
 
         self.initialize()
+
     #TODO: is this needed?
     def initialize(self):
         self.add(self.outerHorBox)
