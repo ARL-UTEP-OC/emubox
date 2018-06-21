@@ -3,7 +3,7 @@ import shutil
 import logging
 import xml.etree.ElementTree as ET
 import gi; gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from src.gui.manager_gui import ManagerBox
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
@@ -152,6 +152,15 @@ class AppWindow(Gtk.ApplicationWindow):
         # VM context menu
         self.itemMenu = Gtk.Menu()
         self.itemMenu.append(self.removeItem)
+
+        # Capture Ctrl-S for saving
+        self.connect("key-press-event", self.keyHandler)
+
+    def keyHandler(self, widget, event):
+        # Check if Ctrl is held down while pressing the 's' or 'S' key. 'S' will occur if caps-lock is on
+        if event.state == Gdk.ModifierType.CONTROL_MASK and event.keyval == Gdk.KEY_s or \
+                event.state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.LOCK_MASK and event.keyval == Gdk.KEY_S:
+            self.fullSave()
 
     def initializeContainers(self):
         self.add(self.notebook)
