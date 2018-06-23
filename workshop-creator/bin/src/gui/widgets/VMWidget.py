@@ -15,6 +15,7 @@ class VMWidget(Gtk.Box):
         self.set_border_width(PADDING)
 
         # Declaration of boxes
+        self.outerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=100)
         self.outerVertBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
         self.nameHorBox = Gtk.Box(spacing=BOX_SPACING)
         self.vrdpEnabledHorBox = Gtk.Box(spacing=BOX_SPACING)
@@ -24,6 +25,7 @@ class VMWidget(Gtk.Box):
         # Declaration of labels
         self.nameLabel = Gtk.Label("Name:")
         self.vrdpEnabledLabel = Gtk.Label("VRDP Enabled:")
+        self.saveLabel = Gtk.Label("Save Changes")
 
         # Declaration of entrys
         self.nameEntry = Gtk.Entry()
@@ -33,16 +35,21 @@ class VMWidget(Gtk.Box):
         self.vrdpEnabledEntry.insert_text(1, "false")
         self.addInetButton = Gtk.Button.new_with_label("Add Internalnet Basename")
 
+        self.saveButton = Gtk.Button(label="Save Changes")
+
         self.initializeContainers()
         self.initializeLabels()
         self.initializeEntrys()
 
     def initializeContainers(self):
-        self.pack_start(self.outerVertBox, True, True, PADDING)
+        self.pack_start(self.outerBox, True, True, PADDING)
+        self.outerBox.add(self.outerVertBox)
         self.outerVertBox.add(self.nameHorBox)
         self.outerVertBox.add(self.vrdpEnabledHorBox)
         self.outerVertBox.add(self.iNetVerBox)
         self.outerVertBox.add(self.addInetButton)
+        self.outerBox.pack_end(self.saveButton, False, False, PADDING)
+
 
     def initializeLabels(self):
         self.nameHorBox.pack_start(self.nameLabel, False, False, PADDING)
