@@ -76,17 +76,6 @@ class AppWindow(Gtk.ApplicationWindow):
         # This will get called when the window terminates
         self.connect("delete-event", self.on_delete)
 
-        # This is called when the action box is clicked
-        # self.actionEventBox.connect("button-press-event", self.actionBoxEvent)
-        # This will be the menu for adding and taking away iNetEntryList
-        self.inetMenu = Gtk.Menu()
-        addInet = Gtk.MenuItem("Add INet")
-        addInet.connect("activate", self.addInetEventHandler)
-        self.inetMenu.append(addInet)
-        # removeInet = Gtk.MenuItem("Remove INet")
-        # removeInet.connect("activate", self.removeInetEventHandler)
-        # self.inetMenu.append(removeInet)
-
         self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
 
         # Currentwidget in focus
