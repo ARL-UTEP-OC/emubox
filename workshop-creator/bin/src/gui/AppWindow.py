@@ -78,6 +78,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
         self.vmWidget.saveButton.connect("clicked", self.saveButtonHandler)
+        self.baseWidget.saveButton.connect("clicked", self.saveButtonHandler)
 
         # Currentwidget in focus
         self.focusedInetWidget = None
