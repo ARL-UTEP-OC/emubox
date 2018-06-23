@@ -77,6 +77,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.connect("delete-event", self.on_delete)
 
         self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
+        self.vmWidget.saveButton.connect("clicked", self.saveButtonHandler)
 
         # Currentwidget in focus
         self.focusedInetWidget = None
@@ -144,6 +145,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
         # Capture Ctrl-S for saving
         self.connect("key-press-event", self.keyHandler)
+
+    def saveButtonHandler(self, widget):
+        self.fullSave()
 
     def keyHandler(self, widget, event):
         # Check if Ctrl is held down while pressing the 's' or 'S' key. 'S' will occur if caps-lock is on
