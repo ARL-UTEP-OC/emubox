@@ -13,6 +13,7 @@ class BaseWidget(Gtk.Box):
         self.set_border_width(PADDING)
 
         # Declaration of boxes
+        self.outerBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=100)
         self.outerVertBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=BOX_SPACING)
         self.buttonsHorBox = Gtk.Box(spacing=BOX_SPACING)
         self.vBoxManageHorBox = Gtk.Box(spacing=BOX_SPACING)
@@ -55,18 +56,20 @@ class BaseWidget(Gtk.Box):
 
         self.chooseVBoxPathButton = Gtk.Button("...")
 
+        self.saveButton = Gtk.Button(label="Save Changes")
+
         self.initializeContainers()
         self.initializeLabels()
         self.initializeEntrys()
 
         self.vBoxManageHorBox.pack_end(self.chooseVBoxPathButton, False, False, 0)
 
-
     def initializeContainers(self):
         #TODO: HERE: need to add to the "right" side
         #Need to make this into 2 boxes (maybe three) and then left
         #justify left, right justify right and grow all equally
-        self.pack_start(self.outerVertBox, True, True, PADDING)
+        self.pack_start(self.outerBox, True, True, PADDING)
+        self.outerBox.add(self.outerVertBox)
         self.outerVertBox.add(self.buttonsHorBox)
         self.outerVertBox.add(self.vBoxManageHorBox)
         self.outerVertBox.add(self.ipAddressHorBox)
@@ -76,6 +79,7 @@ class BaseWidget(Gtk.Box):
         self.outerVertBox.add(self.cloneSnapshotsHorBox)
         self.outerVertBox.add(self.baseOutnameHorBox)
         self.outerVertBox.add(self.vrdpBaseportHorBox)
+        self.outerBox.pack_end(self.saveButton, False, False, PADDING)
 
     def initializeLabels(self):
         self.vBoxManageHorBox.pack_start(self.vBoxManageLabel, False, False, PADDING)
