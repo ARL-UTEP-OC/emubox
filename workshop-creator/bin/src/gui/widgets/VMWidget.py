@@ -78,6 +78,7 @@ class VMWidget(Gtk.Box):
         inet.entry.set_text("default_inet")
         self.inetBasenameWidgetList.append(inet)
         self.iNetVerBox.pack_start(inet, False, False, 0)
+        return inet
 
     def removeInet(self, inetNumber):
 

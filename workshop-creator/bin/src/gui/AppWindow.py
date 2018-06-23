@@ -355,7 +355,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
-        self.vmWidget.addInet()
+        inet = self.vmWidget.addInet()
+        inet.removeInetButton.connect("clicked",
+                                      self.removeInetEventHandler, len(self.vmWidget.inetBasenameWidgetList)-1)
         self.actionBox.show_all()
 
     def removeInetEventHandler(self, menuItem, *data):
