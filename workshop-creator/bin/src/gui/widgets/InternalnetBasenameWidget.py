@@ -17,6 +17,7 @@ class InternalnetBasenameWidget(Gtk.EventBox):
         self.entry = Gtk.Entry()
         self.removeInetButton = Gtk.Button()
         self.removeInetButton.set_image(Gtk.Image.new_from_file(STATIC_DIRECTORY + "/delete-icon.png"))
+        self.removeInetButtonHandlerID = 0
 
         self.initialize()
 

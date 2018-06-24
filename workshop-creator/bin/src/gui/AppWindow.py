@@ -7,7 +7,7 @@ from gi.repository import Gtk, Gdk
 from src.gui.manager_gui import ManagerBox
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
-from src.gui.dialogs.ProcessDialog  import ProcessDialog
+from src.gui.dialogs.ProcessDialog import ProcessDialog
 from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.widgets.BaseWidget import BaseWidget
@@ -274,7 +274,8 @@ class AppWindow(Gtk.ApplicationWindow):
 
                 if len(self.vmWidget.inetBasenameWidgetList) > 1:
                     for k, rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
-                        rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
+                        rientry.removeInetButtonHandlerID = \
+                            rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
 
             elif self.session.currentMaterial != None:
                 self.scrolledInnerBox.pack_start(self.materialWidget, True, True, PADDING)
@@ -361,13 +362,21 @@ class AppWindow(Gtk.ApplicationWindow):
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
         inet = self.vmWidget.addInet()
-        inet.removeInetButton.connect("clicked",
-                                      self.removeInetEventHandler, len(self.vmWidget.inetBasenameWidgetList)-1)
+        inet.removeInetButtonHandlerID = inet.removeInetButton.connect("clicked",
+                                                                       self.removeInetEventHandler,
+                                                                       len(self.vmWidget.inetBasenameWidgetList) - 1)
         self.actionBox.show_all()
 
     def removeInetEventHandler(self, menuItem, *data):
         logging.debug("removeInetEventHandler() initiated: " + str(menuItem) + " " + str(data))
         self.vmWidget.removeInet(data[0])
+
+        # Adjust button handlers for remaining inets
+        i = data[0]
+        for inet in self.vmWidget.inetBasenameWidgetList[i:]:
+            inet.removeInetButton.handler_disconnect(inet.removeInetButtonHandlerID)
+            inet.removeInetButtonHandlerID = inet.removeInetButton.connect("clicked", self.removeInetEventHandler, i)
+            i += 1
         self.actionBox.show_all()
 
     def treeViewActionEvent(self, treeView, event):
@@ -427,7 +436,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         workshopName = self.session.currentWorkshop.filename
         command = "python -u \"" + WORKSHOP_CREATOR_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
-                                                                                 workshopName + ".xml\"")
+                                                                                       workshopName + ".xml\"")
         logging.debug("cloneWorkshopActionEvent(): instantiating ProcessDialog with command: " + command)
         pd = ProcessDialog(command)
         logging.debug("cloneWorkshopActionEvent(): running ProcessDialog")
@@ -444,7 +453,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         workshopName = self.session.currentWorkshop.filename
         command = "python -u \"" + VM_STARTER_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
-                                                                           workshopName + ".xml\"")
+                                                                                 workshopName + ".xml\"")
         logging.debug("startVMsActionEvent(): instantiating ProcessDialog")
         pd = ProcessDialog(command)
         logging.debug("startVMsActionEvent(): running ProcessDialog")
@@ -460,7 +469,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         workshopName = self.session.currentWorkshop.filename
         command = "python -u \"" + VM_POWEROFF_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
-                                                                            workshopName + ".xml\"")
+                                                                                  workshopName + ".xml\"")
         logging.debug("poweroffVMsActionEvent(): instantiating ProcessDialog")
         pd = ProcessDialog(command)
         logging.debug("poweroffVMsActionEvent(): running ProcessDialog")
