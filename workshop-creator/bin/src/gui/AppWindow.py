@@ -373,13 +373,17 @@ class AppWindow(Gtk.ApplicationWindow):
         if len(self.vmWidget.inetBasenameWidgetList) > 1:
             self.vmWidget.removeInet(data[0])
 
-        # Adjust button handlers for remaining inets
-        i = data[0]
-        for inet in self.vmWidget.inetBasenameWidgetList[i:]:
-            inet.removeInetButton.handler_disconnect(inet.removeInetButtonHandlerID)
-            inet.removeInetButtonHandlerID = inet.removeInetButton.connect("clicked", self.removeInetEventHandler, i)
-            i += 1
-        self.actionBox.show_all()
+            # Adjust button handlers for remaining inets
+            i = data[0]
+            for inet in self.vmWidget.inetBasenameWidgetList[i:]:
+                inet.removeInetButton.handler_disconnect(inet.removeInetButtonHandlerID)
+                inet.removeInetButtonHandlerID = inet.removeInetButton.connect("clicked", self.removeInetEventHandler, i)
+                i += 1
+            self.actionBox.show_all()
+
+        else:
+            WarningDialog(self, "There must be at least one Internalnet Basename.")
+            return
 
     def treeViewActionEvent(self, treeView, event):
         logging.debug("treeViewActionEvent() initiated: " + str(event))
