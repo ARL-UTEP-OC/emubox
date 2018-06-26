@@ -272,7 +272,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 self.vmWidget.vrdpEnabledEntry.set_active(self.holdVRDP)
                 self.vmWidget.loadInets(self.session.currentVM.internalnetBasenameList)
 
-                if len(self.vmWidget.inetBasenameWidgetList) > 1:
+                if len(self.vmWidget.inetBasenameWidgetList) > 0:
                     for k, rientry in enumerate(self.vmWidget.inetBasenameWidgetList):
                         rientry.removeInetButtonHandlerID = \
                             rientry.removeInetButton.connect("clicked", self.removeInetEventHandler, k)
@@ -369,7 +369,9 @@ class AppWindow(Gtk.ApplicationWindow):
 
     def removeInetEventHandler(self, menuItem, *data):
         logging.debug("removeInetEventHandler() initiated: " + str(menuItem) + " " + str(data))
-        self.vmWidget.removeInet(data[0])
+
+        if len(self.vmWidget.inetBasenameWidgetList) > 1:
+            self.vmWidget.removeInet(data[0])
 
         # Adjust button handlers for remaining inets
         i = data[0]
