@@ -33,7 +33,7 @@ def workshops_monitor(server):
         broadcast_msg(server, '', "sizes", tmp)
 
     while True:
-        logger.info("Number of clients connected:" + str(len(server.sockets)))
+        logger.info("Participants viewing frontend:" + str(len(server.sockets)))
         workshops_available = []
         curr_workshops = getAvailableWorkshops()
         for w in curr_workshops:

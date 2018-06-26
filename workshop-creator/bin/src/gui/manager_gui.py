@@ -94,7 +94,7 @@ class ManagerBox(Gtk.Box):
                 for line in iter(self.p.stdout.readline, b''):
                     if line.rstrip().lstrip() != "":
                         line = line.split(':')
-                        if line[0] == "Participants viewing frontend: ":
+                        if line[0] == "Participants viewing frontend":
                             self.num_clients = line[1]
                             self.num_clients_label_footer.set_label(str(self.num_clients))
 
