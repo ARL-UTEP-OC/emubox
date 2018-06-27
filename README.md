@@ -75,13 +75,13 @@ Before starting, install Emubox as described [here](#installation).
 
     Windows:
     ```
-    cd emubox\workshop-creator
+    cd workshop-creator
     start_creator.bat
     ```
     Linux:
     ```
     sudo -s
-    cd emubox\workshop-creator
+    cd workshop-creator
     ./start_creator.sh
     ```
 3. Right-click in the Workshops pane and select "New Workshop" and then enter a workshop name.
