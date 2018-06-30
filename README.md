@@ -157,6 +157,7 @@ sudo -s
 cd /root/emubox/workshop-creator
 ./start_creator.sh
 ```
+To create and run a workshop, proceed to [Create and Run a Workshop](#create-and-run-a-workshop).
   
 ### EmuBox Construct Details
 ##### Workshop Creator
