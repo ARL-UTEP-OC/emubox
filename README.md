@@ -150,7 +150,7 @@ The VPN server is pre-configured. To enable the PPTPD VPN server execute the fol
 sudo service pptpd start
 ```
 
-To Start EmuBox:
+##### Start EmuBox (Required)
 1. Open a terminal window and execute the following commands:
 ```
 sudo -s
