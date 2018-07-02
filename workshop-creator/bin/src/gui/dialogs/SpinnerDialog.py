@@ -19,6 +19,7 @@ class SpinnerDialog(Gtk.Dialog):
         self.spinner = Gtk.Spinner()
         self.dialogBox.add(self.outerVerBox)
         self.progress_bar = Gtk.ProgressBar()
+        self.progress_bar_is_hidden = False
         self.outerVerBox.pack_start(self.label, True, True, PADDING)
         self.outerVerBox.pack_start(self.progress_bar, True, True, PADDING)
         self.outerVerBox.pack_start(self.spinner, True, True, PADDING)
@@ -34,3 +35,11 @@ class SpinnerDialog(Gtk.Dialog):
 
     def setTitleVal(self, text):
         self.set_title(text)
+
+    def hideProgressBar(self):
+        if not self.progress_bar_is_hidden:
+            self.progress_bar.hide()
+
+    def showProgressBar(self):
+        if self.progress_bar_is_hidden:
+            self.progress_bar.show()

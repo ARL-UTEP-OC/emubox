@@ -478,7 +478,7 @@ class Session:
     def downloadWorkshop(self, url, workshopName, spinnerDialog):
         logging.debug("Setting up download")
         self.downloadedZip = os.path.join(DOWNLOAD_LOCATION, workshopName+".ebx")
-        t = threading.Thread(target=downloadLargeFile, args=[url, workshopName, self.downloadedZip, spinnerDialog])
+        t = threading.Thread(target=downloadLargeFile, args=[url, self.downloadedZip, spinnerDialog])
         t.start()
         spinnerDialog.run()
         t.join()
