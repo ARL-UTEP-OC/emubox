@@ -5,12 +5,15 @@ import re
 import shutil
 import zipfile
 import logging
+import xml.etree.ElementTree as ET
 from lxml import etree
 from src.gui.dialogs.ProcessDialog import ProcessDialog
+from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.model.Workshop import Workshop
+from src.model.downloadLargeFile import downloadLargeFile
 from src.gui_constants import (MANAGER_SAVE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY,
                                WORKSHOP_MATERIAL_DIRECTORY, WORKSHOP_RDP_CREATOR_FILE_PATH,
-                               WORKSHOP_RDP_DIRECTORY, VBOXMANAGE_DIRECTORY)
+                               WORKSHOP_RDP_DIRECTORY, VBOXMANAGE_DIRECTORY, DOWNLOAD_LOCATION)
 
 
 class Session:
@@ -21,6 +24,7 @@ class Session:
         self.currentWorkshop = None
         self.currentVM = None
         self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
+        self.downloadedZip = None
 
     def overwriteRDPToManagerSaveDirectory(self):
         logging.debug("overwriteRDPToManagerSaveDirectory() initiated")
@@ -129,8 +133,8 @@ class Session:
                 if b == '':
                     break
                 o.write(b)
-        i.close()
-        o.close()
+            i.close()
+            o.close()
         spinnerDialog.hide()
 
     def importUnzip(self, zipPath, spinnerDialog):
@@ -148,7 +152,7 @@ class Session:
         spinnerDialog.setTitleVal("Importing VM")
         spinnerDialog.setLabelVal("Importing OVA file. Please wait...")
         subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath]).communicate()
-        spinnerDialog.hide()
+        # spinnerDialog.hide()
 
     def exportFromVBox(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportFromVBox() initiated " + str(tempPath))
@@ -159,7 +163,7 @@ class Session:
         logging.debug("exportVBoxWorker() initiated " + str(tempPath))
         spinnerDialog.setTitleVal("Exporting VM")
         spinnerDialog.setLabelVal("Creating OVA file for VM: " + vmname + ". Please wait...")
-        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath,"--iso"]).communicate()
+        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath, "--iso"]).communicate()
         # spinnerDialog.destroy()
 
     def zipWorker(self, folderPath, spinnerDialog):
@@ -327,6 +331,7 @@ class Session:
     # This will load xml files
     def loadXMLFiles(self, directory):
         logging.debug("loadXMLFiles() initiated " + str(directory))
+        self.workshopList = []
         # Here we will iterate through all the files that end with .xml
         # in the workshop_configs directory
         if not os.path.exists(directory):
@@ -449,3 +454,118 @@ class Session:
 
             # Write tree to XML config file
             tree.write(os.path.join(WORKSHOP_CONFIG_DIRECTORY, workshop.filename + ".xml"), pretty_print=True)
+
+    def getDownloadLink(self, downloadIndex, workshopName):
+        root = ET.fromstring(downloadIndex.replace('&', '&amp;'))
+        for workshop in root.findall('workshop'):
+            if workshop.find('name').text.rstrip().lstrip() == workshopName:
+                return workshop.find('address').text.rstrip().lstrip()
+
+    def isInIndex(self, downloadIndex, inWorkshop):
+        root = ET.fromstring(downloadIndex)
+
+        for workshop in root.findall('workshop'):
+            if inWorkshop.filename == workshop.find('name').text.rstrip().lstrip():
+                return True
+        return False
+
+    def isWorkshop(self, inName):
+        for workshop in self.workshopList:
+            if workshop.filename == inName:
+                return True
+        return False
+
+    def downloadWorkshop(self, url, workshopName, spinnerDialog):
+        logging.debug("Setting up download")
+        self.downloadedZip = os.path.join(DOWNLOAD_LOCATION, workshopName+".ebx")
+        t = threading.Thread(target=downloadLargeFile, args=[url, workshopName, self.downloadedZip, spinnerDialog])
+        t.start()
+        spinnerDialog.run()
+        t.join()
+
+    def importParse(self, tempPath, window):
+        t = threading.Thread(target=self.importParseWorker, args=[tempPath, window])
+        t.start()
+
+    def importParseWorker(self, tempPath, spinnerDialog):
+        logging.debug("Parsing the imported files")
+        ovaList = []
+        xmlList = []
+        materialList = []
+        rdpList = []
+        # Get all files that end with .ova
+        if os.path.exists(tempPath):
+            baseFiles = os.listdir(tempPath)
+            for filename in baseFiles:
+                if filename.endswith(".ova"):
+                    ovaList.append(filename)
+                elif filename.endswith(".xml"):
+                    xmlList.append(filename)
+        materialsPath = os.path.join(tempPath, "Materials")
+        if os.path.exists(materialsPath):
+            logging.debug("importParse(): Materials folder to search: " + str(materialsPath))
+            if os.path.exists(materialsPath):
+                materialsFiles = os.listdir(materialsPath)
+                logging.debug("importActionEvent(): Materials to import: " + str(materialsFiles))
+                for filename in materialsFiles:
+                    logging.debug("importActionEvent(): Adding material to workshop: " + str(filename))
+                    materialList.append(filename)
+        rdpPath = os.path.join(tempPath, "RDP")
+        if os.path.exists(rdpPath):
+            rdpFiles = os.listdir(rdpPath)
+            for filename in rdpFiles:
+                rdpList.append(filename)
+
+        curCount = 1
+        spinnerDialog.set_title("Importing VM " + str(curCount) + "/" + str(len(ovaList)) + " to VBox...")
+
+        for ova in ovaList:
+            spinnerDialog.setProgressVal((curCount - 1.0) / len(ovaList))
+            self.importVBoxWorker(os.path.join(tempPath, ova), spinnerDialog)
+            curCount += 1
+        # spinnerDialog.run()
+        # spinnerDialog.destroy()
+
+        spinnerDialog.set_title("Preparing to copy workshop files...")
+
+        # t = threading.Thread(target=self.copyImportFiles,
+        #                      args=[tempPath, xmlList, materialList, rdpList, spinnerDialog])
+        # t.start()
+        self.copyImportFiles(tempPath, xmlList, materialList, rdpList, spinnerDialog)
+        # spinnerDialog.run()
+
+    def copyImportFiles(self, tempPath, xmlList, materialList, rdpList, spinnerDialog):
+        logging.debug("Starting xml, material and rdp file copy")
+        curCount = 0.0
+        totalCount = len(xmlList) + len(materialList) + len(rdpList)
+        for xml in xmlList:
+            spinnerDialog.setProgressVal(curCount / totalCount)
+            spinnerDialog.setLabelVal("Copying Configuration Files")
+            shutil.copy2(os.path.join(tempPath, xml), WORKSHOP_CONFIG_DIRECTORY)
+            curCount += 1
+
+        holdMatPath = os.path.join(WORKSHOP_MATERIAL_DIRECTORY, os.path.splitext(xmlList[0])[0])
+        if not os.path.exists(holdMatPath):
+            os.makedirs(holdMatPath)
+
+        for material in materialList:
+            logging.debug("importActionEvent(): Processing file " + str(material))
+            logging.debug("importActionEvent(): Checking for " + os.path.join(holdMatPath, material))
+            if not os.path.exists(os.path.join(holdMatPath, material)):
+                logging.debug("importActionEvent(): copying file " + str(
+                    os.path.join(tempPath, "Materials", material)) + " to " + str(material))
+                spinnerDialog.setProgressVal(curCount / totalCount)
+                spinnerDialog.setLabelVal("Copying Material Files")
+                shutil.copy2(os.path.join(tempPath, "Materials", material), holdMatPath)
+            curCount += 1
+
+        holdRDPPath = os.path.join(WORKSHOP_RDP_DIRECTORY, (os.path.splitext(xmlList[0])[0]))
+        if not os.path.exists(holdRDPPath):
+            os.makedirs(holdRDPPath)
+
+        for rdp in rdpList:
+            if not os.path.exists(holdRDPPath + rdp):
+                spinnerDialog.setProgressVal(curCount / totalCount)
+                spinnerDialog.setLabelVal("Copying RDP Files")
+                shutil.copy2(os.path.join(tempPath, "RDP", rdp), holdRDPPath)
+            curCount += 1

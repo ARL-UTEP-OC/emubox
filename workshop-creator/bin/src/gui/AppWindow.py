@@ -2,6 +2,7 @@ import os
 import shutil
 import logging
 import xml.etree.ElementTree as ET
+import urllib2
 import gi; gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 from src.gui.manager_gui import ManagerBox
@@ -10,6 +11,7 @@ from src.gui.dialogs.ListEntryDialog import ListEntryDialog
 from src.gui.dialogs.ProcessDialog import ProcessDialog
 from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.dialogs.WarningDialog import WarningDialog
+from src.gui.dialogs.DownloadDialog import DownloadDialog
 from src.gui.widgets.BaseWidget import BaseWidget
 from src.gui.widgets.WorkshopTreeWidget import WorkshopTreeWidget
 from src.gui.widgets.MaterialWidget import MaterialWidget
@@ -19,7 +21,8 @@ from src.gui_constants import (BOX_SPACING, PADDING, MATERIAL_TREE_LABEL, VM_TRE
                                WORKSHOP_RDP_CREATOR_FILE_PATH, WORKSHOP_MATERIAL_DIRECTORY,
                                WORKSHOP_CONFIG_DIRECTORY, WORKSHOP_CREATOR_FILE_PATH,
                                WORKSHOP_RESTORE_FILE_PATH, WORKSHOP_RDP_DIRECTORY,
-                               VM_POWEROFF_FILE_PATH, VM_STARTER_FILE_PATH)
+                               VM_POWEROFF_FILE_PATH, VM_STARTER_FILE_PATH,
+                               ONLINE_INDEX_FILE, WORKSHOP_TMP_DIRECTORY)
 
 
 # This class contains the main window, its main container is a notebook
@@ -32,7 +35,6 @@ class AppWindow(Gtk.ApplicationWindow):
         # self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(5)
-
         # TODO: fix error when soft saving
         self.isRemoveVM = False
 
@@ -56,6 +58,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.baseWidget = BaseWidget()
         self.vmWidget = VMWidget()
         self.materialWidget = MaterialWidget()
+        self.downloadIndex = None
 
         # if the currently highlighted tree element is a parent, its a workshop
         self.isParent = None
@@ -92,6 +95,8 @@ class AppWindow(Gtk.ApplicationWindow):
         self.addWorkshop.connect("activate", self.addWorkshopActionEvent)
         self.importWorkshop = Gtk.MenuItem("Import Workshop from EBX archive")
         self.importWorkshop.connect("activate", self.importActionEvent)
+        self.downloadFromRepo = Gtk.MenuItem("Download Workshop From Repo")
+        self.downloadFromRepo.connect("activate", self.download)
 
         self.createRDP = Gtk.MenuItem("Create RDP Files")
         self.createRDP.connect("activate", self.createRDPActionEvent)
@@ -139,6 +144,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.blankMenu = Gtk.Menu()
         self.blankMenu.append(self.addWorkshop)
         self.blankMenu.append(self.importWorkshop)
+        self.blankMenu.append(self.downloadFromRepo)
 
         # VM context menu
         self.itemMenu = Gtk.Menu()
@@ -713,3 +719,66 @@ class AppWindow(Gtk.ApplicationWindow):
         logging.debug("on_delete() initiated: " + str(event) + " " + str(widget))
         self.managerBox.destroy_process()
         self.fullSave()
+
+    def getDownloadIndex(self, location):
+        logging.debug("Attempt to download index file")
+        if location == None:
+            location = ONLINE_INDEX_FILE
+        try:
+            self.downloadIndex = urllib2.urlopen(location).read()
+            return True
+        except:
+            WarningDialog(self, "Could not fetch workshop index file.  Check your network connection and the location.")
+            return False
+
+    def downloadFile(self, url, workshopName):
+        logging.debug("initiating download with progress spinner dialog")
+        try:
+            spinnerDialog = SpinnerDialog(self, "Preparing to download workshop...")
+            self.session.downloadWorkshop(url, workshopName, spinnerDialog)
+            spinnerDialog.destroy()
+            return True
+        except:
+            WarningDialog(self, "Could not download workshop file.  Check your network connection.")
+            return False
+
+    def download(self, menuItem):
+        logging.debug("beginning new workshop download")
+        if (self.downloadIndex == None):
+            if not self.getDownloadIndex(None):
+                return
+        downloadDialog = DownloadDialog(self, "Select a workshop to download.", self.downloadIndex)
+        downloadText = None
+
+        while not downloadDialog.status == True:
+            response = downloadDialog.run()
+            downloadText = downloadDialog.xmlString
+        downloadDialog.destroy()
+
+        if downloadText == None:
+            return
+        elif self.session.isWorkshop(downloadDialog.entryText):
+            WarningDialog(self, "Workshop already exists.")
+            return
+
+        if not self.downloadFile(self.session.getDownloadLink(downloadText, downloadDialog.entryText),
+                                 downloadDialog.entryText):
+            return
+
+        zipPath = str(self.session.downloadedZip)
+        if not os.path.isfile(zipPath):
+            WarningDialog(self, "Error Downloading File, please retry")
+            return
+
+        # First we need to unzip the import file to a temp folder
+        spinnerDialog = SpinnerDialog(self, "Preparing to unzip files")
+        self.session.unzipWorker(zipPath, spinnerDialog)
+        self.session.importParseWorker(os.path.join(WORKSHOP_TMP_DIRECTORY, downloadDialog.entryText), spinnerDialog)
+        spinnerDialog.destroy()
+
+        # # reload all xml files and create a new display
+        self.workshopTree.clearTreeStore()
+        self.session.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
+        self.workshopTree.populateTreeStore(self.session.workshopList)
+        shutil.rmtree(WORKSHOP_TMP_DIRECTORY, ignore_errors=True)
+        os.remove(zipPath)
