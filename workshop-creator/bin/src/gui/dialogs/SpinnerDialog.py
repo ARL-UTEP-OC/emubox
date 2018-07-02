@@ -21,6 +21,7 @@ class SpinnerDialog(Gtk.Dialog):
         self.progress_bar = Gtk.ProgressBar()
         self.outerVerBox.pack_start(self.label, True, True, PADDING)
         self.outerVerBox.pack_start(self.progress_bar, True, True, PADDING)
+        self.outerVerBox.pack_start(self.spinner, True, True, PADDING)
 
         self.show_all()
         self.spinner.start()
