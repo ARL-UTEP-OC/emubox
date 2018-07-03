@@ -78,4 +78,4 @@ class DownloadDialog(Gtk.Dialog):
         # The operation was canceled
         elif responseID == Gtk.ResponseType.CANCEL or responseID == Gtk.ResponseType.DELETE_EVENT:
             self.entryText = None
-            self.status = True
+            self.status = False

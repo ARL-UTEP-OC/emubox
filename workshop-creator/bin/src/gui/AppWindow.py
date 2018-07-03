@@ -750,12 +750,15 @@ class AppWindow(Gtk.ApplicationWindow):
         downloadDialog = DownloadDialog(self, "Select a workshop to download.", self.downloadIndex)
         downloadText = None
 
-        while not downloadDialog.status == True:
-            response = downloadDialog.run()
+        while not downloadDialog.status:
+            if downloadDialog.status is False:
+                downloadDialog.destroy()
+                return
+            downloadDialog.run()
             downloadText = downloadDialog.xmlString
         downloadDialog.destroy()
 
-        if downloadText == None:
+        if downloadText is None:
             return
         elif self.session.isWorkshop(downloadDialog.entryText):
             WarningDialog(self, "Workshop already exists.")
