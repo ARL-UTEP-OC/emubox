@@ -4,7 +4,7 @@ import logging
 import xml.etree.ElementTree as ET
 import urllib2
 import gi; gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 from src.gui.manager_gui import ManagerBox
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
@@ -599,7 +599,7 @@ class AppWindow(Gtk.ApplicationWindow):
             # when finished. These will likely be functions that start threads.
             # TODO: need to make the spinnerDialog take a thread and start it after the dialog is shown, otherwise, this could lead to an undestroyable dialog
             spinnerDialog = SpinnerDialog(self, "Exporting to EBX archive, this may take a few minutes...")
-            spinnerDialog.set_title("Exporting...")
+            GLib.idle_add(spinnerDialog.set_title, "Exporting...")
             self.session.exportWorkshop(folderPath, spinnerDialog)
             spinnerDialog.run()
             # this destroy will happen only after any hides; hides be called after the destroy
@@ -633,7 +633,6 @@ class AppWindow(Gtk.ApplicationWindow):
             # TODO: need to make the spinnerDialog take a thread and start it after the dialog is shown, otherwise, this could lead to an undestroyable dialog
             spinnerDialog = SpinnerDialog(self, "Preparing to decompress EBX archive")
             self.session.importUnzip(zipPath, spinnerDialog)
-            spinnerDialog.run()
 
             ovaList = []
             xmlList = []
@@ -663,9 +662,8 @@ class AppWindow(Gtk.ApplicationWindow):
 
             for ova in ovaList:
                 logging.debug("importActionEvent(): Importing " + str(ova) + " into VirtualBox...")
-                spinnerDialog.set_title("Importing " + str(ova) + " into VirtualBox...")
+                GLib.idle_add(spinnerDialog.set_title, "Importing " + str(ova) + " into VirtualBox...")
                 self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
-                spinnerDialog.run()
             spinnerDialog.destroy()
 
             for xml in xmlList:
@@ -704,9 +702,10 @@ class AppWindow(Gtk.ApplicationWindow):
                                        "Workshop import complete.")
             dialog.run()
             dialog.destroy()
+
             # reload all xml files and create a new display
-            self.session.loadXMLFiles(tempPath)
             self.workshopTree.clearTreeStore()
+            self.session.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
             self.workshopTree.populateTreeStore(self.session.workshopList)
 
             shutil.rmtree(baseTempPath, ignore_errors=True)
@@ -775,8 +774,11 @@ class AppWindow(Gtk.ApplicationWindow):
 
         # First we need to unzip the import file to a temp folder
         spinnerDialog = SpinnerDialog(self, "Preparing to unzip files")
-        self.session.unzipWorker(zipPath, spinnerDialog)
-        self.session.importParseWorker(os.path.join(WORKSHOP_TMP_DIRECTORY, downloadDialog.entryText), spinnerDialog)
+        self.session.unzip(zipPath, spinnerDialog)
+        spinnerDialog.destroy()
+
+        spinnerDialog = SpinnerDialog(self, "Preparing to import files")
+        self.session.importParseWithSpinner(os.path.join(WORKSHOP_TMP_DIRECTORY, downloadDialog.entryText), spinnerDialog)
         spinnerDialog.destroy()
 
         # # reload all xml files and create a new display
@@ -785,3 +787,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopTree.populateTreeStore(self.session.workshopList)
         shutil.rmtree(WORKSHOP_TMP_DIRECTORY, ignore_errors=True)
         os.remove(zipPath)
+        dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
+                                   "Workshop download complete.")
+        dialog.run()
+        dialog.destroy()
