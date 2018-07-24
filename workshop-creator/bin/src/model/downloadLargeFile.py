@@ -31,7 +31,7 @@ def downloadLargeFile(url, dest, spinnerDialog):
                     break
                 downloaded += len(chunk)
                 if chunked:
-                    spinnerDialog.setLabelVal("Downloaded " + str(downloaded / 10**6) + " MB")
+                    spinnerDialog.setLabelVal("Downloaded %0.2f MB" % (downloaded / 10**6))
                 else:
                     spinnerDialog.setLabelVal(str(math.floor((downloaded / total_size) * 1000) / 10) + "% Downloaded")
                     spinnerDialog.setProgressVal(downloaded / total_size)
