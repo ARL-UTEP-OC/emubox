@@ -75,13 +75,13 @@ Before starting, install Emubox as described [here](#installation).
 
     Windows:
     ```
-    cd emubox\workshop-creator
+    cd workshop-creator
     start_creator.bat
     ```
     Linux:
     ```
     sudo -s
-    cd emubox\workshop-creator
+    cd workshop-creator
     ./start_creator.sh
     ```
 3. Right-click in the Workshops pane and select "New Workshop" and then enter a workshop name.
@@ -150,13 +150,14 @@ The VPN server is pre-configured. To enable the PPTPD VPN server execute the fol
 sudo service pptpd start
 ```
 
-To Start EmuBox:
+##### Start EmuBox (Required)
 1. Open a terminal window and execute the following commands:
 ```
 sudo -s
 cd /root/emubox/workshop-creator
 ./start_creator.sh
 ```
+To create and run a workshop, proceed to [Create and Run a Workshop](#create-and-run-a-workshop).
   
 ### EmuBox Construct Details
 ##### Workshop Creator
