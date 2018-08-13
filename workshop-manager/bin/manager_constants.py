@@ -12,7 +12,7 @@ SOCKET_IO_PORT = 9090
 VBOX_PROBETIME = 5
 
 # 'VM_RESTORE_TIME': Used by vbox_monitor. The interval of time to check for VMs that need to be restored.
-VM_RESTORE_TIME = 9999999
+VM_RESTORE_TIME = 1
 
 # 'LOCK_WAIT_TIME': Used by vbox_monitor. The amount of time to wait for locks to be released when an error occurs.
 LOCK_WAIT_TIME = 5

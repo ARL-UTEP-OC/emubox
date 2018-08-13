@@ -131,12 +131,7 @@ class Session:
                 o.write(b)
         i.close()
         o.close()
-        #spinnerDialog.hide()
-        spinnerDialog.setTitleVal("Done")
-        spinnerDialog.setLabelVal("Please close this Window")
-
-
-
+        spinnerDialog.hide()
 
     def importUnzip(self, zipPath, spinnerDialog):
         logging.debug("importUnzip() initiated " + str(zipPath))
@@ -153,9 +148,7 @@ class Session:
         spinnerDialog.setTitleVal("Importing VM")
         spinnerDialog.setLabelVal("Importing OVA file. Please wait...")
         subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath]).communicate()
-        #spinnerDialog.hide()
-        spinnerDialog.setTitleVal("Done")
-        spinnerDialog.setLabelVal("Please close this Window")
+        spinnerDialog.hide()
 
     def exportFromVBox(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportFromVBox() initiated " + str(tempPath))
@@ -199,9 +192,8 @@ class Session:
         spinnerDialog.setLabelVal("--------Almost finished, cleaning temporary directories--------")
         spinnerDialog.setProgressVal(1)
         shutil.rmtree(folderPath, ignore_errors=True)
-        # spinnerDialog.hide()
-        spinnerDialog.setTitleVal("Done")
-        spinnerDialog.setLabelVal("Please close this Window")
+        # spinnerDialog.setLabelVal("--------Complete--------")
+        spinnerDialog.hide()
 
     def exportZipFiles(self, folderPath, spinnerDialog):
         logging.debug("exportZipFiles() initiated " + str(folderPath))
