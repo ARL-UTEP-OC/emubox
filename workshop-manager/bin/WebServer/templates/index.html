@@ -27,7 +27,7 @@
                     <div style="text-align: center"> {{ workshop.workshopName }} </div>
                 </td>
                 <td>
-                    <div style="text-align: center"><span class="workshop_queue" id="{{ workshop.workshopName }}">{{ workshop.q.qsize() }}</span> workshops available! </div>
+                    <div style="text-align: center"><span class="workshop_queue" id="{{ workshop.workshopName.replace(' ', '_') }}">{{ workshop.q.qsize() }}</span> workshops available! </div>
                 </td>
                 <td>
                     {% for material in workshop.materials %}
@@ -35,8 +35,8 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <div id = "download_links_{{ workshop.workshopName }}" style="text-align: center; display:none">
-                        <select id="dl_selector_{{ workshop.workshopName }}">
+                    <div id = "download_links_{{ workshop.workshopName.replace(' ', '_') }}" style="text-align: center">
+                        <select id="dl_selector_{{ workshop.workshopName.replace(' ', '_') }}">
                             <option value="/checkout/ms-rdp/{{ workshop.workshopName }}">Windows</option>
                             <option value="/checkout/rdesktop/{{ workshop.workshopName }}">Linux</option>
                         </select>
@@ -51,7 +51,8 @@
 
         <script>
             function initiate_download(workshopName) {
-                window.open($("#dl_selector_" + workshopName).val(), "_self");
+                {#window.alert("worked");#}
+                window.open($("#dl_selector_" + workshopName.replace(' ', '_')).val(), "_self");
             }
 
             var socket = io.connect("http://" + window.location.hostname + ":" + {{ socket_io_port }});
@@ -61,10 +62,10 @@
 
             socket.on('sizes', function(sizes) {
                 if (sizes[1] === 0)
-                    $('#download_links_' + sizes[0]).hide();
+                    $('#download_links_' + sizes[0].replace(' ', '_')).hide();
                 else
-                    $('#download_links_' + sizes[0]).show();
-                $('#' + sizes[0]).text(sizes[1]);
+                    $('#download_links_' + sizes[0].replace(' ', '_')).show();
+                $('#' + sizes[0].replace(' ', '_')).text(sizes[1]);
             });
         </script>
     </body>
