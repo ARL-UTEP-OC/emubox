@@ -5,12 +5,16 @@ import re
 import shutil
 import zipfile
 import logging
+import xml.etree.ElementTree as ET
+import gi; gi.require_version('Gtk', '3.0')
+from gi.repository import GLib
 from lxml import etree
 from src.gui.dialogs.ProcessDialog import ProcessDialog
 from src.model.Workshop import Workshop
+from src.model.downloadLargeFile import downloadLargeFile
 from src.gui_constants import (MANAGER_SAVE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY,
                                WORKSHOP_MATERIAL_DIRECTORY, WORKSHOP_RDP_CREATOR_FILE_PATH,
-                               WORKSHOP_RDP_DIRECTORY, VBOXMANAGE_DIRECTORY)
+                               WORKSHOP_RDP_DIRECTORY, VBOXMANAGE_DIRECTORY, DOWNLOAD_LOCATION)
 
 
 class Session:
@@ -21,6 +25,7 @@ class Session:
         self.currentWorkshop = None
         self.currentVM = None
         self.loadXMLFiles(WORKSHOP_CONFIG_DIRECTORY)
+        self.downloadedZip = None
 
     def overwriteRDPToManagerSaveDirectory(self):
         logging.debug("overwriteRDPToManagerSaveDirectory() initiated")
@@ -65,7 +70,7 @@ class Session:
             logging.debug("Starting copy, taking files from: " + materialsSourceDir + " -- " + str(os.listdir(materialsSourceDir)))
 
             for materialsFile in os.listdir(materialsSourceDir):
-                logging.debug("executing copy: " + os.path.join(materialsSourceDir, materialsFile) + " to " + os.path.join(self.holdDirectory,"Materials"))
+                logging.debug("executing copy: " + os.path.join(materialsSourceDir, materialsFile) + " to " + os.path.join(self.holdDirectory, "Materials"))
                 shutil.copy2(os.path.join(materialsSourceDir, materialsFile),
                 os.path.join(self.holdDirectory, "Materials"))
 
@@ -88,10 +93,17 @@ class Session:
         pd.run()
         pd.destroy()
 
+    def unzip(self, zipPath, spinnerDialog):
+        logging.debug("unzip() initiated " + str(zipPath))
+        t = threading.Thread(target=self.unzipWorker, args=[zipPath, spinnerDialog])
+        t.start()
+        spinnerDialog.run()
+        t.join()
+
     # Thread function, performs unzipping operation
     def unzipWorker(self, zipPath, spinnerDialog):
         logging.debug("unzipWorker() initiated " + str(zipPath))
-        spinnerDialog.setTitleVal("Unpacking EBX")
+        GLib.idle_add(spinnerDialog.setTitleVal, "Unpacking EBX")
 
         block_size = 1048576
         z = zipfile.ZipFile(zipPath, 'r')
@@ -123,51 +135,50 @@ class Session:
                 status = float(offset) / float(entry_info.file_size) * 100.
                 if int(status) > int_val:
                     int_val = int(status)
-                    spinnerDialog.setProgressVal(float(int_val / 100.))
-                    spinnerDialog.setLabelVal("Processing file " + str(currmem_num) + "/" + str(
+                    GLib.idle_add(spinnerDialog.setProgressVal, float(int_val / 100.))
+                    GLib.idle_add(spinnerDialog.setLabelVal, "Processing file " + str(currmem_num) + "/" + str(
                         len(members_list)) + ":\r\n" + entry_name + "\r\nExtracting: " + str(int_val) + " %")
                 if b == '':
                     break
                 o.write(b)
-        i.close()
-        o.close()
-        #spinnerDialog.hide()
-        spinnerDialog.setTitleVal("Done")
-        spinnerDialog.setLabelVal("Please close this Window")
-
-
-
+            i.close()
+            o.close()
+        spinnerDialog.hide()
 
     def importUnzip(self, zipPath, spinnerDialog):
         logging.debug("importUnzip() initiated " + str(zipPath))
         t = threading.Thread(target=self.unzipWorker, args=[zipPath, spinnerDialog])
         t.start()
+        spinnerDialog.run()
+        t.join()
 
     def importToVBox(self, tempPath, spinnerDialog):
         logging.debug("importToVBox() initiated " + str(tempPath))
         t = threading.Thread(target=self.importVBoxWorker, args=[tempPath, spinnerDialog])
         t.start()
+        spinnerDialog.run()
+        t.join()
 
     def importVBoxWorker(self, tempPath, spinnerDialog):
         logging.debug("importVBoxWorker() initiated " + str(tempPath))
-        spinnerDialog.setTitleVal("Importing VM")
-        spinnerDialog.setLabelVal("Importing OVA file. Please wait...")
+        GLib.idle_add(spinnerDialog.setTitleVal, "Importing VM")
+        GLib.idle_add(spinnerDialog.setLabelVal, "Importing OVA file. Please wait...")
         subprocess.Popen([VBOXMANAGE_DIRECTORY, "import", tempPath]).communicate()
-        #spinnerDialog.hide()
-        spinnerDialog.setTitleVal("Done")
-        spinnerDialog.setLabelVal("Please close this Window")
+        spinnerDialog.hide()
 
     def exportFromVBox(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportFromVBox() initiated " + str(tempPath))
         t = threading.Thread(target=self.exportVBoxWorker, args=[tempPath, vmname, spinnerDialog])
         t.start()
+        spinnerDialog.run()
+        t.join()
 
     def exportVBoxWorker(self, tempPath, vmname, spinnerDialog):
         logging.debug("exportVBoxWorker() initiated " + str(tempPath))
-        spinnerDialog.setTitleVal("Exporting VM")
-        spinnerDialog.setLabelVal("Creating OVA file for VM: " + vmname + ". Please wait...")
-        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath,"--iso"]).communicate()
-        # spinnerDialog.destroy()
+        GLib.idle_add(spinnerDialog.setTitleVal, "Exporting VM")
+        GLib.idle_add(spinnerDialog.setLabelVal, "Creating OVA file for VM: " + vmname + ". Please wait...")
+        subprocess.Popen([VBOXMANAGE_DIRECTORY, "export", vmname, "-o", tempPath, "--iso"]).communicate()
+        spinnerDialog.hide()
 
     def zipWorker(self, folderPath, spinnerDialog):
         logging.debug("zipWorker() initiated " + str(folderPath))
@@ -192,20 +203,18 @@ class Session:
                     name = os.path.normpath(name)
                     status = float(currFile / (numFiles * 1.))
                     logging.debug("adjusting dialog progress: " + str(status))
-                    spinnerDialog.setLabelVal(
+                    GLib.idle_add(spinnerDialog.setLabelVal,
                         "Compressing to EBX archive " + str(currFile) + "/" + str(numFiles) + ": " + name)
-                    spinnerDialog.setProgressVal(status)
+                    GLib.idle_add(spinnerDialog.setProgressVal, status),
                     zf.write(name, name)
-        spinnerDialog.setLabelVal("--------Almost finished, cleaning temporary directories--------")
-        spinnerDialog.setProgressVal(1)
+                GLib.idle_add(spinnerDialog.setLabelVal, "--------Almost finished, cleaning temporary directories--------")
+                GLib.idle_add(spinnerDialog.setProgressVal, 1)
         shutil.rmtree(folderPath, ignore_errors=True)
-        # spinnerDialog.hide()
-        spinnerDialog.setTitleVal("Done")
-        spinnerDialog.setLabelVal("Please close this Window")
+        spinnerDialog.hide()
 
     def exportZipFiles(self, folderPath, spinnerDialog):
         logging.debug("exportZipFiles() initiated " + str(folderPath))
-        spinnerDialog.set_title("Zipping content...")
+        GLib.idle_add(spinnerDialog.set_title, "Zipping content...")
         shutil.copy2(os.path.join(WORKSHOP_CONFIG_DIRECTORY, self.currentWorkshop.filename + ".xml"), folderPath)
         t = threading.Thread(target=self.zipWorker, args=[folderPath, spinnerDialog])
         t.start()
@@ -251,8 +260,8 @@ class Session:
             logging.debug("Current VM NAME: " + vm.name)
             outputOva = os.path.join(folderPath, vm.name + '.ova')
             logging.debug("exportWorkshop(): adjusting dialog progress value to " + str(currVMNum / (numVMs * 1.)))
-            spinnerDialog.setProgressVal(currVMNum / (numVMs * 1.))
-            spinnerDialog.setLabelVal("Exporting VM " + str(currVMNum + 1) + "/" + str(numVMs) + ": " + str(vm.name))
+            GLib.idle_add(spinnerDialog.setProgressVal, currVMNum / (numVMs * 1.))
+            GLib.idle_add(spinnerDialog.setLabelVal, "Exporting VM " + str(currVMNum + 1) + "/" + str(numVMs) + ": " + str(vm.name))
             currVMNum = currVMNum + 1
             logging.debug("Checking if " + folderPath + " exists: ")
             if os.path.exists(folderPath):
@@ -335,6 +344,7 @@ class Session:
     # This will load xml files
     def loadXMLFiles(self, directory):
         logging.debug("loadXMLFiles() initiated " + str(directory))
+        self.workshopList = []
         # Here we will iterate through all the files that end with .xml
         # in the workshop_configs directory
         if not os.path.exists(directory):
@@ -457,3 +467,116 @@ class Session:
 
             # Write tree to XML config file
             tree.write(os.path.join(WORKSHOP_CONFIG_DIRECTORY, workshop.filename + ".xml"), pretty_print=True)
+
+    def getDownloadLink(self, downloadIndex, workshopName):
+        root = ET.fromstring(downloadIndex.replace('&', '&amp;'))
+        for workshop in root.findall('workshop'):
+            if workshop.find('name').text.rstrip().lstrip() == workshopName:
+                return workshop.find('address').text.rstrip().lstrip()
+
+    def isInIndex(self, downloadIndex, inWorkshop):
+        root = ET.fromstring(downloadIndex)
+
+        for workshop in root.findall('workshop'):
+            if inWorkshop.filename == workshop.find('name').text.rstrip().lstrip():
+                return True
+        return False
+
+    def isWorkshop(self, inName):
+        for workshop in self.workshopList:
+            if workshop.filename == inName:
+                return True
+        return False
+
+    def downloadWorkshop(self, url, workshopName, spinnerDialog):
+        logging.debug("Setting up download")
+        self.downloadedZip = os.path.join(DOWNLOAD_LOCATION, workshopName+".ebx")
+        t = threading.Thread(target=downloadLargeFile, args=[url, self.downloadedZip, spinnerDialog])
+        t.start()
+        spinnerDialog.run()
+        t.join()
+
+    def importParseWithSpinner(self, tempPath, spinnerDialog):
+        logging.debug("importParseWithSpinner() initiated")
+        t = threading.Thread(target=self.importParseWorker, args=[tempPath, spinnerDialog])
+        t.start()
+        spinnerDialog.run()
+        t.join()
+
+    def importParseWorker(self, tempPath, spinnerDialog):
+        logging.debug("Parsing the imported files")
+        ovaList = []
+        xmlList = []
+        materialList = []
+        rdpList = []
+        # Get all files that end with .ova
+        if os.path.exists(tempPath):
+            baseFiles = os.listdir(tempPath)
+            for filename in baseFiles:
+                if filename.endswith(".ova"):
+                    ovaList.append(filename)
+                elif filename.endswith(".xml"):
+                    xmlList.append(filename)
+        materialsPath = os.path.join(tempPath, "Materials")
+        if os.path.exists(materialsPath):
+            logging.debug("importParse(): Materials folder to search: " + str(materialsPath))
+            if os.path.exists(materialsPath):
+                materialsFiles = os.listdir(materialsPath)
+                logging.debug("importActionEvent(): Materials to import: " + str(materialsFiles))
+                for filename in materialsFiles:
+                    logging.debug("importActionEvent(): Adding material to workshop: " + str(filename))
+                    materialList.append(filename)
+        rdpPath = os.path.join(tempPath, "RDP")
+        if os.path.exists(rdpPath):
+            rdpFiles = os.listdir(rdpPath)
+            for filename in rdpFiles:
+                rdpList.append(filename)
+
+        curCount = 1
+        GLib.idle_add(spinnerDialog.set_title, "Importing VM " + str(curCount) + "/" + str(len(ovaList)) + " to VBox...")
+
+        for ova in ovaList:
+            GLib.idle_add(spinnerDialog.setProgressVal, (curCount - 1.0) / len(ovaList))
+            self.importVBoxWorker(os.path.join(tempPath, ova), spinnerDialog)
+            curCount += 1
+
+        GLib.idle_add(spinnerDialog.set_title, "Preparing to copy workshop files...")
+
+        self.copyImportFiles(tempPath, xmlList, materialList, rdpList, spinnerDialog)
+        spinnerDialog.hide()
+
+    def copyImportFiles(self, tempPath, xmlList, materialList, rdpList, spinnerDialog):
+        logging.debug("Starting xml, material and rdp file copy")
+        curCount = 1.0
+
+        totalCount = len(xmlList) + len(materialList) + len(rdpList)
+        GLib.idle_add(spinnerDialog.setLabelVal, "Copying Configuration Files")
+        for xml in xmlList:
+            GLib.idle_add(spinnerDialog.setProgressVal, curCount / totalCount)
+            shutil.copy2(os.path.join(tempPath, xml), WORKSHOP_CONFIG_DIRECTORY)
+            curCount += 1
+
+        holdMatPath = os.path.join(WORKSHOP_MATERIAL_DIRECTORY, os.path.splitext(xmlList[0])[0])
+        if not os.path.exists(holdMatPath):
+            os.makedirs(holdMatPath)
+
+        GLib.idle_add(spinnerDialog.setLabelVal, "Copying Material Files")
+        for material in materialList:
+            logging.debug("importActionEvent(): Processing file " + str(material))
+            logging.debug("importActionEvent(): Checking for " + os.path.join(holdMatPath, material))
+            if not os.path.exists(os.path.join(holdMatPath, material)):
+                logging.debug("importActionEvent(): copying file " + str(
+                    os.path.join(tempPath, "Materials", material)) + " to " + str(material))
+                GLib.idle_add(spinnerDialog.setProgressVal, curCount / totalCount)
+                shutil.copy2(os.path.join(tempPath, "Materials", material), holdMatPath)
+            curCount += 1
+
+        holdRDPPath = os.path.join(WORKSHOP_RDP_DIRECTORY, (os.path.splitext(xmlList[0])[0]))
+        if not os.path.exists(holdRDPPath):
+            os.makedirs(holdRDPPath)
+
+        GLib.idle_add(spinnerDialog.setLabelVal, "Copying RDP Files")
+        for rdp in rdpList:
+            GLib.idle_add(spinnerDialog.setProgressVal, curCount / totalCount)
+            shutil.copy2(os.path.join(tempPath, "RDP", rdp), holdRDPPath)
+            curCount += 1
