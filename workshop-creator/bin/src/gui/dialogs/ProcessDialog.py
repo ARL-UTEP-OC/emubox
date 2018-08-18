@@ -3,19 +3,28 @@ import logging
 import shlex
 import gi; gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, GLib
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 from src.gui_constants import POSIX
 
 
 class ProcessDialog(Gtk.Dialog):
 
-    def __init__(self, processPath):
+    def __init__(self, processPath, capture="stdout", granularity="line"): #other parameters: stdout/stderr, char/line-based
         
         Gtk.Dialog.__init__(self, title="Process Output Console Dialog")
+        logging.debug("ProcessDialog(): initiated")
         #self.set_transient_for(parent.get_toplevel())
         #Variables needed for obtaining and displaying process output
         self.p = None
         self.proc_complete = False
+        if capture == "stderr":
+            self.capture = "stderr"
+        else:
+            capture = "stdout"
+        if granularity == "char":
+            self.granularity = "char"
+        else:
+            self.granularity = "line"
 
         #Configuraiton for this Gtk.Window
         self.set_default_size(400, 180)
@@ -58,10 +67,12 @@ class ProcessDialog(Gtk.Dialog):
         self.text_buffer.insert(i, str(msg), -1)
 
     def hideDialog(self):
+        logging.debug("hideDialog(): initiated")
         self.hide()
 
     def watchProcess(self, processPath):
-        #Function for starting the process and capturing its stdout
+        logging.debug("watchProcess(): initiated")
+        #Function for starting the process and capturing its output
         try:
             GLib.idle_add(self.appendText, "Starting process: " + str(processPath) + "\r\n")
             if POSIX:
@@ -71,7 +82,10 @@ class ProcessDialog(Gtk.Dialog):
             logging.debug("watchProcess(): finished call to popen, observing stdout...")
             while True:
                 logging.debug("watchProcess(): reading stdout")
-                out = self.p.stdout.readline()
+                if self.granularity == "line":
+                    out = self.p.stdout.readline()
+                else:
+                    out = self.p.stdout.read(1)
                 if out == '' and self.p.poll() != None:
                     logging.debug("watchProcess(): breaking out")
                     break
@@ -90,14 +104,14 @@ class ProcessDialog(Gtk.Dialog):
             GLib.idle_add(self.hideDialog)
 
     def destroy_progress(self, widget, data=None):
-        logging.debug("watchProcess(): destroy_progress(): initiated")
+        logging.debug("destroy_progress(): initiated")
         #Sharing thread memory, so we have access to the process that it creates and watches
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
             self.p.terminate()
         GLib.idle_add(self.hideDialog)
 
-# if __name__ == "__main__":
-#     #a = ProcessWindow("ping localhost -t")
-#     a = ProcessWindow("tracert -d www.google.com")
-#     Gtk.main()
+#if __name__ == "__main__":
+     #a = ProcessWindow("ping localhost -t")
+     #a = ProcessDialog("tracert -d www.google.com")
+     #Gtk.main()
