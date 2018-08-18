@@ -2,7 +2,7 @@ import threading
 import logging
 import shlex
 import gi; gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GObject, GLib
 from subprocess import Popen, PIPE, STDOUT
 from src.gui_constants import POSIX
 
@@ -16,9 +16,7 @@ class ProcessDialog(Gtk.Dialog):
         #Variables needed for obtaining and displaying process output
         self.p = None
         self.proc_complete = False
-        self.curr_out_buff_pos = 0
-        self.curr_read_buff_pos = 0
-        self.curr_out_buff = []
+
         #Configuraiton for this Gtk.Window
         self.set_default_size(400, 180)
         self.set_resizable(True)
@@ -48,40 +46,48 @@ class ProcessDialog(Gtk.Dialog):
         #Start the thread that executes the process and captures its output
         t = threading.Thread(target=self.watchProcess, args=(processPath,))
         t.start()
-        #Start a timer that will retrieve the process output and show it on the TextView
-        GObject.timeout_add(10, self.appendText)
 
     def autoscroll(self, *args):
         #The actual scrolling method
         adj = self.scrolled_window.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
 
+    def appendText(self, msg):
+        i = self.text_buffer.get_end_iter()
+        logging.debug("appendText(): " + str(msg))
+        self.text_buffer.insert(i, str(msg), -1)
+
+    def hideDialog(self):
+        self.hide()
+
     def watchProcess(self, processPath):
         #Function for starting the process and capturing its stdout
         try:
-            self.curr_out_buff.append("Starting process: " + str(processPath) + "\r\n")
-            self.curr_out_buff_pos = self.curr_out_buff_pos + 1
+            GLib.idle_add(self.appendText, "Starting process: " + str(processPath) + "\r\n")
             if POSIX:
-                self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, stderr=STDOUT, bufsize=1)
+                self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, stderr=PIPE)
             else:
-                self.p = Popen(processPath, shell=False, stdout=PIPE, bufsize=1)
+                self.p = Popen(processPath, shell=False, stdout=PIPE, stderr=PIPE)
             logging.debug("watchProcess(): finished call to popen, observing stdout...")
-            with self.p.stdout:
-                for line in iter(self.p.stdout.readline, b''):
-                    logging.debug("watchProcess(): new line identified: " + line)
-                    if line.rstrip().lstrip() != "":
-                        self.curr_out_buff.append(line)
-                        self.curr_out_buff_pos = self.curr_out_buff_pos + 1
+            while True:
+                logging.debug("watchProcess(): reading stdout")
+                out = self.p.stdout.readline()
+                if out == '' and self.p.poll() != None:
+                    logging.debug("watchProcess(): breaking out")
+                    break
+                else: 
+                    logging.debug("watchProcess(): calling idle_add")
+                    GLib.idle_add(self.appendText, out)
+
             # wait for the subprocess to exit
             self.p.wait()
-            #Need to set proc_complete so that the appendText method can return False
-            #and then subsequently, this will stop the GObject timer
             self.proc_complete = True
+            GLib.idle_add(self.hideDialog)
         except Exception as x:
             logging.error("watchProcess(): Something went wrong while running process: " + str(processPath) + "\r\n" + str(x))
             if self.p != None and self.p.poll() == None:
                 self.p.terminate()
-            self.hide()
+            GLib.idle_add(self.hideDialog)
 
     def destroy_progress(self, widget, data=None):
         logging.debug("watchProcess(): destroy_progress(): initiated")
@@ -89,42 +95,7 @@ class ProcessDialog(Gtk.Dialog):
         #if the process is still running, terminate it
         if self.p != None and self.p.poll() == None:
             self.p.terminate()
-        #self.destroy()
-
-    def appendText(self):
-        #This function is called by a GObject timer. It will check if there is
-        #any new output from the executing process. If there is data then
-        #it will be pulled from the buffer and displayed in the Text View
-        #If the process has stopped, then an additional check is conducted
-        #to ensure the final output is displayed
-        if self.curr_out_buff_pos > self.curr_read_buff_pos:
-            logging.debug("appendText(): text is being added to buffer")
-            i = self.text_buffer.get_end_iter()
-            for x in xrange(self.curr_read_buff_pos, self.curr_out_buff_pos):
-                logging.debug("appendText(): " + str(self.curr_out_buff[x]))
-                self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
-            self.curr_read_buff_pos = self.curr_out_buff_pos
-        if self.proc_complete != True:
-            #logging.debug("appendText(): process executing...")
-            return True
-        else:
-            logging.debug("appendText(): process completed execution, finishing processing")
-            while self.curr_out_buff_pos > self.curr_read_buff_pos:
-                logging.debug("appendText(): getting current position")
-                i = self.text_buffer.get_end_iter()
-                for x in xrange(self.curr_read_buff_pos, self.curr_out_buff_pos):
-                    logging.debug("appendText(): adding character: " + str(self.curr_out_buff[x]))
-                    self.text_buffer.insert(i, str(self.curr_out_buff[x]), -1)
-                logging.debug("appendText(): updating cursor position: " + self.curr_out_buff_pos)
-                self.curr_read_buff_pos = self.curr_out_buff_pos
-            logging.debug("appendText(): wrote all bytes, closing up")
-            i = self.text_buffer.get_end_iter()
-            logging.debug("appendText(): Process execution complete")
-            self.text_buffer.insert(i, str("Process execution complete"), -1)
-            logging.debug("appendText(): wrote last line in text buffer... returning false")
-            logging.debug("appendText(): hiding dialog")
-            self.hide()
-            return False
+        GLib.idle_add(self.hideDialog)
 
 # if __name__ == "__main__":
 #     #a = ProcessWindow("ping localhost -t")
