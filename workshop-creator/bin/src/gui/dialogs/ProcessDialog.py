@@ -20,7 +20,7 @@ class ProcessDialog(Gtk.Dialog):
         if capture == "stderr":
             self.capture = "stderr"
         else:
-            capture = "stdout"
+            self.capture = "stdout"
         if granularity == "char":
             self.granularity = "char"
         else:
@@ -81,11 +81,17 @@ class ProcessDialog(Gtk.Dialog):
                 self.p = Popen(processPath, shell=False, stdout=PIPE, stderr=PIPE)
             logging.debug("watchProcess(): finished call to popen, observing stdout...")
             while True:
-                logging.debug("watchProcess(): reading stdout")
+                logging.debug("watchProcess(): reading stderr")
                 if self.granularity == "line":
-                    out = self.p.stdout.readline()
+                    if self.capture == "stdout":
+                        out = self.p.stdout.readline()
+                    else:
+                        out = self.p.stderr.readline()
                 else:
-                    out = self.p.stdout.read(1)
+                    if self.capture == "stdout":
+                        out = self.p.stdout.read(1)
+                    else:
+                        out = self.p.stderr.read(1)
                 if out == '' and self.p.poll() != None:
                     logging.debug("watchProcess(): breaking out")
                     break
