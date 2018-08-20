@@ -2,17 +2,22 @@ import time
 import ast
 import threading
 import gi; gi.require_version('Gtk', '3.0')
+from vboxmanage_utils import getCloneNames
 from src.gui_constants import MANAGER_BIN_DIRECTORY, PADDING
 from subprocess import Popen, PIPE
 from gi.repository import Gtk
 
 
 class WorkshopListBoxRow(Gtk.ListBoxRow):
+
     def __init__(self, workshop):
         super(Gtk.ListBoxRow, self).__init__()
         self.workshopName = workshop[0]
         self.num_available = workshop[1]
-        self.add(Gtk.Label(str(self.workshopName) + "\t\t\t\t\t\t\t\tUnits Available: " + str(self.num_available)))
+        self.add(Gtk.Label(str(self.workshopName) +
+                           "\t\t\t\t\t\t\t\tUnits Available: " +
+                           str(self.num_available) + "/" +
+                           str(len(getCloneNames(self.workshopName)))))
 
 
 class ManagerBox(Gtk.Box):
@@ -132,7 +137,10 @@ class ManagerBox(Gtk.Box):
                         child.num_available = workshop[1]
                         for label in child.get_children():
                             child.remove(label)
-                        child.add(Gtk.Label(str(child.workshopName) + "\t\t\t\t\t\t\t\tUnits Available: " + str(child.num_available)))
+                        child.add(Gtk.Label(str(child.workshopName) +
+                                            "\t\t\t\t\t\t\t\tUnits Available: " +
+                                            str(child.num_available) + "/" +
+                                            str(len(getCloneNames(child.workshopName)))))
         self.workshops_list_box.show_all()
 
     def workshop_is_displayed(self, workshop):
