@@ -88,10 +88,10 @@ class Session:
 
     def scriptWorker(self, filePath, script):
         logging.debug("scriptWorker() initiated " + str(filePath) + " " + script)
-        pd = ProcessDialog("python -u \"" + script + "\" \"" + filePath + "\"")
+        pd = ProcessDialog("python -u \"" + script + "\" \"" + filePath + "\"", granularity="char")
         pd.set_title("Processing... please wait")
         pd.run()
-        pd.destroy()
+        #pd.destroy()
 
     def unzip(self, zipPath, spinnerDialog):
         logging.debug("unzip() initiated " + str(zipPath))
@@ -265,9 +265,9 @@ class Session:
             currVMNum = currVMNum + 1
             logging.debug("Checking if " + folderPath + " exists: ")
             if os.path.exists(folderPath):
-                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " export \"" + vm.name + "\" -o \"" + outputOva + "\" --iso")
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " export \"" + vm.name + "\" -o \"" + outputOva + "\" --iso", granularity="char", capture="stderr")
                 pd.run()
-                pd.destroy()
+                #pd.destroy()
             else:
                 logging.error("folderPath" + folderPath + " was not created!")
 

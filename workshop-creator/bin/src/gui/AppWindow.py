@@ -23,6 +23,7 @@ from src.gui_constants import (BOX_SPACING, PADDING, MATERIAL_TREE_LABEL, VM_TRE
                                WORKSHOP_CONFIG_DIRECTORY, WORKSHOP_CREATOR_FILE_PATH,
                                WORKSHOP_RESTORE_FILE_PATH, WORKSHOP_RDP_DIRECTORY,
                                VM_POWEROFF_FILE_PATH, VM_STARTER_FILE_PATH,
+                               VBOXMANAGE_DIRECTORY,
                                ONLINE_INDEX_FILE, WORKSHOP_TMP_DIRECTORY)
 
 
@@ -620,6 +621,7 @@ class AppWindow(Gtk.ApplicationWindow):
             # TODO: need to make the spinnerDialog take a thread and start it after the dialog is shown, otherwise, this could lead to an undestroyable dialog
             spinnerDialog = SpinnerDialog(self, "Preparing to decompress EBX archive")
             self.session.importUnzip(zipPath, spinnerDialog)
+            spinnerDialog.show()
 
             ovaList = []
             xmlList = []
@@ -646,11 +648,18 @@ class AppWindow(Gtk.ApplicationWindow):
                 rdpFiles = os.listdir(rdpPath)
                 for filename in rdpFiles:
                     rdpList.append(filename)
-
+            vmNum = 1
             for ova in ovaList:
+                prog = float(float(vmNum) / len(ovaList))
                 logging.debug("importActionEvent(): Importing " + str(ova) + " into VirtualBox...")
-                GLib.idle_add(spinnerDialog.set_title, "Importing " + str(ova) + " into VirtualBox...")
-                self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
+                GLib.idle_add(spinnerDialog.setTitleVal, "Importing VMs")
+                GLib.idle_add(spinnerDialog.setLabelVal, "Importing VM " + str(vmNum) + " of " + str(len(ovaList)))
+                GLib.idle_add(spinnerDialog.setProgressVal, prog)
+                #HERE is where
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " import " + os.path.join(tempPath, ova), granularity="char", capture="stderr")
+                pd.run()
+                vmNum = vmNum + 1
+                #self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
             spinnerDialog.destroy()
 
             for xml in xmlList:
