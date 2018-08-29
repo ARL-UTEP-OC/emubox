@@ -1,13 +1,14 @@
 import os
-import subprocess
 import re
+import shlex
 import xml.etree.ElementTree as ET
+from subprocess import check_output, Popen, PIPE
 from src.gui_constants import VBOXMANAGE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY
 
 
 def getVMs():
     getVMsCmd = [VBOXMANAGE_DIRECTORY, "list", "vms"]
-    vmList = subprocess.check_output(getVMsCmd)
+    vmList = check_output(getVMsCmd)
     vmList = re.findall("\"(.*)\"", vmList)
     return list(vmList)
 
@@ -34,11 +35,13 @@ def getCloneNames(workshopName):
 def isRunning(workshopName):
     clone_names = getCloneNames(workshopName)
     for clone_name in clone_names:
-        cmd = VBOXMANAGE_DIRECTORY + \
-              " showvminfo " + "\"" + clone_name + "\" | grep -c \"running (since\""
-        ps = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        output = ps.communicate()[0]
-        output = int(output)
+        cmd1 = VBOXMANAGE_DIRECTORY + " showvminfo " + "\"" + clone_name + "\""
+        cmd2 = "grep -c \"running (since\""
+
+        p1 = Popen(shlex.split(cmd1), shell=False, stdout=PIPE)
+        p2 = Popen(shlex.split(cmd2), shell=False, stdin=p1.stdout, stdout=PIPE)
+
+        output = int(p2.communicate()[0])
         if output == 0:
             return False
     return True
