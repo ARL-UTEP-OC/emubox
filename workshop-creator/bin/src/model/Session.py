@@ -17,7 +17,17 @@ from src.gui_constants import (MANAGER_SAVE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY
                                WORKSHOP_RDP_DIRECTORY, VBOXMANAGE_DIRECTORY, DOWNLOAD_LOCATION)
 
 
+class SessionSingleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(SessionSingleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 class Session:
+    __metaclass__ = SessionSingleton
 
     def __init__(self):
         logging.debug("Creating Session")
