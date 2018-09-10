@@ -8,7 +8,7 @@ from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.widgets.WorkshopListWidget import WorkshopListWidget
 from src.gui_constants import (VM_STARTER_FILE_PATH, VM_POWEROFF_FILE_PATH,
                                WORKSHOP_CONFIG_DIRECTORY, WORKSHOP_CREATOR_FILE_PATH, WORKSHOP_RESTORE_FILE_PATH)
-from vboxmanage_utils import isRunning, hasClonesCreated, getCloneNames, getVMs, getStatus
+from vboxmanage_utils import getStatus
 
 
 class SuperMenu(Gtk.Box):
