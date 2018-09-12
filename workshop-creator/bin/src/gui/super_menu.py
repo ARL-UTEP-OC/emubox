@@ -8,7 +8,7 @@ from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.widgets.WorkshopListWidget import WorkshopListWidget
 from src.gui_constants import (VM_STARTER_FILE_PATH, VM_POWEROFF_FILE_PATH,
                                WORKSHOP_CONFIG_DIRECTORY, WORKSHOP_CREATOR_FILE_PATH, WORKSHOP_RESTORE_FILE_PATH)
-from vboxmanage_utils import getStatus
+from vboxmanage_utils import getStatus, getCloneNames
 
 
 class SuperMenu(Gtk.Box):
@@ -25,7 +25,6 @@ class SuperMenu(Gtk.Box):
         select.connect("changed", self.onItemSelected)
 
         # Here we will initialize signals for the tree view right clicked
-        #TODO: Investigate why treeViewActionEvent stops selection
         self.workshopListWidget.treeView.connect("button-press-event", self.treeViewActionEvent)
         self.focusedTreeIter = None
 
@@ -37,6 +36,8 @@ class SuperMenu(Gtk.Box):
         self.poweroffVMs.connect("activate", self.poweroffVMsActionEvent)
         self.restoreSnapshots = Gtk.MenuItem("Signal - Restore Snapshots")
         self.restoreSnapshots.connect("activate", self.restoreSnapshotsActionEvent)
+        self.deleteClones = Gtk.MenuItem("Signal - Delete Clones")
+        self.deleteClones.connect("activate", self.deleteClonesActionEvent)
 
         # Workshop context menu
         self.workshopMenu = Gtk.Menu()
@@ -45,6 +46,7 @@ class SuperMenu(Gtk.Box):
         self.workshopMenu.append(self.startVMs)
         self.workshopMenu.append(self.poweroffVMs)
         self.workshopMenu.append(self.restoreSnapshots)
+        self.workshopMenu.append(self.deleteClones)
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
 
     def treeViewActionEvent(self, treeView, event):
@@ -139,6 +141,29 @@ class SuperMenu(Gtk.Box):
         pd.destroy()
         logging.debug("poweroffVMsActionEvent(): returned from ProcessDialog")
         self.refreshActionEvent(self.session.workshopList)
+
+    def deleteClonesActionEvent(self, menuItem):
+        logging.debug("deleteClonesActionEvent() initiated: " + str(menuItem))
+        if self.session.currentWorkshop is None:
+            WarningDialog(self.window, "You must select a workshop before you can delete clones.")
+            return
+        elif getStatus(self.session.currentWorkshop.filename) == "Clones Not Created":
+            WarningDialog(Gtk.Window(), "Clones are not yet created for this workshop.")
+            return
+        elif getStatus(self.session.currentWorkshop.filename) == "Running":
+            WarningDialog(self.window, "Workshop is currently running. Cannot delete running clones.")
+        elif getStatus(self.session.currentWorkshop.filename) == "Ready":
+            workshopName = self.session.currentWorkshop.filename
+            clones = getCloneNames(workshopName)
+
+            for clone in clones:
+                logging.debug("deleteClonesActionEvent(): instantiating ProcessDialog")
+                pd = ProcessDialog("vboxmanage unregistervm " + clone.replace(" ", "\\ ") + " --delete")
+                logging.debug("deleteClonesActionEvent(): running ProcessDialog")
+                pd.run()
+                pd.destroy()
+                logging.debug("deleteClonesActionEvent(): returned from ProcessDialog")
+            self.refreshActionEvent(self.session.workshopList)
 
     def onItemSelected(self, selection):
         logging.debug("Item was selected: " + str(selection.get_selected))
