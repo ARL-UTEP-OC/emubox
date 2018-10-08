@@ -6,6 +6,7 @@ import urllib2
 import gi; gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GLib
 from src.gui.manager_gui import ManagerBox
+from src.gui.super_menu import SuperMenu
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
 from src.gui.dialogs.ProcessDialog import ProcessDialog
@@ -47,10 +48,12 @@ class AppWindow(Gtk.ApplicationWindow):
         self.scrolledInnerBox = Gtk.Box(spacing=BOX_SPACING, orientation=Gtk.Orientation.VERTICAL)
 
         self.managerBox = ManagerBox()
+        self.superMenu = SuperMenu()
 
         self.notebook = Gtk.Notebook()
         self.notebook.append_page(self.windowBox, Gtk.Label("Creator"))
         self.notebook.append_page(self.managerBox, Gtk.Label("Manager"))
+        self.notebook.append_page(self.superMenu, Gtk.Label("Super Menu"))
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
@@ -102,15 +105,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.createRDP = Gtk.MenuItem("Create RDP Files")
         self.createRDP.connect("activate", self.createRDPActionEvent)
 
-        self.cloneWorkshop = Gtk.MenuItem("Signal - Create Clones")
-        self.cloneWorkshop.connect("activate", self.cloneWorkshopActionEvent)
-        self.startVMs = Gtk.MenuItem("Signal - Start VMs (headless)")
-        self.startVMs.connect("activate", self.startVMsActionEvent)
-        self.poweroffVMs = Gtk.MenuItem("Signal - Power Off VMs")
-        self.poweroffVMs.connect("activate", self.poweroffVMsActionEvent)
-        self.restoreSnapshots = Gtk.MenuItem("Signal - Restore Snapshots")
-        self.restoreSnapshots.connect("activate", self.restoreSnapshotsActionEvent)
-
         self.removeWorkshop = Gtk.MenuItem("Remove Workshop")
         self.removeWorkshop.connect("activate", self.removeWorkshopActionEvent)
         self.exportWorkshop = Gtk.MenuItem("Export Workshop")
@@ -130,12 +124,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
 
         self.workshopMenu.append(self.createRDP)
-        self.workshopMenu.append(Gtk.SeparatorMenuItem())
-
-        self.workshopMenu.append(self.cloneWorkshop)
-        self.workshopMenu.append(self.startVMs)
-        self.workshopMenu.append(self.poweroffVMs)
-        self.workshopMenu.append(self.restoreSnapshots)
         self.workshopMenu.append(Gtk.SeparatorMenuItem())
 
         self.workshopMenu.append(self.removeWorkshop)
@@ -354,6 +342,7 @@ class AppWindow(Gtk.ApplicationWindow):
         logging.debug("Full Saving")
         self.softSave()
         self.hardSave()
+        self.superMenu.refreshActionEvent(self.session.workshopList)
 
     def createRDPActionEvent(self, menuItem):
         logging.debug("createRDPActionEvent() initiated: " + str(menuItem))
@@ -361,10 +350,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.session.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
         logging.debug("copying rdp files to manager directory")
         self.session.overwriteRDPToManagerSaveDirectory()
-
-    def restoreSnapshotsActionEvent(self, menuItem):
-        logging.debug("restoreSnapshotsActionEvent() initiated")
-        self.session.runScript(WORKSHOP_RESTORE_FILE_PATH)
 
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
@@ -511,6 +496,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         if workshopText != None and vmText != None:
             self.addNewWorkshop(workshopText, vmText)
+        self.superMenu.refreshActionEvent(self.session.workshopList)
 
     def removeWorkshopActionEvent(self, menuItem):
         logging.debug("removeWorkshopActionEvent() initiated: " + str(menuItem))
@@ -523,6 +509,7 @@ class AppWindow(Gtk.ApplicationWindow):
             model = self.workshopTree.treeStore
             self.session.removeWorkshop()
             model.remove(self.focusedTreeIter)
+        self.superMenu.refreshActionEvent(self.session.workshopList)
 
     def addMaterialActionEvent(self, menuItem):
         logging.debug("addMaterialActionEvent() initiated: " + str(menuItem))
