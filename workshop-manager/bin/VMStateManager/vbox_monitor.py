@@ -150,6 +150,12 @@ def makeNotAvailableToRestoreState(vmNameList):
         restoreState.append(vmName)
         queueStateSem.release()
 
+def exportEcelData(machine):
+    #TODO: Grab username and password for this machine inside of its corresponding workshop.xml file
+    #TODO: Use machine's groupname to determine workshop name. Use workshop name to find corresonding xml file
+    #TODO: Read workshop xml file, find corresponding machine, grab username and password
+    return
+
 
 def makeRestoreToAvailableState():  # will look at restore buffer and process any items that exist
     global vms
@@ -180,6 +186,8 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 queueStateSem.wait()
                 queueStateSem.acquire()
                 mach = vbox.find_machine(substate)
+                # TODO: Create virtualbox session, get a guest session (Grab credentials)
+                # TODO: Read from XML where to save files in host machine
                 vmState = getVMInfo(session, mach)["VMState"]
                 queueStateSem.release()
                 logging.debug("currState:" + str(vmState))
