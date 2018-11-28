@@ -10,13 +10,15 @@ from src.gui.super_menu import SuperMenu
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
 from src.gui.dialogs.ProcessDialog import ProcessDialog
-from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.dialogs.DownloadDialog import DownloadDialog
+from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.widgets.BaseWidget import BaseWidget
 from src.gui.widgets.WorkshopTreeWidget import WorkshopTreeWidget
 from src.gui.widgets.MaterialWidget import MaterialWidget
 from src.gui.widgets.VMWidget import VMWidget
+from src.gui.windows.InetsWindow import InetsWindow
+from src.gui.windows.CommandsWindow import CommandsWindow
 from src.model.Session import Session
 from src.gui_constants import (BOX_SPACING, PADDING, MATERIAL_TREE_LABEL, VM_TREE_LABEL,
                                WORKSHOP_RDP_CREATOR_FILE_PATH, WORKSHOP_MATERIAL_DIRECTORY,
@@ -84,6 +86,8 @@ class AppWindow(Gtk.ApplicationWindow):
         self.connect("delete-event", self.on_delete)
 
         self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
+        self.vmWidget.inetsButton.connect("clicked", self.openInetsWindowHandler)
+        self.vmWidget.customShutdownCommandsButton.connect("clicked", self.openCustomCommandsHandler)
         self.vmWidget.saveButton.connect("clicked", self.saveButtonHandler)
         self.baseWidget.saveButton.connect("clicked", self.saveButtonHandler)
 
@@ -350,6 +354,10 @@ class AppWindow(Gtk.ApplicationWindow):
         self.session.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
         logging.debug("copying rdp files to manager directory")
         self.session.overwriteRDPToManagerSaveDirectory()
+
+    def openInetsWindowHandler(self, menuItem):
+        logging.debug("openInetWindowHandler() initated: " + str(menuItem))
+        InetsWindow(self, self.session.currentVM.internalnetBasenameList)
 
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
@@ -787,3 +795,7 @@ class AppWindow(Gtk.ApplicationWindow):
                                    "Workshop download complete.")
         dialog.run()
         dialog.destroy()
+
+    def openCustomCommandsHandler(self, menuItem):
+        logging.debug("openInetWindowHandler() initated: " + str(menuItem))
+        CommandsWindow(self)
