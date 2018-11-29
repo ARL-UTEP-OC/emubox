@@ -659,7 +659,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " import " + os.path.join(tempPath, ova), granularity="char", capture="stderr")
                 pd.run()
                 vmNum = vmNum + 1
-                #self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
+                self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
             spinnerDialog.destroy()
 
             for xml in xmlList:
