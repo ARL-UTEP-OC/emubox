@@ -705,6 +705,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.workshopTree.populateTreeStore(self.session.workshopList)
 
             shutil.rmtree(baseTempPath, ignore_errors=True)
+            self.superMenu.refreshActionEvent(self.session.workshopList)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -787,3 +788,4 @@ class AppWindow(Gtk.ApplicationWindow):
                                    "Workshop download complete.")
         dialog.run()
         dialog.destroy()
+        self.superMenu.refreshActionEvent(self.session.workshopList)
