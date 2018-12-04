@@ -7,6 +7,7 @@ import gevent.monkey
 from gevent.lock import BoundedSemaphore
 from virtualbox import Manager
 from virtualbox.library import SessionState, MachineState, LockType
+from lxml import etree
 
 from manager_constants import LOCK_WAIT_TIME, VBOX_PROBETIME, VM_RESTORE_TIME
 
@@ -150,11 +151,33 @@ def makeNotAvailableToRestoreState(vmNameList):
         restoreState.append(vmName)
         queueStateSem.release()
 
+
 def exportEcelData(machine):
+    logging.info("exportEcelData: machine: " + machine.groups)
     #TODO: Grab username and password for this machine inside of its corresponding workshop.xml file
     #TODO: Use machine's groupname to determine workshop name. Use workshop name to find corresonding xml file
     #TODO: Read workshop xml file, find corresponding machine, grab username and password
-    return
+    # This program copies a file from a guest machine in VirtualBox to the host machine.
+    # Assume machine is already running.
+    """
+    machine_session = machine.create_session()
+    guest_session = machine_session.console.guest.create_session("root", "toor")
+
+    print "Creating tar file in guest..."
+    # Generate name for the file
+    tar_name = "ecel_data_" + time.strftime("%Y%m%d-%H%M%S") + ".tar.bz2"
+    # create tar file from the guest machine to ease export
+    process, stdout, stderr = guest_session.execute("/bin/bash", ["-c", "tar cjfv " + tar_name + " /root/ecel/plugins"])
+
+    # Copy the tar bz2 file to a path in the host machine
+    print "Copying file to host..."
+    host_path = "C:/users/ivaaa/Desktop/"
+    progress = guest_session.file_copy_from_guest("/" + tar_name, host_path + tar_name, [])
+    progress.wait_for_completion()
+    print "Copying completed"
+    guest_session.close()
+    machine_session.close()
+    """
 
 
 def makeRestoreToAvailableState():  # will look at restore buffer and process any items that exist
@@ -188,6 +211,7 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 mach = vbox.find_machine(substate)
                 # TODO: Create virtualbox session, get a guest session (Grab credentials)
                 # TODO: Read from XML where to save files in host machine
+                exportEcelData(mach)
                 vmState = getVMInfo(session, mach)["VMState"]
                 queueStateSem.release()
                 logging.debug("currState:" + str(vmState))
