@@ -1,5 +1,6 @@
 import gc
 import logging
+import os
 import time
 import traceback
 
@@ -10,6 +11,7 @@ from virtualbox.library import SessionState, MachineState, LockType
 from lxml import etree
 
 from manager_constants import LOCK_WAIT_TIME, VBOX_PROBETIME, VM_RESTORE_TIME
+from src.gui_constants import WORKSHOP_CONFIG_DIRECTORY
 
 
 gevent.monkey.patch_all()
@@ -152,32 +154,51 @@ def makeNotAvailableToRestoreState(vmNameList):
         queueStateSem.release()
 
 
-def exportEcelData(machine):
-    logging.info("exportEcelData: machine: " + machine.groups)
-    #TODO: Grab username and password for this machine inside of its corresponding workshop.xml file
-    #TODO: Use machine's groupname to determine workshop name. Use workshop name to find corresonding xml file
-    #TODO: Read workshop xml file, find corresponding machine, grab username and password
-    # This program copies a file from a guest machine in VirtualBox to the host machine.
-    # Assume machine is already running.
-    """
-    machine_session = machine.create_session()
-    guest_session = machine_session.console.guest.create_session("root", "toor")
+def execShutdownCmds(machine):
+    logging.info("execShutdownCmds: machine: " + str(machine.groups))
+    try:
+        machine_group = machine.groups[0]
+        workshopName = str(machine_group.encode('ascii', 'ignore')).split('/')[1]
+        xmlFileName = workshopName + ".xml"
 
-    print "Creating tar file in guest..."
-    # Generate name for the file
-    tar_name = "ecel_data_" + time.strftime("%Y%m%d-%H%M%S") + ".tar.bz2"
-    # create tar file from the guest machine to ease export
-    process, stdout, stderr = guest_session.execute("/bin/bash", ["-c", "tar cjfv " + tar_name + " /root/ecel/plugins"])
+        xmlFileName = os.path.join(WORKSHOP_CONFIG_DIRECTORY, 'testidk.xml')
 
-    # Copy the tar bz2 file to a path in the host machine
-    print "Copying file to host..."
-    host_path = "C:/users/ivaaa/Desktop/"
-    progress = guest_session.file_copy_from_guest("/" + tar_name, host_path + tar_name, [])
-    progress.wait_for_completion()
-    print "Copying completed"
-    guest_session.close()
-    machine_session.close()
-    """
+        tree = etree.parse('/home/dgnajera/Downloads/research/RouteHijacking_shutdown_cmd_example.xml')
+        root = tree.getroot()
+        vmset = root.find('testbed-setup').find('vm-set')
+
+        for vm in vmset.findall('vm'):
+            currentVM = vm.find('name').text
+            if currentVM in machine.name:
+                logging.info("execShutdownCmds: Match found!")
+                # Find shutdown commands to be executed
+                shutdownCommands = vm.find('shutdown-commands')
+                if shutdownCommands is not None:
+                    cmds = shutdownCommands.findall('cmd')
+                    if len(cmds):  # Shutdown commands found
+                        cmds.sort(key=lambda x: x.attrib['seq'])  # Sort shutdown commands by sequence
+
+                        # Iterate through commands and execute them
+                        for cmd in cmds:
+                            username = cmd.find('username').text.strip()
+                            password = cmd.find('password').text.strip()
+
+                            machine_session = machine.create_session()  # Create session to the machine
+                            guest_session = machine_session.console.guest.create_session(username, password)
+
+                            cmdToExecute = cmd.find('syscall')
+                            if cmdToExecute is not None:  # command is a system call
+                                guest_session.execute(cmdToExecute.text.strip())
+                            else:
+                                cmdToExecute = cmd.find('copyfrom')
+                                if cmdToExecute is not None:  # command is a copy from
+                                    sourceFile = cmdToExecute.find('source-file').text.strip()
+                                    destDir = cmdToExecute.find('dest-dir').text.strip()
+                                    guest_session.file_copy_from_guest(sourceFile, destDir).wait_for_completion()
+                            guest_session.close()
+                            machine_session.close()
+    except Exception:
+        logging.info("execShutdownCms: An error occurred: " + str(machine.groups))
 
 
 def makeRestoreToAvailableState():  # will look at restore buffer and process any items that exist
@@ -211,13 +232,13 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 mach = vbox.find_machine(substate)
                 # TODO: Create virtualbox session, get a guest session (Grab credentials)
                 # TODO: Read from XML where to save files in host machine
-                exportEcelData(mach)
                 vmState = getVMInfo(session, mach)["VMState"]
                 queueStateSem.release()
                 logging.debug("currState:" + str(vmState))
                 result = -1
                 if restoreSubstates[substate] == "pending" and vmState == MachineState(5):
                     logging.debug("CALLING POWEROFF"+str(substate)+":"+str(restoreSubstates[substate]))
+                    execShutdownCmds(mach)
                     result = powerdownMachine(session, mach)
                     if result != -1:
                         restoreSubstates[substate] = "poweroff_sent"
