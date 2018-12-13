@@ -122,6 +122,8 @@ class Session:
 
         currmem_num = 0
         for entry_name in members_list:
+            if entry_name[-1] is '/':  # if entry is a directory
+                continue
             logging.debug("unzipWorker(): unzipping " + str(entry_name))
             # increment our file progress counter
             currmem_num = currmem_num + 1

@@ -17,8 +17,6 @@ from src.gui.widgets.BaseWidget import BaseWidget
 from src.gui.widgets.WorkshopTreeWidget import WorkshopTreeWidget
 from src.gui.widgets.MaterialWidget import MaterialWidget
 from src.gui.widgets.VMWidget import VMWidget
-from src.gui.windows.InetsWindow import InetsWindow
-from src.gui.windows.CommandsWindow import CommandsWindow
 from src.model.Session import Session
 from src.gui_constants import (BOX_SPACING, PADDING, MATERIAL_TREE_LABEL, VM_TREE_LABEL,
                                WORKSHOP_RDP_CREATOR_FILE_PATH, WORKSHOP_MATERIAL_DIRECTORY,
@@ -86,8 +84,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.connect("delete-event", self.on_delete)
 
         self.vmWidget.addInetButton.connect("clicked", self.addInetEventHandler)
-        self.vmWidget.inetsButton.connect("clicked", self.openInetsWindowHandler)
-        self.vmWidget.customShutdownCommandsButton.connect("clicked", self.openCustomCommandsHandler)
         self.vmWidget.saveButton.connect("clicked", self.saveButtonHandler)
         self.baseWidget.saveButton.connect("clicked", self.saveButtonHandler)
 
@@ -354,10 +350,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.session.runScript(WORKSHOP_RDP_CREATOR_FILE_PATH)
         logging.debug("copying rdp files to manager directory")
         self.session.overwriteRDPToManagerSaveDirectory()
-
-    def openInetsWindowHandler(self, menuItem):
-        logging.debug("openInetWindowHandler() initated: " + str(menuItem))
-        InetsWindow(self, self.session.currentVM.internalnetBasenameList)
 
     def addInetEventHandler(self, menuItem):
         logging.debug("addInetEventHandler() initiated: " + str(menuItem))
@@ -667,7 +659,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " import " + os.path.join(tempPath, ova), granularity="char", capture="stderr")
                 pd.run()
                 vmNum = vmNum + 1
-                #self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
+                self.session.importToVBox(os.path.join(tempPath, ova), spinnerDialog)
             spinnerDialog.destroy()
 
             for xml in xmlList:
@@ -713,6 +705,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.workshopTree.populateTreeStore(self.session.workshopList)
 
             shutil.rmtree(baseTempPath, ignore_errors=True)
+            self.superMenu.refreshActionEvent(self.session.workshopList)
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -795,7 +788,4 @@ class AppWindow(Gtk.ApplicationWindow):
                                    "Workshop download complete.")
         dialog.run()
         dialog.destroy()
-
-    def openCustomCommandsHandler(self, menuItem):
-        logging.debug("openInetWindowHandler() initated: " + str(menuItem))
-        CommandsWindow(self)
+        self.superMenu.refreshActionEvent(self.session.workshopList)
