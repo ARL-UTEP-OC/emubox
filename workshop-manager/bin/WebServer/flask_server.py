@@ -58,8 +58,8 @@ def checkout(type, workshopName):
     global i
     workshop = filter(lambda x: x.workshopName == workshopName, getAvailableWorkshops())[0]
     if workshop.q.qsize():
-        unit = workshop.q.get()
         threadsToRunSem.acquire()
+        unit = workshop.q.get()
         putOnHold(unit)
         logging.info("flask_server: Initiated checkoutUnit().")
         threadsToRun.append(threading.Thread(target=checkoutUnit, args=(unit,)))

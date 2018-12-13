@@ -1,5 +1,6 @@
 import gc
 import logging
+import os
 import time
 import traceback
 
@@ -7,8 +8,10 @@ import gevent.monkey
 from gevent.lock import BoundedSemaphore
 from virtualbox import Manager
 from virtualbox.library import SessionState, MachineState, LockType
+from lxml import etree
 
 from manager_constants import LOCK_WAIT_TIME, VBOX_PROBETIME, VM_RESTORE_TIME
+from src.gui_constants import WORKSHOP_CONFIG_DIRECTORY
 
 
 gevent.monkey.patch_all()
@@ -151,6 +154,51 @@ def makeNotAvailableToRestoreState(vmNameList):
         queueStateSem.release()
 
 
+def execShutdownCmds(machine):
+    logging.info("execShutdownCmds: machine: " + str(machine.groups))
+    try:
+        machine_group = machine.groups[0]
+        workshopName = str(machine_group.encode('ascii', 'ignore')).split('/')[1]
+        xmlFileName = workshopName + ".xml"
+
+        tree = etree.parse(os.path.join(WORKSHOP_CONFIG_DIRECTORY, xmlFileName))
+        root = tree.getroot()
+        vmset = root.find('testbed-setup').find('vm-set')
+
+        for vm in vmset.findall('vm'):
+            currentVM = vm.find('name').text
+            if currentVM in machine.name:
+                logging.info("execShutdownCmds: Match found! (" + currentVM + " in " + machine.name + ")")
+                # Find shutdown commands to be executed
+                shutdownCommands = vm.find('shutdown-commands')
+                if shutdownCommands is not None:
+                    cmds = shutdownCommands.findall('cmd')
+                    if len(cmds):  # Shutdown commands found
+                        cmds.sort(key=lambda x: x.attrib['seq'])  # Sort shutdown commands by sequence
+                        # Iterate through commands and execute them
+                        for cmd in cmds:
+                            username = cmd.find('username').text.strip()
+                            password = cmd.find('password').text.strip()
+
+                            # Create session to the machine
+                            machine_session = machine.create_session()
+                            guest_session = machine_session.console.guest.create_session(username, password)
+
+                            cmdToExecute = cmd.find('syscall')
+                            if cmdToExecute is not None:  # command is a system call
+                                cmdToExecute = cmdToExecute.text.strip()
+                                guest_session.execute('/bin/bash', ['-c', cmdToExecute])
+                            else:
+                                cmdToExecute = cmd.find('copyfrom')
+                                if cmdToExecute is not None:  # command is a copy from
+                                    sourceFile = cmdToExecute.find('source-file').text.strip()
+                                    destDir = cmdToExecute.find('dest-dir').text.strip()
+                                    guest_session.file_copy_from_guest(sourceFile, destDir, []).wait_for_completion()
+                            guest_session.close()
+    except Exception:
+        logging.info("execShutdownCmds: An error occurred: " + str(machine.groups))
+
+
 def makeRestoreToAvailableState():  # will look at restore buffer and process any items that exist
     global vms
     global groupToVms
@@ -186,6 +234,7 @@ def makeRestoreToAvailableState():  # will look at restore buffer and process an
                 result = -1
                 if restoreSubstates[substate] == "pending" and vmState == MachineState(5):
                     logging.debug("CALLING POWEROFF"+str(substate)+":"+str(restoreSubstates[substate]))
+                    execShutdownCmds(mach)
                     result = powerdownMachine(session, mach)
                     if result != -1:
                         restoreSubstates[substate] = "poweroff_sent"

@@ -52,7 +52,7 @@
         <script>
             function initiate_download(workshopName) {
                 {#window.alert("worked");#}
-                window.open($("#dl_selector_" + workshopName.replace(' ', '_')).val(), "_self");
+                window.open($("#dl_selector_" + workshopName.replace(/ /g, '_')).val(), "_self");
             }
 
             var socket = io.connect("http://" + window.location.hostname + ":" + {{ socket_io_port }});
@@ -62,10 +62,10 @@
 
             socket.on('sizes', function(sizes) {
                 if (sizes[1] === 0)
-                    $('#download_links_' + sizes[0].replace(' ', '_')).hide();
+                    $('#download_links_' + sizes[0].replace(/ /g, '_')).hide();
                 else
-                    $('#download_links_' + sizes[0].replace(' ', '_')).show();
-                $('#' + sizes[0].replace(' ', '_')).text(sizes[1]);
+                    $('#download_links_' + sizes[0].replace(/ /g, '_')).show();
+                $('#' + sizes[0].replace(/ /g, '_')).text(sizes[1]);
             });
         </script>
     </body>
