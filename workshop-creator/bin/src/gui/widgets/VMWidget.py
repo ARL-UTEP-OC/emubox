@@ -33,9 +33,6 @@ class VMWidget(Gtk.Box):
         self.vrdpEnabledEntry = Gtk.ComboBoxText()
         self.vrdpEnabledEntry.insert_text(0, "true")
         self.vrdpEnabledEntry.insert_text(1, "false")
-        self.inetsButton = Gtk.Button.new_with_label("Inets")
-        self.customShutdownCommandsButton = Gtk.Button.new_with_label("Custom Shutdown Commands")
-        self.buttonsBox = Gtk.Box()
         self.addInetButton = Gtk.Button.new_with_label("Add Internalnet Basename")
 
         self.saveButton = Gtk.Button(label="Save Changes")
@@ -52,9 +49,6 @@ class VMWidget(Gtk.Box):
         self.outerVertBox.add(self.iNetVerBox)
         self.outerVertBox.add(self.addInetButton)
         self.outerBox.pack_end(self.saveButton, False, False, PADDING)
-        self.buttonsBox.pack_start(self.inetsButton, True, True, 0)
-        self.buttonsBox.pack_start(self.customShutdownCommandsButton, True, True, 0)
-        self.outerVertBox.add(self.buttonsBox)
 
 
     def initializeLabels(self):

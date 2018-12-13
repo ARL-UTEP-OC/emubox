@@ -10,9 +10,9 @@ from src.gui.super_menu import SuperMenu
 from src.gui.dialogs.EntryDialog import EntryDialog
 from src.gui.dialogs.ListEntryDialog import ListEntryDialog
 from src.gui.dialogs.ProcessDialog import ProcessDialog
+from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.dialogs.DownloadDialog import DownloadDialog
-from src.gui.dialogs.SpinnerDialog import SpinnerDialog
 from src.gui.widgets.BaseWidget import BaseWidget
 from src.gui.widgets.WorkshopTreeWidget import WorkshopTreeWidget
 from src.gui.widgets.MaterialWidget import MaterialWidget
