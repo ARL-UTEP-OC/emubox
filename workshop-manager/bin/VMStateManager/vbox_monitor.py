@@ -11,8 +11,7 @@ from virtualbox.library import SessionState, MachineState, LockType
 from lxml import etree
 
 from manager_constants import LOCK_WAIT_TIME, VBOX_PROBETIME, VM_RESTORE_TIME
-from src.gui_constants import WORKSHOP_CONFIG_DIRECTORY
-
+from gui_constants import WORKSHOP_CONFIG_DIRECTORY
 
 gevent.monkey.patch_all()
 
