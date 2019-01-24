@@ -6,7 +6,7 @@ from src.model.Session import Session
 from src.gui.dialogs.ProcessDialog import ProcessDialog
 from src.gui.dialogs.WarningDialog import WarningDialog
 from src.gui.widgets.WorkshopListWidget import WorkshopListWidget
-from src.gui_constants import (VM_STARTER_FILE_PATH, VM_POWEROFF_FILE_PATH,
+from src.gui_constants import (VM_STARTER_FILE_PATH, VM_POWEROFF_FILE_PATH, VBOXMANAGE_DIRECTORY,
                                WORKSHOP_CONFIG_DIRECTORY, WORKSHOP_CREATOR_FILE_PATH, WORKSHOP_RESTORE_FILE_PATH)
 from vboxmanage_utils import getStatus, getCloneNames
 
@@ -158,7 +158,7 @@ class SuperMenu(Gtk.Box):
 
             for clone in clones:
                 logging.debug("deleteClonesActionEvent(): instantiating ProcessDialog")
-                pd = ProcessDialog("vboxmanage unregistervm " + clone.replace(" ", "\\ ") + " --delete")
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " unregistervm " + clone.replace(" ", "\\ ") + " --delete")
                 logging.debug("deleteClonesActionEvent(): running ProcessDialog")
                 pd.run()
                 pd.destroy()
