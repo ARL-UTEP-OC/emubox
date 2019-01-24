@@ -52,8 +52,8 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.notebook = Gtk.Notebook()
         self.notebook.append_page(self.windowBox, Gtk.Label("Configuration"))
-        self.notebook.append_page(self.managerBox, Gtk.Label("Frontend"))
         self.notebook.append_page(self.superMenu, Gtk.Label("VBox Actions"))
+        self.notebook.append_page(self.managerBox, Gtk.Label("Frontend"))
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
