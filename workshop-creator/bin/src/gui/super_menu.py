@@ -127,9 +127,10 @@ class SuperMenu(Gtk.Box):
         if self.session.currentWorkshop is None:
             WarningDialog(self.window, "You must select a workshop before you can run the workshop.")
             return
-        elif getStatus(self.session.currentWorkshop.filename) != "Running":
-            WarningDialog(Gtk.Window(),  "Workshop is not running")
-            return
+        #TODO: will uncomment when we code a way to see if VM running in windows
+        #elif getStatus(self.session.currentWorkshop.filename) != "Running":
+        #    WarningDialog(Gtk.Window(),  "Workshop is not running")
+        #    return
 
         workshopName = self.session.currentWorkshop.filename
         command = "python -u \"" + VM_POWEROFF_FILE_PATH + "\" \"" + os.path.join(WORKSHOP_CONFIG_DIRECTORY,
