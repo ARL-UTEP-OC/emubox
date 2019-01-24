@@ -3,8 +3,8 @@ import re
 import shlex
 import xml.etree.ElementTree as ET
 from subprocess import check_output, Popen, PIPE
-from src.gui_constants import VBOXMANAGE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY
-
+from src.gui_constants import VBOXMANAGE_DIRECTORY, WORKSHOP_CONFIG_DIRECTORY, POSIX
+import logging
 
 def getVMs():
     getVMsCmd = [VBOXMANAGE_DIRECTORY, "list", "vms"]
@@ -33,16 +33,20 @@ def getCloneNames(workshopName):
 
 
 def isRunning(workshopName):
+    logging.debug("isRunning(): " + str(workshopName))
     clone_names = getCloneNames(workshopName)
+    logging.debug("isRunning(): clone_names: " + str(clone_names))
     for clone_name in clone_names:
         cmd1 = VBOXMANAGE_DIRECTORY + " showvminfo " + "\"" + clone_name + "\""
         cmd2 = "grep -c \"running (since\""
-
-        p1 = Popen(shlex.split(cmd1), shell=False, stdout=PIPE)
-        p2 = Popen(shlex.split(cmd2), shell=False, stdin=p1.stdout, stdout=PIPE)
-
-        output = int(p2.communicate()[0])
-        if output == 0:
+        logging.debug("isRunning(): cmd1: " + str(cmd1))
+        if POSIX:
+            p1 = Popen(shlex.split(cmd1), shell=False, stdout=PIPE)
+            p2 = Popen(shlex.split(cmd2), shell=False, stdin=p1.stdout, stdout=PIPE)
+            output = int(p2.communicate()[0])
+            if output == 0:
+               return False
+        else:
             return False
     return True
 
