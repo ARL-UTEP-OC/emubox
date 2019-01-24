@@ -76,12 +76,18 @@ class ProcessDialog(Gtk.Dialog):
         try:
             GLib.idle_add(self.appendText, "Starting process: " + str(processPath) + "\r\n")
             if POSIX:
-                self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, stderr=PIPE)
+                if self.capture=="stdout":
+                    self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=PIPE, stderr=None)
+                else:
+                    self.p = Popen(shlex.split(processPath, posix=POSIX), shell=False, stdout=None, stderr=PIPE)
             else:
-                self.p = Popen(processPath, shell=False, stdout=PIPE, stderr=PIPE)
+                if self.capture=="stdout":
+                    self.p = Popen(processPath, shell=False, stdout=PIPE, stderr=None)
+                else:
+                    self.p = Popen(processPath, shell=False, stdout=None, stderr=PIPE)
             logging.debug("watchProcess(): finished call to popen, observing stdout...")
             while True:
-                logging.debug("watchProcess(): reading stderr")
+                logging.debug("watchProcess(): reading input")
                 if self.granularity == "line":
                     if self.capture == "stdout":
                         out = self.p.stdout.readline()
