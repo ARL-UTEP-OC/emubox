@@ -54,6 +54,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.notebook.append_page(self.windowBox, Gtk.Label("Configuration"))
         self.notebook.append_page(self.superMenu, Gtk.Label("VBox Actions"))
         self.notebook.append_page(self.managerBox, Gtk.Label("Frontend"))
+        self.notebook.connect("switch_page", self.notebookChangeHandler)
 
         # Widget creation
         self.workshopTree = WorkshopTreeWidget()
@@ -142,32 +143,10 @@ class AppWindow(Gtk.ApplicationWindow):
         # Capture Ctrl-S for saving
         self.connect("key-press-event", self.keyHandler)
 
-    def saveButtonHandler(self, widget):
-        self.fullSave()
-
-    def keyHandler(self, widget, event):
-        # Check if Ctrl is held down while pressing the 's' or 'S' key. 'S' will occur if caps-lock is on
-        if event.state == Gdk.ModifierType.CONTROL_MASK and event.keyval == Gdk.KEY_s or \
-                event.state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.LOCK_MASK and event.keyval == Gdk.KEY_S:
-            self.fullSave()
-
-    def initializeContainers(self):
-        self.add(self.notebook)
-
-        self.windowBox.pack_start(self.workshopTree, True, True, PADDING)
-        self.windowBox.pack_end(self.actionEventBox, True, True, PADDING)
-
-        self.actionEventBox.add(self.actionBox)
-        self.actionBox.pack_start(self.scrolledActionBox, True, True, PADDING)
-
-        self.scrolledActionBox.add(self.scrolledInnerBox)
-        self.scrolledActionBox.set_min_content_width(450)
-        self.scrolledActionBox.set_min_content_height(600)
-
-    def onItemSelected(self, selection):
-        logging.debug("Item was selected: " + str(selection))
-        self.softSave()
-        self.hardSave()
+    def notebookChangeHandler(self, page, page_num, user_data):
+        logging.debug("notebookChangeHandler(): Notebook changed " + "page: " + str(page.get_tab_label_text(page_num)))
+        #Need to set the current workshop to whatever is highlighted - that way when save, we save to the correct one!
+        selection = self.workshopTree.treeView.get_selection()
         model, treeiter = selection.get_selected()
         self.currentModel = model
         self.currentIter = treeiter
@@ -189,6 +168,80 @@ class AppWindow(Gtk.ApplicationWindow):
 
             if not matchFound:
                 return
+            logging.debug("onItemSelected(): working with matching workshop name: " + filename)
+
+        elif not model.iter_has_child(treeiter):
+            self.isParent = False
+            vmName = model[treeiter][0]
+            treeiter = model.iter_parent(treeiter)
+            filename = model[treeiter][0]
+            self.session.currentWorkshop = None
+            matchFound = False
+
+            for workshop in self.session.workshopList:
+                if filename == workshop.filename:
+                    self.session.currentWorkshop = workshop
+                    matchFound = True
+                    break
+
+            if not matchFound:
+                return
+
+    def saveButtonHandler(self, widget):
+        logging.debug("saveButtonHandler(): initiated")
+        model, treeIter = self.workshopTree.treeView.get_selection().get_selected()
+        logging.debug("saveButtonHandler(): selected tree items is: " + str(model[treeIter][0]))
+
+        self.fullSave()
+
+    def keyHandler(self, widget, event):
+        # Check if Ctrl is held down while pressing the 's' or 'S' key. 'S' will occur if caps-lock is on
+        if event.state == Gdk.ModifierType.CONTROL_MASK and event.keyval == Gdk.KEY_s or \
+                event.state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.LOCK_MASK and event.keyval == Gdk.KEY_S:
+            self.fullSave()
+
+    def initializeContainers(self):
+        logging.debug("initializeContainers(): initiated")
+        self.add(self.notebook)
+
+        self.windowBox.pack_start(self.workshopTree, True, True, PADDING)
+        self.windowBox.pack_end(self.actionEventBox, True, True, PADDING)
+
+        self.actionEventBox.add(self.actionBox)
+        self.actionBox.pack_start(self.scrolledActionBox, True, True, PADDING)
+
+        self.scrolledActionBox.add(self.scrolledInnerBox)
+        self.scrolledActionBox.set_min_content_width(450)
+        self.scrolledActionBox.set_min_content_height(600)
+
+    def onItemSelected(self, selection):
+        logging.debug("Item was selected: " + str(selection))
+        #save any changes that may have occured when working with the previous selection (workshop)
+        self.softSave()
+        self.hardSave()
+
+        model, treeiter = selection.get_selected()
+        self.currentModel = model
+        self.currentIter = treeiter
+
+        if treeiter == None:
+            return
+
+        if model.iter_has_child(treeiter):
+            self.isParent = True
+            filename = model[treeiter][0]
+            self.session.currentWorkshop = None
+            matchFound = False
+
+            for workshop in self.session.workshopList:
+                if filename == workshop.filename:
+                    self.session.currentWorkshop = workshop
+                    matchFound = True
+                    break
+
+            if not matchFound:
+                return
+            logging.debug("onItemSelected(): working with matching workshop name: " + filename)
 
             # The clicked row in the tree was valid so we will need to
             # clear all children in the main container and add the new one
@@ -276,8 +329,11 @@ class AppWindow(Gtk.ApplicationWindow):
                 self.scrolledInnerBox.pack_start(self.materialWidget, True, True, PADDING)
 
                 self.materialWidget.nameEntry.set_text(self.session.currentMaterial.name)
-
             self.actionBox.show_all()
+
+        self.softSave()
+        self.hardSave()
+
 
     # This handles clicking the vboxpath
     def onVBoxPathClicked(self, button):
@@ -304,6 +360,8 @@ class AppWindow(Gtk.ApplicationWindow):
             self.holdLinked = "true"
             if self.baseWidget.linkedClonesEntry.get_active_text() == "false":
                 self.holdLinked = "false"
+            #TODO: here be the dragons!
+            logging.debug("softSave(): baseWidget group name: " + self.baseWidget.baseGroupNameEntry.get_text())
             self.session.softSaveWorkshop(self.baseWidget.vBoxManageEntry.get_text(),
                                           self.baseWidget.ipAddressEntry.get_text(),
                                           self.baseWidget.baseGroupNameEntry.get_text(),

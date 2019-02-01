@@ -374,6 +374,7 @@ class Session:
         self.oldCloneSnapshots = self.currentWorkshop.cloneSnapshots
         self.oldLinkedClones = self.currentWorkshop.linkedClones
         self.oldBaseGroupName = self.currentWorkshop.baseGroupName
+        logging.debug("softSaveWorkshop(): old name: " + self.oldBaseGroupName + " New: " + inBaseGroupName)
         self.oldBaseOutName = self.currentWorkshop.baseOutName
         self.oldVRDPBaseport = self.currentWorkshop.vrdpBaseport
 
@@ -428,9 +429,9 @@ class Session:
             self.runRDPScript()
 
     def hardSave(self):
-        logging.debug("hardSave() initiated")
+        logging.debug("Session: hardSave() initiated")
         for workshop in self.workshopList:
-
+            logging.debug("Session: hardSave(): Saving Workshop with baseGroupName: " + str(workshop.baseGroupName))
             # Create root of XML etree
             root = etree.Element("xml")
 
