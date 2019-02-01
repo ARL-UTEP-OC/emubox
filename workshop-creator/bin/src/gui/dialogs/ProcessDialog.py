@@ -63,7 +63,7 @@ class ProcessDialog(Gtk.Dialog):
 
     def appendText(self, msg):
         i = self.text_buffer.get_end_iter()
-        logging.debug("appendText(): " + str(msg))
+        #logging.debug("appendText(): " + str(msg))
         self.text_buffer.insert(i, str(msg), -1)
 
     def hideDialog(self):
@@ -85,9 +85,9 @@ class ProcessDialog(Gtk.Dialog):
                     self.p = Popen(processPath, shell=False, stdout=PIPE, stderr=None)
                 else:
                     self.p = Popen(processPath, shell=False, stdout=None, stderr=PIPE)
-            logging.debug("watchProcess(): finished call to popen, observing stdout...")
+            #logging.debug("watchProcess(): finished call to popen, observing stdout...")
             while True:
-                logging.debug("watchProcess(): reading input")
+                #logging.debug("watchProcess(): reading input")
                 if self.granularity == "line":
                     if self.capture == "stdout":
                         out = self.p.stdout.readline()
@@ -99,10 +99,10 @@ class ProcessDialog(Gtk.Dialog):
                     else:
                         out = self.p.stderr.read(1)
                 if out == '' and self.p.poll() != None:
-                    logging.debug("watchProcess(): breaking out")
+                    #logging.debug("watchProcess(): breaking out")
                     break
                 else: 
-                    logging.debug("watchProcess(): calling idle_add")
+                    #logging.debug("watchProcess(): calling idle_add")
                     GLib.idle_add(self.appendText, out)
 
             # wait for the subprocess to exit
