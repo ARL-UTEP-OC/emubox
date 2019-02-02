@@ -192,13 +192,15 @@ class AppWindow(Gtk.ApplicationWindow):
         model, treeIter = self.workshopTree.treeView.get_selection().get_selected()
         logging.debug("saveButtonHandler(): selected tree items is: " + str(model[treeIter][0]))
 
-        self.fullSave()
+        self.softSave()
+        self.hardSave()
 
     def keyHandler(self, widget, event):
         # Check if Ctrl is held down while pressing the 's' or 'S' key. 'S' will occur if caps-lock is on
         if event.state == Gdk.ModifierType.CONTROL_MASK and event.keyval == Gdk.KEY_s or \
                 event.state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.LOCK_MASK and event.keyval == Gdk.KEY_S:
-            self.fullSave()
+            self.softSave()
+            self.hardSave()
 
     def initializeContainers(self):
         logging.debug("initializeContainers(): initiated")
