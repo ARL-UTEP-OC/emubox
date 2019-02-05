@@ -716,7 +716,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 GLib.idle_add(spinnerDialog.setLabelVal, "Importing VM " + str(vmNum) + " of " + str(len(ovaList)))
                 GLib.idle_add(spinnerDialog.setProgressVal, prog)
                 #HERE is where
-                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " import " + os.path.join(tempPath, ova), granularity="char", capture="stderr")
+                pd = ProcessDialog(VBOXMANAGE_DIRECTORY + " import " + os.path.join(tempPath, ova) + " --options keepallmacs", granularity="char", capture="stderr")
                 pd.run()
                 vmNum = vmNum + 1
             spinnerDialog.destroy()
